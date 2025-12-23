@@ -1,0 +1,782 @@
+
+/* ========== Tajawal Font ========== */
+@font-face {
+    font-family: 'Tajawal';
+    src: url('../../fonts/tajawal/Tajawal-Regular.ttf') format('truetype');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: 'Tajawal';
+    src: url('../../fonts/tajawal/Tajawal-Medium.ttf') format('truetype');
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: 'Tajawal';
+    src: url('../../fonts/tajawal/Tajawal-Bold.ttf') format('truetype');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+
+/* ========== Inter Font (English) ========== */
+@font-face {
+    font-family: 'Inter';
+    src: url('../../fonts/inter/Inter-Regular.ttf') format('truetype');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: 'Inter';
+    src: url('../../fonts/inter/Inter-Medium.ttf') format('truetype');
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: 'Inter';
+    src: url('../../fonts/inter/Inter-SemiBold.ttf') format('truetype');
+    font-weight: 600;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: 'Inter';
+    src: url('../../fonts/inter/Inter-Bold.ttf') format('truetype');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html[dir="ltr"] body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+html[dir="rtl"] body {
+    font-family: 'Tajawal', sans-serif;
+}
+
+body {
+    font-family: 'Tajawal', sans-serif;
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #f8fafc 100%);
+    min-height: 100vh;
+    position: relative;
+    overflow-x: hidden;
+}
+
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: radial-gradient(circle at 20% 80%, rgba(255, 215, 0, 0.05) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(255, 140, 0, 0.03) 0%, transparent 50%), radial-gradient(circle at 40% 40%, rgba(255, 69, 0, 0.02) 0%, transparent 50%);
+    z-index: 1;
+}
+
+.login-container {
+    position: relative;
+    z-index: 2;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px
+}
+
+/* Language Switcher */
+.language-switcher-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+}
+
+html[dir="rtl"] .language-switcher-container {
+    right: auto;
+    left: 20px;
+}
+
+.language-switcher-dropdown {
+    position: relative;
+}
+
+.language-switcher-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    color: #334155;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.language-switcher-toggle:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.language-switcher-toggle .flag-icon {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.language-switcher-toggle i {
+    font-size: 12px;
+    transition: transform 0.3s ease;
+}
+
+.language-switcher-dropdown.active .language-switcher-toggle i {
+    transform: rotate(180deg);
+}
+
+.language-switcher-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    min-width: 160px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.3s ease;
+    z-index: 1001;
+}
+
+html[dir="rtl"] .language-switcher-menu {
+    right: auto;
+    left: 0;
+}
+
+.language-switcher-dropdown.active .language-switcher-menu {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.language-option {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 12px 16px;
+    background: none;
+    border: none;
+    text-align: left;
+    cursor: pointer;
+    font-size: 14px;
+    color: #334155;
+    transition: background-color 0.2s ease;
+}
+
+html[dir="rtl"] .language-option {
+    text-align: right;
+}
+
+.language-option:hover {
+    background: #f8fafc;
+}
+
+.language-option.active {
+    background: #eff6ff;
+    color: #1e40af;
+    font-weight: 600;
+}
+
+.language-option .flag-icon-small {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.language-option span {
+    flex: 1;
+}
+
+.language-option i {
+    font-size: 12px;
+    color: #3b82f6;
+}
+
+.input-icon {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    color: #6b7280;
+}
+
+html[dir="rtl"] .input-icon {
+    right: 15px;
+}
+
+html[dir="ltr"] .input-icon {
+    left: 15px;
+}
+
+.spinner {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.login-wrapper {
+    display: grid;
+    grid-template-columns:1fr 1fr;
+    gap: 0;
+    max-width: 900px;
+    width: 100%;
+    background: white;
+    border-radius: 24px;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+    animation: slideInUp 0.8s ease-out
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(40px)
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0)
+    }
+}
+
+.logo-section {
+    background: linear-gradient(135deg, #FFD700 0%, #FF8C00 50%, #FF4500 100%);
+    padding: 60px 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.logo-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(0,0,0,0.1)" stroke-width="0.5"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
+    opacity: 0.2
+}
+
+.logo-container {
+    position: relative;
+    z-index: 2
+}
+
+.logo-circle {
+    width: 150px;
+    height: 150px;
+    background: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2), 0 0 0 2px #fff;
+    position: relative;
+    animation: pulse 3s infinite;
+    margin-bottom: 30px;
+    overflow: hidden
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2), 0 0 0 2px #fff
+    }
+    50% {
+        transform: scale(1.05);
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3), 0 0 0 2px #fff
+    }
+}
+
+.logo-image {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    border-radius: 50%;
+    transition: transform 0.3s ease
+}
+
+.logo-image:hover {
+    transform: scale(1.05)
+}
+
+.logo-fallback {
+    font-size: 3rem;
+    background: linear-gradient(45deg, #FFD700, #FF8C00, #FF4500);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: glow 2s ease-in-out infinite alternate
+}
+
+@keyframes glow {
+    from {
+        filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.6))
+    }
+    to {
+        filter: drop-shadow(0 0 20px rgba(255, 69, 0, 0.8))
+    }
+}
+
+.company-name {
+    color: white;
+    font-size: 2.5rem;
+    font-weight: 700;
+    font-family: 'Tajawal', sans-serif;
+    text-shadow: 2px 2px 6px rgba(0, 0, 0, 0.4);
+    letter-spacing: 1px;
+    margin-bottom: 15px;
+}
+
+.company-subtitle {
+    color: white;
+    font-size: 1.6rem;
+    font-weight: 600;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.4);
+    letter-spacing: 4px;
+    opacity: 0.95;
+    margin-bottom: 20px
+}
+
+.company-description {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 1.1rem;
+    font-weight: 400;
+    font-family: 'Tajawal', sans-serif;
+    line-height: 1.6;
+    max-width: 300px;
+}
+
+.form-section {
+    padding: 60px 50px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center
+}
+
+.welcome-text {
+    text-align: center;
+    margin-bottom: 40px
+}
+
+.welcome-text h2 {
+    color: #FF8C00;
+    font-size: 2rem;
+    font-weight: 700;
+    font-family: 'Tajawal', sans-serif;
+    margin-bottom: 10px;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.welcome-text p {
+    color: #64748b;
+    font-size: 1.1rem;
+    font-family: 'Tajawal', sans-serif;
+}
+
+.form-group {
+    margin-bottom: 25px
+}
+
+.form-label {
+    color: #FF8C00;
+    font-size: 1rem;
+    font-weight: 600;
+    font-family: 'Tajawal', sans-serif;
+    margin-bottom: 10px;
+    display: block;
+}
+
+.input-group {
+    position: relative
+}
+
+.form-control {
+    width: 100%;
+    padding: 18px 55px 18px 55px;
+    border: 2px solid #e2e8f0;
+    border-radius: 15px;
+    font-size: 1.1rem;
+    font-family: 'Tajawal', sans-serif;
+    background: #f8fafc;
+    transition: all 0.3s ease;
+    outline: none;
+}
+
+.form-control.is-invalid {
+    border-color: #ef4444;
+    background: #fef2f2;
+}
+
+.invalid-feedback {
+    display: block;
+    color: #ef4444;
+    font-size: 0.875rem;
+    margin-top: 0.5rem;
+}
+
+.form-control:focus {
+    border-color: #FF8C00;
+    background: white;
+    box-shadow: 0 0 0 3px rgba(255, 140, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+.input-icon {
+    position: absolute;
+    right: 18px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #FF8C00;
+    font-size: 1.2rem;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus ~ .input-icon {
+    color: #FF4500;
+    transform: translateY(-50%) scale(1.1);
+}
+
+.input-icon {
+    pointer-events: none;
+}
+
+.password-toggle {
+    position: absolute;
+    left: 18px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    font-size: 1.1rem;
+    padding: 8px;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.password-toggle:hover {
+    color: #FF8C00;
+    background: rgba(255, 140, 0, 0.1);
+    transform: translateY(-50%) scale(1.1);
+}
+
+.form-options {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 35px;
+    flex-wrap: wrap;
+    gap: 15px
+}
+
+.remember-me {
+    display: flex;
+    align-items: center;
+    gap: 10px
+}
+
+.remember-me input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    accent-color: #FF8C00;
+}
+
+.remember-me label {
+    color: #64748b;
+    font-size: 0.95rem;
+    font-family: 'Tajawal', sans-serif;
+    cursor: pointer;
+    user-select: none;
+    transition: color 0.3s ease;
+}
+
+.remember-me label:hover {
+    color: #FF8C00;
+}
+
+.forgot-password {
+    color: #FF8C00;
+    text-decoration: none;
+    font-size: 0.95rem;
+    font-family: 'Tajawal', sans-serif;
+    transition: all 0.3s ease;
+}
+
+.forgot-password:hover {
+    color: #FF4500;
+    text-decoration: underline;
+    transform: translateY(-1px);
+}
+
+.login-btn {
+    width: 100%;
+    padding: 18px;
+    background: linear-gradient(135deg, #FFD700 0%, #FF8C00 50%, #FF4500 100%);
+    border: none;
+    border-radius: 15px;
+    color: white;
+    font-size: 1.2rem;
+    font-weight: 700;
+    font-family: 'Tajawal', sans-serif;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.4s ease;
+    box-shadow: 0 8px 25px rgba(255, 140, 0, 0.3);
+    margin-bottom: 25px;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.login-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 35px rgba(255, 140, 0, 0.4);
+}
+
+.login-btn:active {
+    transform: translateY(-1px)
+}
+
+.login-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transition: left 0.6s
+}
+
+.login-btn:hover::before {
+    left: 100%
+}
+
+.btn-loading {
+    display: none
+}
+
+.login-btn.loading .btn-text {
+    display: none
+}
+
+.login-btn.loading .btn-loading {
+    display: block
+}
+
+.form-footer {
+    text-align: center;
+    margin-top: 20px
+}
+
+.form-footer p {
+    color: #94a3b8;
+    font-size: 0.9rem;
+    font-family: 'Tajawal', sans-serif;
+    margin: 0;
+}
+
+@media (max-width: 768px) {
+    .login-wrapper {
+        grid-template-columns:1fr;
+        max-width: 450px
+    }
+
+    .logo-section {
+        padding: 40px 30px
+    }
+
+    .form-section {
+        padding: 40px 30px
+    }
+
+    .logo-circle {
+        width: 120px;
+        height: 120px
+    }
+
+    .company-name {
+        font-size: 2rem
+    }
+
+    .company-subtitle {
+        font-size: 1.3rem
+    }
+
+    .form-options {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 20px
+    }
+}
+
+@media (max-width: 480px) {
+    .login-container {
+        padding: 10px
+    }
+
+    .logo-section {
+        padding: 30px 20px
+    }
+
+    .form-section {
+        padding: 30px 20px
+    }
+
+    .logo-circle {
+        width: 100px;
+        height: 100px
+    }
+
+    .company-name {
+        font-size: 1.8rem
+    }
+
+    .company-subtitle {
+        font-size: 1.1rem
+    }
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg)
+    }
+    100% {
+        transform: rotate(360deg)
+    }
+}
+
+.fa-spinner {
+    animation: spin 1s linear infinite
+}
+
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 10000;
+    animation: slideInRight 0.4s ease-out;
+    max-width: 350px;
+    min-width: 300px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 140, 0, 0.3)
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1
+    }
+}
+
+@keyframes slideOutRight {
+    from {
+        transform: translateX(0);
+        opacity: 1
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0
+    }
+}
+
+.notification-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 15px 20px;
+    border-radius: 12px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15)
+}
+
+.notification-content i:first-child {
+    font-size: 1.3rem
+}
+
+.notification-content span {
+    flex: 1;
+    font-size: 0.95rem;
+    line-height: 1.4
+}
+
+.notification-close {
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 50%;
+    transition: background 0.3s ease;
+    opacity: 0.8
+}
+
+.notification-close:hover {
+    background: rgba(255, 255, 255, 0.2);
+    opacity: 1
+}
+
+.notification-success {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white
+}
+
+.notification-error {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: white
+}
+
+.notification-info {
+    background: linear-gradient(135deg, #FFD700, #FF8C00);
+    color: white
+}
+
+.notification-warning {
+    background: linear-gradient(135deg, #FF8C00, #FF4500);
+    color: white
+}

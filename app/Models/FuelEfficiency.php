@@ -1,0 +1,41 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
+
+class FuelEfficiency extends Model
+{
+    use SoftDeletes;
+
+    protected $fillable = [
+        'generator_id',
+        'consumption_date',
+        'operating_hours',
+        'fuel_price_per_liter',
+        'fuel_efficiency_percentage',
+        'fuel_efficiency_comparison',
+        'energy_distribution_efficiency',
+        'energy_efficiency_comparison',
+        'total_operating_cost',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'consumption_date' => 'date',
+            'operating_hours' => 'decimal:2',
+            'fuel_price_per_liter' => 'decimal:2',
+            'fuel_efficiency_percentage' => 'decimal:2',
+            'energy_distribution_efficiency' => 'decimal:2',
+            'total_operating_cost' => 'decimal:2',
+        ];
+    }
+
+    public function generator(): BelongsTo
+    {
+        return $this->belongsTo(Generator::class);
+    }
+}
