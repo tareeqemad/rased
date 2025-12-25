@@ -1,4 +1,4 @@
-@extends('layouts.admin')
+﻿@extends('layouts.admin')
 
 @section('title', 'إضافة سجل صيانة')
 
@@ -37,9 +37,7 @@
                                     </option>
                                 @endforeach
                             </select>
-                            @error('generator_id')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
+                            
                         </div>
 
                         <div class="col-md-6">
@@ -49,53 +47,41 @@
                                 <option value="periodic" {{ old('maintenance_type') === 'periodic' ? 'selected' : '' }}>دورية</option>
                                 <option value="emergency" {{ old('maintenance_type') === 'emergency' ? 'selected' : '' }}>طارئة</option>
                             </select>
-                            @error('maintenance_type')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
+                            
                         </div>
 
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">تاريخ الصيانة <span class="text-danger">*</span></label>
                             <input type="date" name="maintenance_date" class="form-control @error('maintenance_date') is-invalid @enderror" 
                                    value="{{ old('maintenance_date', date('Y-m-d')) }}" required>
-                            @error('maintenance_date')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
+                            
                         </div>
 
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">اسم الفني المسؤول</label>
                             <input type="text" name="technician_name" class="form-control @error('technician_name') is-invalid @enderror" 
                                    value="{{ old('technician_name') }}">
-                            @error('technician_name')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
+                            
                         </div>
 
                         <div class="col-md-12">
                             <label class="form-label fw-semibold">الأعمال المنفذة</label>
                             <textarea name="work_performed" class="form-control @error('work_performed') is-invalid @enderror" rows="4">{{ old('work_performed') }}</textarea>
-                            @error('work_performed')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
+                            
                         </div>
 
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">زمن التوقف (ساعات)</label>
                             <input type="number" step="0.01" name="downtime_hours" class="form-control @error('downtime_hours') is-invalid @enderror" 
                                    value="{{ old('downtime_hours') }}" min="0">
-                            @error('downtime_hours')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
+                            
                         </div>
 
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">تكلفة الصيانة</label>
                             <input type="number" step="0.01" name="maintenance_cost" class="form-control @error('maintenance_cost') is-invalid @enderror" 
                                    value="{{ old('maintenance_cost') }}" min="0">
-                            @error('maintenance_cost')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
+                            
                         </div>
                     </div>
 

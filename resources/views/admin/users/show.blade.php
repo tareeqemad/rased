@@ -36,7 +36,7 @@
                                 </a>
                             @endcan
                             @if((auth()->user()->isSuperAdmin() || (auth()->user()->isCompanyOwner() && ($user->isEmployee() || $user->isTechnician()))) && !$user->isSuperAdmin())
-                                <a href="{{ route('admin.users.permissions', $user) }}" class="btn btn-warning">
+                                <a href="{{ route('admin.permissions.index', ['user_id' => $user->id]) }}" class="btn btn-warning">
                                     <i class="bi bi-shield-check me-2"></i>
                                     إدارة الصلاحيات
                                 </a>
@@ -51,7 +51,7 @@
             </div>
             <div class="col-md-8">
                 <div class="card border-0 shadow-sm">
-                    <div class="card-header bg-white border-bottom">
+                    <div class="card-header d-flex justify-content-between align-items-center">
                         <h5 class="mb-0 fw-bold">معلومات المستخدم</h5>
                     </div>
                     <div class="card-body">
@@ -92,7 +92,7 @@
 
                 @if($user->isCompanyOwner() && $user->ownedOperators->count() > 0)
                     <div class="card border-0 shadow-sm mt-3">
-                        <div class="card-header bg-white border-bottom">
+                        <div class="card-header d-flex justify-content-between align-items-center">
                             <h5 class="mb-0 fw-bold">المشغلون المملوكون</h5>
                         </div>
                         <div class="card-body">
@@ -110,7 +110,7 @@
 
                 @if(($user->isEmployee() || $user->isTechnician()) && $user->operators->count() > 0)
                     <div class="card border-0 shadow-sm mt-3">
-                        <div class="card-header bg-white border-bottom">
+                        <div class="card-header d-flex justify-content-between align-items-center">
                             <h5 class="mb-0 fw-bold">المشغلون المنتمي إليهم</h5>
                         </div>
                         <div class="card-body">
@@ -129,13 +129,13 @@
                 <!-- الصلاحيات -->
                 @if($user->permissions->count() > 0 || auth()->user()->isSuperAdmin() || (auth()->user()->isCompanyOwner() && ($user->isEmployee() || $user->isTechnician())))
                     <div class="card border-0 shadow-sm mt-3">
-                        <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center">
+                        <div class="card-header d-flex justify-content-between align-items-center">
                             <h5 class="mb-0 fw-bold">
                                 <i class="bi bi-shield-check me-2"></i>
                                 الصلاحيات
                             </h5>
                             @if(auth()->user()->isSuperAdmin() || (auth()->user()->isCompanyOwner() && ($user->isEmployee() || $user->isTechnician())))
-                                <a href="{{ route('admin.users.permissions', $user) }}" class="btn btn-sm btn-warning">
+                                <a href="{{ route('admin.permissions.index', ['user_id' => $user->id]) }}" class="btn btn-sm btn-warning">
                                     <i class="bi bi-pencil me-1"></i>
                                     إدارة الصلاحيات
                                 </a>

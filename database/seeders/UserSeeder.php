@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Permission;
+use App\Models\Role as RoleModel;
 use App\Models\User;
 use App\Role;
 use Illuminate\Database\Seeder;
@@ -15,6 +16,12 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
+        // الحصول على الأدوار
+        $superAdminRole = RoleModel::where('name', 'super_admin')->first();
+        $adminRole = RoleModel::where('name', 'admin')->first();
+        $companyOwnerRole = RoleModel::where('name', 'company_owner')->first();
+        $employeeRole = RoleModel::where('name', 'employee')->first();
+
         // Super Admin
         User::create([
             'name' => 'مدير النظام',
@@ -22,6 +29,7 @@ class UserSeeder extends Seeder
             'email' => 'admin@rased.ps',
             'password' => Hash::make('Tar@2025'),
             'role' => Role::SuperAdmin,
+            'role_id' => $superAdminRole?->id,
         ]);
 
         // Admin (سلطة الطاقة)
@@ -31,6 +39,7 @@ class UserSeeder extends Seeder
             'email' => 'admin@power.ps',
             'password' => Hash::make('password'),
             'role' => Role::Admin,
+            'role_id' => $adminRole?->id,
         ]);
 
         // Company Owner - mmluk
@@ -40,6 +49,7 @@ class UserSeeder extends Seeder
             'email' => 'mmluk@operator.ps',
             'password' => Hash::make('tareq123'),
             'role' => Role::CompanyOwner,
+            'role_id' => $companyOwnerRole?->id,
         ]);
 
         // 5 Employees for mmluk with different permissions
@@ -49,6 +59,7 @@ class UserSeeder extends Seeder
             'email' => 'emp1@mmluk.ps',
             'password' => Hash::make('password'),
             'role' => Role::Employee,
+            'role_id' => $employeeRole?->id,
         ]);
 
         $employee2 = User::create([
@@ -57,6 +68,7 @@ class UserSeeder extends Seeder
             'email' => 'emp2@mmluk.ps',
             'password' => Hash::make('password'),
             'role' => Role::Employee,
+            'role_id' => $employeeRole?->id,
         ]);
 
         $employee3 = User::create([
@@ -65,6 +77,7 @@ class UserSeeder extends Seeder
             'email' => 'emp3@mmluk.ps',
             'password' => Hash::make('password'),
             'role' => Role::Employee,
+            'role_id' => $employeeRole?->id,
         ]);
 
         $employee4 = User::create([
@@ -73,6 +86,7 @@ class UserSeeder extends Seeder
             'email' => 'emp4@mmluk.ps',
             'password' => Hash::make('password'),
             'role' => Role::Employee,
+            'role_id' => $employeeRole?->id,
         ]);
 
         $employee5 = User::create([
@@ -81,6 +95,7 @@ class UserSeeder extends Seeder
             'email' => 'emp5@mmluk.ps',
             'password' => Hash::make('password'),
             'role' => Role::Employee,
+            'role_id' => $employeeRole?->id,
         ]);
 
         // منح صلاحيات مختلفة للموظفين

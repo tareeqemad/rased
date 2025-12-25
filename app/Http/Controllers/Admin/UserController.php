@@ -8,80 +8,272 @@ use App\Http\Requests\Admin\UpdateUserRequest;
 use App\Models\Operator;
 use App\Models\User;
 use App\Role;
+use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\Response;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
 
 class UserController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index(): View
-    {
-        $this->authorize('viewAny', User::class);
+   public function index(Request $request)
+{
+    $this->authorize('viewAny', User::class);
 
-        $user = auth()->user();
-        $query = User::with(['ownedOperators', 'operators']);
+    $actor = $request->user();
 
-        if ($user->isCompanyOwner()) {
-            // المشغل يرى فقط موظفيه
-            $operator = $user->ownedOperators()->first();
-            if ($operator) {
-                $query->whereHas('operators', function ($q) use ($operator) {
-                    $q->where('operators.id', $operator->id);
-                })->whereIn('role', [Role::Employee, Role::Technician]);
-            } else {
-                $query->whereRaw('1 = 0'); // لا يوجد مستخدمين
-            }
-        } elseif ($user->isEmployee() || $user->isTechnician()) {
-            // الموظف أو الفني لا يمكنهما رؤية المستخدمين
-            $query->whereRaw('1 = 0');
-        }
-
-        $users = $query->latest()->paginate(15);
-
-        return view('admin.users.index', compact('users'));
+    // ✅ New UI expects JSON on ajax=1 / wantsJson
+    if ($request->wantsJson() || $request->boolean('ajax')) {
+        return $this->ajaxIndex($request, $actor);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create(): View
+    // ✅ Normal page load
+    return view('admin.users.index');
+}
+
+private function ajaxIndex(Request $request, User $actor): JsonResponse
+{
+    $q = trim((string) $request->query('q', ''));
+    $role = trim((string) $request->query('role', ''));
+    $operatorId = (int) $request->query('operator_id', 0);
+
+    $perPage = (int) $request->query('per_page', 15);
+    $perPage = max(5, min(50, $perPage));
+
+    $allowedRoles = array_map(fn(\App\Role $r) => $r->value, \App\Role::cases());
+    if ($role !== '' && !in_array($role, $allowedRoles, true)) {
+        $role = '';
+    }
+
+    // -----------------------------
+    // Base scope (حسب صلاحية المستخدم)
+    // -----------------------------
+    $base = User::query();
+
+    if ($actor->isCompanyOwner()) {
+        $operator = $actor->ownedOperators()->select('id')->first();
+
+        if (!$operator) {
+            return response()->json([
+                'ok' => true,
+                'data' => [],
+                'meta' => ['current_page' => 1, 'last_page' => 1, 'from' => 0, 'to' => 0, 'total' => 0],
+                'stats' => ['total' => 0, 'company_owners' => 0, 'admins' => 0, 'employees' => 0, 'technicians' => 0],
+                'message' => 'لا يوجد Operator مرتبط بهذا المشغل.',
+            ]);
+        }
+
+        // ✅ المشغل يشوف فقط موظفينه وفنيينه
+        $base->whereIn('role', [\App\Role::Employee->value, \App\Role::Technician->value])
+            ->whereHas('operators', fn(Builder $q) => $q->where('operators.id', $operator->id));
+
+        // ✅ تجاهل فلترة "المشغل" القادمة من الواجهة
+        $operatorId = 0;
+
+        // ✅ المشغل لا يفلتر لأدوار غير (employee/technician)
+        if (!in_array($role, [\App\Role::Employee->value, \App\Role::Technician->value], true)) {
+            $role = '';
+        }
+    } elseif (!($actor->isSuperAdmin() || $actor->isAdmin())) {
+        return response()->json(['ok' => false, 'message' => 'غير مصرح.'], 403);
+    }
+
+    // -----------------------------
+    // Search
+    // -----------------------------
+    if ($q !== '') {
+        $base->where(function (Builder $qb) use ($q) {
+            $qb->where('users.name', 'like', "%{$q}%")
+               ->orWhere('users.username', 'like', "%{$q}%")
+               ->orWhere('users.email', 'like', "%{$q}%")
+               ->orWhereHas('ownedOperators', fn(Builder $op) => $op->where('operators.name', 'like', "%{$q}%"))
+               ->orWhereHas('operators', fn(Builder $op) => $op->where('operators.name', 'like', "%{$q}%"));
+        });
+    }
+
+    // -----------------------------
+    // Operator filter (للسوبر/الأدمن فقط)
+    // -----------------------------
+    if (($actor->isSuperAdmin() || $actor->isAdmin()) && $operatorId > 0) {
+        $base->whereIn('role', [\App\Role::Employee->value, \App\Role::Technician->value])
+            ->whereHas('operators', fn(Builder $op) => $op->where('operators.id', $operatorId));
+    }
+
+    // -----------------------------
+    // Stats (بدون role filter)
+    // -----------------------------
+    $counts = (clone $base)->toBase()
+        ->select('role', DB::raw('COUNT(*) as c'))
+        ->groupBy('role')
+        ->pluck('c', 'role')
+        ->all();
+
+    $stats = [
+        'total' => array_sum($counts),
+        'company_owners' => (int)($counts[\App\Role::CompanyOwner->value] ?? 0),
+        'admins' => (int)($counts[\App\Role::Admin->value] ?? 0) + (int)($counts[\App\Role::SuperAdmin->value] ?? 0),
+        'employees' => (int)($counts[\App\Role::Employee->value] ?? 0),
+        'technicians' => (int)($counts[\App\Role::Technician->value] ?? 0),
+    ];
+
+    // -----------------------------
+    // List query (مع eager load)
+    // -----------------------------
+    $list = (clone $base)->with([
+        'operators:id,name',
+        'ownedOperators' => function ($q) {
+            $q->select('id', 'owner_id', 'name')
+              ->withCount([
+                  'users as employees_count' => function ($uq) {
+                      $uq->whereIn('role', [\App\Role::Employee->value, \App\Role::Technician->value]);
+                  },
+              ]);
+        },
+    ]);
+
+    if ($role !== '') {
+        $list->where('role', $role);
+    }
+
+    $p = $list->orderByDesc('created_at')->paginate($perPage);
+
+    $data = $p->getCollection()->map(function (User $u) use ($actor) {
+        $operatorName = null;
+        $employeesCount = null;
+
+        if ($u->isCompanyOwner()) {
+            $op = $u->ownedOperators->first();
+            $operatorName = $op?->name;
+            $employeesCount = $op ? (int)($op->employees_count ?? 0) : 0;
+        } elseif ($u->isEmployee() || $u->isTechnician()) {
+            $operatorName = $u->operators->first()?->name;
+        }
+
+        return [
+            'id' => $u->id,
+            'name' => $u->name,
+            'username' => $u->username,
+            'email' => $u->email,
+            'role' => $u->role?->value ?? (string)$u->getRawOriginal('role'),
+            'operator' => $operatorName,
+            'employees_count' => $employeesCount,
+            'created_at' => optional($u->created_at)->format('Y-m-d'),
+            'can_edit' => $actor->can('update', $u),
+            'can_delete' => $actor->can('delete', $u),
+            'urls' => [
+                'edit' => route('admin.users.edit', $u),
+                'permissions' => route('admin.permissions.index', ['user_id' => $u->id]),
+            ],
+        ];
+    })->values();
+
+        return response()->json([
+            'ok' => true,
+            'data' => $data,
+            'meta' => [
+                'current_page' => $p->currentPage(),
+                'last_page' => $p->lastPage(),
+                'from' => $p->firstItem() ?? 0,
+                'to' => $p->lastItem() ?? 0,
+                'total' => $p->total(),
+            ],
+            'stats' => $stats,
+        ]);
+    }
+
+    public function create(Request $request): View
     {
         $this->authorize('create', User::class);
 
-        $user = auth()->user();
+        $authUser = auth()->user();
+        $defaultRole = trim((string)$request->query('role', ''));
+
+        // roles
         $roles = collect(Role::cases());
-
-        // CompanyOwner يمكنه إنشاء موظفين وفنيين فقط
-        if ($user->isCompanyOwner()) {
-            $roles = $roles->filter(fn ($role) => $role === Role::Employee || $role === Role::Technician);
+        if ($authUser->isCompanyOwner()) {
+            $roles = $roles->filter(fn ($r) => in_array($r, [Role::Employee, Role::Technician], true));
         }
 
+        // operators
+        $operatorLocked = null;
         $operators = collect();
-        if ($user->isSuperAdmin()) {
-            $operators = Operator::all();
-        } elseif ($user->isCompanyOwner()) {
-            $operators = $user->ownedOperators;
+
+        if ($authUser->isCompanyOwner()) {
+            $operatorLocked = $authUser->ownedOperators()->first();
         }
 
-        return view('admin.users.create', compact('roles', 'operators'));
+        // ✅ Ajax Modal
+        if ($request->ajax() || $request->boolean('modal')) {
+            return view('admin.users.partials.modal-form', [
+                'mode' => 'create',
+                'user' => null,
+                'roles' => $roles,
+                'defaultRole' => $defaultRole,
+                'operatorLocked' => $operatorLocked,
+                'operators' => $operators,
+            ]);
+        }
+
+        return view('admin.users.create', compact('roles', 'operators', 'operatorLocked', 'defaultRole'));
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(StoreUserRequest $request): RedirectResponse
+    public function edit(Request $request, User $user): View
+    {
+        $this->authorize('update', $user);
+
+        $authUser = auth()->user();
+
+        $roles = collect(Role::cases());
+        if ($authUser->isCompanyOwner()) {
+            $roles = $roles->filter(fn ($r) => in_array($r, [Role::Employee, Role::Technician], true));
+        }
+
+        $operatorLocked = null;
+        $operators = collect();
+        if ($authUser->isCompanyOwner()) {
+            $operatorLocked = $authUser->ownedOperators()->first();
+        }
+
+        $userOperators = $user->operators->pluck('id')->toArray();
+        $selectedOperator = $user->operators->first();
+
+        if ($request->ajax() || $request->boolean('modal')) {
+            return view('admin.users.partials.modal-form', [
+                'mode' => 'edit',
+                'user' => $user,
+                'roles' => $roles,
+                'defaultRole' => '',
+                'operatorLocked' => $operatorLocked,
+                'operators' => $operators,
+                'userOperators' => $userOperators,
+                'selectedOperator' => $selectedOperator,
+            ]);
+        }
+
+        return view('admin.users.edit', compact('user', 'roles', 'operators', 'operatorLocked', 'userOperators'));
+    }
+
+    public function show(User $user): View
+    {
+        $this->authorize('view', $user);
+
+        // تحميل العلاقات المطلوبة
+        $user->load(['ownedOperators', 'operators', 'permissions']);
+
+        return view('admin.users.show', compact('user'));
+    }
+
+    public function store(StoreUserRequest $request)
     {
         $authUser = auth()->user();
         $role = Role::from($request->validated('role'));
 
-        // CompanyOwner يمكنه إنشاء موظفين وفنيين فقط
-        if ($authUser->isCompanyOwner() && $role !== Role::Employee && $role !== Role::Technician) {
-            return redirect()->back()
-                ->withInput()
-                ->with('error', 'يمكنك إنشاء موظفين وفنيين فقط.');
+        if ($authUser->isCompanyOwner() && !in_array($role, [Role::Employee, Role::Technician], true)) {
+            return $this->jsonOrRedirect($request, false, 'يمكنك إنشاء موظفين وفنيين فقط.');
         }
 
         $user = User::create([
@@ -92,67 +284,32 @@ class UserController extends Controller
             'role' => $role,
         ]);
 
-        // ربط الموظف أو الفني بالمشغل
+        // ربط الموظف/الفني بمشغل واحد فقط
         if ($user->isEmployee() || $user->isTechnician()) {
             if ($authUser->isCompanyOwner()) {
-                // CompanyOwner يربط الموظف أو الفني بمشغله تلقائياً
                 $operator = $authUser->ownedOperators()->first();
-                if ($operator) {
-                    $user->operators()->attach($operator->id);
+                if (!$operator) {
+                    $user->delete();
+                    return $this->jsonOrRedirect($request, false, 'لا يوجد مشغل مرتبط بحسابك. أكمل ملف المشغل أولاً.');
                 }
-            } elseif ($request->filled('operator_id')) {
-                $user->operators()->attach($request->input('operator_id'));
+                $user->operators()->sync([$operator->id]);
+            } else {
+                $operatorId = (int)$request->input('operator_id');
+                if (!$operatorId) {
+                    $user->delete();
+                    return $this->jsonOrRedirect($request, false, 'اختر المشغل لربط الموظف/الفني.');
+                }
+                $user->operators()->sync([$operatorId]);
             }
         }
 
-        return redirect()->route('admin.users.index')
-            ->with('success', 'تم إنشاء المستخدم بنجاح.');
+        return $this->jsonOrRedirect($request, true, 'تم إنشاء المستخدم بنجاح.');
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(User $user): View
+    public function update(UpdateUserRequest $request, User $user)
     {
-        $this->authorize('view', $user);
-
-        $user->load(['ownedOperators', 'operators', 'permissions']);
-
-        return view('admin.users.show', compact('user'));
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(User $user): View
-    {
-        $this->authorize('update', $user);
-
         $authUser = auth()->user();
-        $roles = collect(Role::cases());
 
-        // CompanyOwner يمكنه تحديث موظفيه وفنييه فقط
-        if ($authUser->isCompanyOwner()) {
-            $roles = $roles->filter(fn ($role) => $role === Role::Employee || $role === Role::Technician);
-        }
-
-        $operators = collect();
-        if ($authUser->isSuperAdmin()) {
-            $operators = Operator::all();
-        } elseif ($authUser->isCompanyOwner()) {
-            $operators = $authUser->ownedOperators;
-        }
-
-        $userOperators = $user->operators->pluck('id')->toArray();
-
-        return view('admin.users.edit', compact('user', 'roles', 'operators', 'userOperators'));
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(UpdateUserRequest $request, User $user): RedirectResponse
-    {
         $data = [
             'name' => $request->validated('name'),
             'username' => $request->validated('username'),
@@ -166,42 +323,87 @@ class UserController extends Controller
 
         $user->update($data);
 
-        // تحديث المشغلين للموظف أو الفني
         if ($user->isEmployee() || $user->isTechnician()) {
-            $authUser = auth()->user();
             if ($authUser->isCompanyOwner()) {
-                // CompanyOwner يربط الموظف أو الفني بمشغله فقط
                 $operator = $authUser->ownedOperators()->first();
-                if ($operator) {
-                    $user->operators()->sync([$operator->id]);
+                if (!$operator) {
+                    return $this->jsonOrRedirect($request, false, 'لا يوجد مشغل مرتبط بحسابك.');
                 }
+                $user->operators()->sync([$operator->id]);
             } else {
-                $operatorIds = $request->input('operator_id', []);
-                $user->operators()->sync($operatorIds);
+                $operatorId = (int) $request->validated('operator_id', 0);
+                if (!$operatorId) {
+                    return $this->jsonOrRedirect($request, false, 'اختر المشغل لربط الموظف/الفني.');
+                }
+                $user->operators()->sync([$operatorId]);
             }
         } else {
             $user->operators()->detach();
         }
 
-        return redirect()->route('admin.users.index')
-            ->with('success', 'تم تحديث المستخدم بنجاح.');
+        return $this->jsonOrRedirect($request, true, 'تم تحديث المستخدم بنجاح.');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(User $user): RedirectResponse
+    public function destroy(Request $request, User $user)
     {
         $this->authorize('delete', $user);
 
         if ($user->id === auth()->id()) {
-            return redirect()->route('admin.users.index')
-                ->with('error', 'لا يمكنك حذف حسابك الخاص.');
+            return $this->jsonOrRedirect($request, false, 'لا يمكنك حذف حسابك الخاص.');
         }
 
         $user->delete();
 
-        return redirect()->route('admin.users.index')
-            ->with('success', 'تم حذف المستخدم بنجاح.');
+        return $this->jsonOrRedirect($request, true, 'تم حذف المستخدم بنجاح.');
+    }
+
+    /**
+     * Select2 operators (server-side)
+     */
+    public function ajaxOperators(Request $request)
+    {
+        $authUser = auth()->user();
+        if (!$authUser || !$authUser->isSuperAdmin()) {
+            abort(403);
+        }
+
+       $term = trim((string) $request->query('q', $request->query('term', '')));
+        $page = max(1, (int)$request->query('page', 1));
+        $perPage = 10;
+
+        $query = Operator::query()->orderBy('name');
+
+        if ($term !== '') {
+            $query->where(function ($x) use ($term) {
+                $x->where('name', 'like', "%{$term}%")
+                    ->orWhere('unit_number', 'like', "%{$term}%");
+            });
+        }
+
+        $p = $query->paginate($perPage, ['id', 'name', 'unit_number'], 'page', $page);
+
+        $results = $p->getCollection()->map(function ($op) {
+            $suffix = $op->unit_number ? " - {$op->unit_number}" : '';
+            return ['id' => $op->id, 'text' => $op->name . $suffix];
+        })->values();
+
+        return response()->json([
+            'results' => $results,
+            'pagination' => ['more' => $p->hasMorePages()],
+        ]);
+    }
+
+    private function jsonOrRedirect(Request $request, bool $ok, string $message)
+    {
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'ok' => $ok,
+                'message' => $message,
+            ], $ok ? Response::HTTP_OK : Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        return $ok
+            ? redirect()->route('admin.users.index')->with('success', $message)
+            : redirect()->back()->withInput()->with('error', $message);
     }
 }

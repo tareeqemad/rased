@@ -1,0 +1,32 @@
+/* ============================================
+   إدارة الأدوار - Roles Management
+   ============================================ */
+
+/* Badge Styles */
+.badge-system {
+    background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+}
+
+.badge-custom {
+    background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+}
+
+/* Table Loading */
+.table-loading {
+    position: relative;
+}
+
+.table-loading::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+}
+

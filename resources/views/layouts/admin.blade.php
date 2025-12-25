@@ -25,6 +25,8 @@
 
     <!-- Icons Css -->
     <link href="{{ asset('assets/admin/css/icons.css') }}" rel="stylesheet">
+    <!-- Feather Icons Css (Direct Load) -->
+    <link href="{{ asset('assets/admin/icon-fonts/feather/feather.css') }}" rel="stylesheet">
 
     <!-- Node Waves Css -->
     <link href="{{ asset('assets/admin/libs/node-waves/waves.min.css') }}" rel="stylesheet">
@@ -54,7 +56,7 @@
         <!-- app-header -->
         @include('admin.partials.header')
         <!-- /app-header -->
-        
+
         <!-- Start::app-sidebar -->
         @include('admin.partials.sidebar')
         <!-- End::app-sidebar -->
@@ -72,7 +74,7 @@
                 <!-- /breadcrumb -->
 
                 <!-- Flash Messages -->
-                @include('admin.partials.flash-messages')
+                @include('admin.partials.toast')
 
                 @yield('content')
             </div>
@@ -122,6 +124,47 @@
     <!-- Custom JS -->
     <script src="{{ asset('assets/admin/js/custom.js') }}"></script>
     <script src="{{ asset('assets/admin/js/notifications.js') }}"></script>
+
+    <!-- Flash Messages as Bootstrap Toasts -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // عرض رسائل Flash كـ Bootstrap Toasts
+            @if(session('success'))
+                if (window.adminNotifications) {
+                    window.adminNotifications.success('{{ session('success') }}');
+                }
+            @endif
+
+            @if(session('error'))
+                if (window.adminNotifications) {
+                    window.adminNotifications.error('{{ session('error') }}');
+                }
+            @endif
+
+            @if(session('warning'))
+                if (window.adminNotifications) {
+                    window.adminNotifications.warning('{{ session('warning') }}');
+                }
+            @endif
+
+            @if(session('info'))
+                if (window.adminNotifications) {
+                    window.adminNotifications.info('{{ session('info') }}');
+                }
+            @endif
+
+            @if($errors->any())
+                @foreach($errors->all() as $error)
+                    if (window.adminNotifications) {
+                        window.adminNotifications.error('{{ $error }}');
+                    }
+                @endforeach
+            @endif
+        });
+    </script>
+
+    <!-- General Helpers JS -->
+    <script src="{{ asset('assets/admin/js/general-helpers.js') }}"></script>
 
     @stack('scripts')
 </body>

@@ -19,4 +19,6 @@ Route::get('/complaints-suggestions/create', [\App\Http\Controllers\ComplaintSug
 Route::post('/complaints-suggestions', [\App\Http\Controllers\ComplaintSuggestionController::class, 'store'])->name('complaints-suggestions.store');
 Route::get('/complaints-suggestions/track', [\App\Http\Controllers\ComplaintSuggestionController::class, 'track'])->name('complaints-suggestions.track');
 Route::post('/complaints-suggestions/search', [\App\Http\Controllers\ComplaintSuggestionController::class, 'search'])->name('complaints-suggestions.search');
+Route::get('/complaints-suggestions/operators/by-governorate/{governorate}', [\App\Http\Controllers\ComplaintSuggestionController::class, 'getOperatorsByGovernorate'])->name('complaints-suggestions.operators-by-governorate');
 Route::get('/complaints-suggestions/generators', [\App\Http\Controllers\ComplaintSuggestionController::class, 'getGeneratorsByLocation'])->name('complaints-suggestions.generators');
+Route::get('/complaints-suggestions/generators-by-operator', [\App\Http\Controllers\ComplaintSuggestionController::class, 'getGeneratorsByOperator'])->name('complaints-suggestions.generators-by-operator');

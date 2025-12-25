@@ -36,7 +36,7 @@
             </div>
             <div class="col-md-8">
                 <div class="card border-0 shadow-sm">
-                    <div class="card-header bg-white border-bottom">
+                    <div class="card-header d-flex justify-content-between align-items-center">
                         <h5 class="mb-0 fw-bold">معلومات المشغل</h5>
                     </div>
                     <div class="card-body">

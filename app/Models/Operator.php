@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Governorate;
+use App\Role;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -65,7 +66,16 @@ class Operator extends Model
 
     public function users(): BelongsToMany
     {
-        return $this->belongsToMany(User::class, 'operator_user');
+        return $this->belongsToMany(User::class, 'operator_user')
+            ->withTimestamps();
+    }
+
+    /**
+     * الموظفين + الفنيين التابعين لهذا المشغل
+     */
+    public function staff(): BelongsToMany
+    {
+        return $this->users()->whereIn('role', [Role::Employee, Role::Technician]);
     }
 
     public function generators(): HasMany
@@ -83,61 +93,45 @@ class Operator extends Model
         return $this->hasMany(ComplianceSafety::class);
     }
 
-    /**
-     * التحقق من اكتمال بيانات الملف الشخصي
-     */
     public function isProfileComplete(): bool
     {
         return $this->profile_completed &&
-            ! empty($this->unit_number) &&
-            ! empty($this->unit_name) &&
-            ! is_null($this->governorate) &&
-            ! empty($this->city) &&
-            ! empty($this->detailed_address) &&
-            ! is_null($this->latitude) &&
-            ! is_null($this->longitude) &&
-            ! empty($this->owner_name) &&
-            ! empty($this->operator_id_number) &&
-            ! empty($this->operation_entity) &&
-            ! is_null($this->status);
+            !empty($this->unit_number) &&
+            !empty($this->unit_name) &&
+            !is_null($this->governorate) &&
+            !empty($this->city) &&
+            !empty($this->detailed_address) &&
+            !is_null($this->latitude) &&
+            !is_null($this->longitude) &&
+            !empty($this->owner_name) &&
+            !empty($this->operator_id_number) &&
+            !empty($this->operation_entity) &&
+            !is_null($this->status);
     }
 
-    /**
-     * الحصول على تفاصيل المحافظة
-     */
     public function getGovernorateDetails(): ?array
     {
         return $this->governorate?->details();
     }
 
-    /**
-     * الحصول على اسم المحافظة
-     */
     public function getGovernorateLabel(): ?string
     {
         return $this->governorate?->label();
     }
 
-    /**
-     * الحصول على ترميز المحافظة
-     */
     public function getGovernorateCode(): ?string
     {
         return $this->governorate?->code();
     }
 
-    /**
-     * الحصول على آخر رقم وحدة للمحافظة
-     */
     public static function getNextUnitNumber(?Governorate $governorate): string
     {
-        if (! $governorate) {
+        if (!$governorate) {
             return 'OP-001';
         }
 
         $code = $governorate->code();
 
-        // البحث عن آخر رقم وحدة لهذه المحافظة
         $lastUnit = static::where('governorate', $governorate)
             ->whereNotNull('unit_number')
             ->where('unit_number', 'like', $code.'-%')
@@ -145,7 +139,6 @@ class Operator extends Model
             ->first();
 
         if ($lastUnit && $lastUnit->unit_number) {
-            // استخراج الرقم من آخر وحدة
             $parts = explode('-', $lastUnit->unit_number);
             $lastNumber = (int) end($parts);
             $nextNumber = $lastNumber + 1;
@@ -156,43 +149,20 @@ class Operator extends Model
         return $code.'-'.str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
     }
 
-    /**
-     * الحصول على قائمة الحقول المفقودة
-     */
     public function getMissingFields(): array
     {
         $missing = [];
 
-        if (empty($this->unit_number)) {
-            $missing[] = 'رقم الوحدة';
-        }
-        if (empty($this->unit_name)) {
-            $missing[] = 'اسم الوحدة';
-        }
-        if (is_null($this->governorate)) {
-            $missing[] = 'المحافظة';
-        }
-        if (empty($this->city)) {
-            $missing[] = 'المدينة';
-        }
-        if (empty($this->detailed_address)) {
-            $missing[] = 'العنوان التفصيلي';
-        }
-        if (is_null($this->latitude) || is_null($this->longitude)) {
-            $missing[] = 'إحداثيات الموقع';
-        }
-        if (empty($this->owner_name)) {
-            $missing[] = 'اسم المالك';
-        }
-        if (empty($this->operator_id_number)) {
-            $missing[] = 'رقم هوية المشغل';
-        }
-        if (empty($this->operation_entity)) {
-            $missing[] = 'جهة التشغيل';
-        }
-        if (is_null($this->status)) {
-            $missing[] = 'حالة الوحدة';
-        }
+        if (empty($this->unit_number)) $missing[] = 'رقم الوحدة';
+        if (empty($this->unit_name)) $missing[] = 'اسم الوحدة';
+        if (is_null($this->governorate)) $missing[] = 'المحافظة';
+        if (empty($this->city)) $missing[] = 'المدينة';
+        if (empty($this->detailed_address)) $missing[] = 'العنوان التفصيلي';
+        if (is_null($this->latitude) || is_null($this->longitude)) $missing[] = 'إحداثيات الموقع';
+        if (empty($this->owner_name)) $missing[] = 'اسم المالك';
+        if (empty($this->operator_id_number)) $missing[] = 'رقم هوية المشغل';
+        if (empty($this->operation_entity)) $missing[] = 'جهة التشغيل';
+        if (is_null($this->status)) $missing[] = 'حالة الوحدة';
 
         return $missing;
     }

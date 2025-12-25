@@ -35,6 +35,15 @@ class AdminNotifications {
             }
         }
 
+        // Also check for validation errors in error list
+        const errorList = document.querySelectorAll('.invalid-feedback');
+        errorList.forEach(error => {
+            const errorText = error.textContent.trim();
+            if (errorText && !errorMsg) {
+                this.showToast(errorText, 'danger');
+            }
+        });
+
         if (successMsg) {
             this.showToast(successMsg, 'success');
         }

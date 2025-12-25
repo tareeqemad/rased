@@ -1,143 +1,1078 @@
+{{-- resources/views/admin/users/index.blade.php --}}
 @extends('layouts.admin')
 
 @section('title', 'إدارة المستخدمين')
 
 @php
     $breadcrumbTitle = 'إدارة المستخدمين';
+
+    $isSuperAdmin   = auth()->user()->isSuperAdmin();
+    $isCompanyOwner = auth()->user()->isCompanyOwner();
+
+    // Meta for roles (JS uses it to render badges + labels)
+    $roleMeta = [
+        'company_owner' => ['label' => 'مشغل',        'badge' => 'badge-role-owner'],
+        'employee'      => ['label' => 'موظف',        'badge' => 'badge-role-employee'],
+        'technician'    => ['label' => 'فني',         'badge' => 'badge-role-tech'],
+        'admin'         => ['label' => 'سلطة الطاقة',  'badge' => 'badge-role-admin'],
+        'super_admin'   => ['label' => 'مدير النظام',  'badge' => 'badge-role-sa'],
+    ];
+
+    // Roles visible in filters
+    $filterRoleKeys = $isSuperAdmin ? array_keys($roleMeta) : ['employee','technician'];
+
+    // Roles allowed in create modal
+    $createRoleKeys = $isSuperAdmin ? ['company_owner','admin','employee','technician'] : ['employee','technician'];
 @endphp
 
+@push('styles')
+    {{-- Select2 (نفس مسار صفحة الصلاحيات) --}}
+    <link rel="stylesheet" href="{{ asset('assets/admin/libs/select2/select2.min.css') }}">
+
+    <style>
+        /* ===== Users Page (Neutral / Minimal Blue) ===== */
+        .users-page{
+            --u-border:#e5e7eb;
+            --u-border2:#eef2f7;
+            --u-surface:#ffffff;
+            --u-subtle:#f8fafc;
+            --u-text:#0f172a;
+            --u-muted:#64748b;
+        }
+        .users-page .users-card{
+            position: relative;
+            border: 1px solid var(--u-border);
+            border-radius: 14px;
+            background: var(--u-surface);
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(15,23,42,.04);
+        }
+        .users-page .users-card::before{
+            content:"";
+            position:absolute;
+            top:0; left:0; right:0;
+            height: 3px;
+            background: rgba(var(--primary-rgb), .85);
+        }
+
+        .users-page .users-card-header{
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--u-border2);
+            background: var(--u-surface);
+            display:flex;
+            align-items:flex-start;
+            justify-content:space-between;
+            gap:1rem;
+        }
+        .users-page .users-title{
+            font-weight: 900;
+            font-size: 1.05rem;
+            margin: 0;
+            color: var(--u-text);
+        }
+        .users-page .users-subtitle{
+            margin-top: .25rem;
+            color: var(--u-muted);
+            font-size: .85rem;
+        }
+
+        .users-page .users-note{
+            background: var(--u-subtle);
+            border: 1px dashed var(--u-border);
+            border-radius: 12px;
+            padding: .75rem 1rem;
+            color: #334155;
+        }
+
+        /* Search input (icon inside + subtle clear) */
+        .users-page .users-search{
+            position: relative;
+        }
+        .users-page .users-search .bi-search{
+            position:absolute;
+            top:50%;
+            transform:translateY(-50%);
+            right:12px;
+            color:#94a3b8;
+            pointer-events:none;
+            font-size: 1.05rem;
+        }
+        .users-page .users-search .form-control{
+            padding-right: 42px !important;
+            padding-left: 42px !important;
+        }
+        .users-page .users-search .users-clear{
+            position:absolute;
+            top:50%;
+            transform:translateY(-50%);
+            left:10px;
+            border:0;
+            background:transparent;
+            color:#94a3b8;
+            padding:0;
+        }
+        .users-page .users-search .users-clear:hover{
+            color:#64748b;
+        }
+
+        /* Stats */
+        .users-page .users-stats{
+            display:flex;
+            flex-wrap:wrap;
+            gap:.5rem;
+        }
+        .users-page .users-stat{
+            background: var(--u-subtle);
+            border: 1px solid var(--u-border2);
+            border-radius: 12px;
+            padding: .65rem .8rem;
+            min-width: 140px;
+        }
+        .users-page .users-stat .label{
+            font-size: .75rem;
+            color: var(--u-muted);
+        }
+        .users-page .users-stat .value{
+            font-size: 1.1rem;
+            font-weight: 900;
+            color: var(--u-text);
+            margin-top: .15rem;
+        }
+
+        /* Table */
+        .users-page .users-table thead th{
+            background: var(--u-subtle);
+            border-bottom: 1px solid var(--u-border2);
+            color:#475569;
+            font-size:.75rem;
+            letter-spacing:.4px;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+        .users-page .avatar-pill{
+            width:34px; height:34px;
+            border-radius: 999px;
+            background: rgba(var(--primary-rgb), .12);
+            color: rgba(var(--primary-rgb), .95);
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            font-weight:900;
+        }
+
+        .users-page .btn-icon{
+            width: 38px;
+            height: 38px;
+            padding: 0;
+            border-radius: 10px;
+            display:inline-flex;
+            align-items:center;
+            justify-content:center;
+        }
+
+        .users-page .badge-soft{
+            border: 1px solid var(--u-border2);
+            background: var(--u-surface);
+            color: var(--u-text);
+            font-weight: 800;
+            border-radius: 999px;
+            padding: .35rem .6rem;
+            font-size: .75rem;
+            white-space: nowrap;
+        }
+
+        /* Role badges (soft) */
+        .users-page .badge-role-owner{
+            background: rgba(var(--primary-rgb), .12);
+            border: 1px solid rgba(var(--primary-rgb), .25);
+            color: rgba(var(--primary-rgb), 1);
+        }
+        .users-page .badge-role-employee{
+            background: rgba(var(--success-rgb), .12);
+            border: 1px solid rgba(var(--success-rgb), .25);
+            color: rgba(var(--success-rgb), 1);
+        }
+        .users-page .badge-role-tech{
+            background: rgba(var(--warning-rgb), .12);
+            border: 1px solid rgba(var(--warning-rgb), .25);
+            color: rgba(var(--warning-rgb), 1);
+        }
+        .users-page .badge-role-admin{
+            background: rgba(var(--info-rgb), .12);
+            border: 1px solid rgba(var(--info-rgb), .25);
+            color: rgba(var(--info-rgb), 1);
+        }
+        .users-page .badge-role-sa{
+            background: rgba(var(--danger-rgb), .10);
+            border: 1px solid rgba(var(--danger-rgb), .25);
+            color: rgba(var(--danger-rgb), 1);
+        }
+
+        /* Loading overlay */
+        .users-page .users-loading{
+            position:absolute;
+            inset:0;
+            background: rgba(255,255,255,.92);
+            backdrop-filter: blur(3px);
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            z-index: 50;
+        }
+
+        .users-page .empty-state{
+            padding: 2rem 0;
+            text-align:center;
+            color: var(--u-muted);
+        }
+
+        /* Select2 (RTL friendly) */
+        .users-page .select2-container{ width:100% !important; }
+        .users-page .select2-container--default .select2-selection--single{
+            height: 44px !important;
+            border: 1px solid var(--u-border) !important;
+            border-radius: 12px !important;
+            background: var(--u-surface) !important;
+            display:flex !important;
+            align-items:center !important;
+        }
+        .users-page .select2-container--default .select2-selection--single .select2-selection__rendered{
+            line-height: 44px !important;
+            padding-right: 12px !important;
+            padding-left: 40px !important;
+            font-weight: 800;
+        }
+        .users-page .select2-container--default .select2-selection--single .select2-selection__arrow{
+            height: 44px !important;
+            left: 10px !important;
+            right: auto !important;
+        }
+        .users-page .select2-dropdown{
+            border: 1px solid var(--u-border) !important;
+            border-radius: 12px !important;
+            overflow:hidden;
+            box-shadow: 0 8px 20px rgba(0,0,0,.08) !important;
+        }
+    </style>
+@endpush
+
 @section('content')
-    <div class="container-fluid">
-        <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center">
-                <h5 class="mb-0 fw-bold">
-                    <i class="bi bi-people-fill me-2"></i>
-                    إدارة المستخدمين
-                </h5>
-                @can('create', App\Models\User::class)
-                    <a href="{{ route('admin.users.create') }}" class="btn btn-primary">
-                        <i class="bi bi-plus-circle me-2"></i>
-                        إضافة مستخدم جديد
-                    </a>
-                @endcan
-            </div>
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-hover mb-0">
-                        <thead class="table-light">
+<div class="users-page"
+     id="usersPage"
+     data-index-url="{{ route('admin.users.index') }}"
+     data-users-base-url="{{ route('admin.users.index') }}"
+     data-operators-search-url="{{ route('admin.users.ajaxOperators') }}"
+     data-is-super-admin="{{ $isSuperAdmin ? 1 : 0 }}"
+     data-is-company-owner="{{ $isCompanyOwner ? 1 : 0 }}">
+
+    <div class="row g-3">
+        <div class="col-12">
+            <div class="users-card">
+                <div class="users-loading d-none" id="usersLoading">
+                    <div class="text-center">
+                        <div class="spinner-border" role="status"></div>
+                        <div class="small text-muted mt-2">جاري التحميل...</div>
+                    </div>
+                </div>
+
+                <div class="users-card-header">
+                    <div>
+                        <h5 class="users-title">
+                            <i class="bi bi-people me-2"></i>
+                            إدارة المستخدمين
+                        </h5>
+                        <div class="users-subtitle">
+                            إدارة الحسابات حسب الصلاحيات والارتباط بالمشغل.
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        @can('create', App\Models\User::class)
+                            <button type="button" class="btn btn-primary" id="btnOpenCreate">
+                                <i class="bi bi-plus-lg me-1"></i>
+                                إضافة مستخدم
+                            </button>
+                        @endcan
+
+                        <button type="button" class="btn btn-outline-secondary" id="btnResetFilters">
+                            <i class="bi bi-arrow-counterclockwise me-1"></i>
+                            تصفير
+                        </button>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    @if($isCompanyOwner)
+                        <div class="users-note mb-3">
+                            <i class="bi bi-shield-lock me-1"></i>
+                            أنت ترى وتدير فقط <strong>الموظفين والفنيين</strong> التابعين لمشغّلك.
+                        </div>
+                    @endif
+
+                    <div class="users-stats mb-3">
+                        <div class="users-stat">
+                            <div class="label">الإجمالي</div>
+                            <div class="value" id="statTotal">—</div>
+                        </div>
+
+                        @if($isSuperAdmin)
+                            <div class="users-stat">
+                                <div class="label">المشغلين</div>
+                                <div class="value" id="statOwners">—</div>
+                            </div>
+                            <div class="users-stat">
+                                <div class="label">سلطة الطاقة</div>
+                                <div class="value" id="statAdmins">—</div>
+                            </div>
+                        @endif
+
+                        <div class="users-stat">
+                            <div class="label">الموظفين</div>
+                            <div class="value" id="statEmployees">—</div>
+                        </div>
+                        <div class="users-stat">
+                            <div class="label">الفنيين</div>
+                            <div class="value" id="statTechnicians">—</div>
+                        </div>
+                    </div>
+
+                    <div class="row g-2 align-items-end">
+                        <div class="col-lg-4">
+                            <label class="form-label fw-semibold">بحث</label>
+                            <div class="users-search">
+                                <i class="bi bi-search"></i>
+                                <input type="text" class="form-control" id="usersSearch" placeholder="اسم / اسم المستخدم / البريد..." autocomplete="off">
+                                <button type="button" class="users-clear d-none" id="btnClearSearch" title="إلغاء البحث">
+                                    <i class="bi bi-x-circle"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-3">
+                            <label class="form-label fw-semibold">الدور</label>
+                            <select class="form-select" id="roleFilter">
+                                <option value="">الكل</option>
+                                @foreach($filterRoleKeys as $rk)
+                                    <option value="{{ $rk }}">{{ $roleMeta[$rk]['label'] ?? $rk }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        @if($isSuperAdmin)
+                            <div class="col-lg-3" id="operatorFilterWrap">
+                                <label class="form-label fw-semibold">المشغل</label>
+                                <select class="form-select" id="operatorFilter"></select>
+                                <div class="form-text">فلترة الموظفين/الفنيين حسب مشغل معيّن.</div>
+                            </div>
+                        @endif
+
+                        <div class="col-lg-2">
+                            <button class="btn btn-outline-primary w-100" id="btnRefresh">
+                                <i class="bi bi-arrow-repeat me-1"></i>
+                                تحديث
+                            </button>
+                        </div>
+                    </div>
+
+                    <hr class="my-3">
+
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0 users-table">
+                            <thead>
                             <tr>
-                                <th>الاسم</th>
+                                <th style="min-width:220px;">الاسم</th>
                                 <th>اسم المستخدم</th>
                                 <th>البريد الإلكتروني</th>
-                                <th>الصلاحية</th>
-                                <th>المشغلون</th>
-                                <th>تاريخ الإنشاء</th>
-                                <th>الإجراءات</th>
+                                <th>الدور</th>
+                                <th>المشغل</th>
+                                <th>عدد الموظفين</th>
+                                <th style="min-width:140px;">الإجراءات</th>
                             </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($users as $user)
+                            </thead>
+                            <tbody id="usersTbody">
                                 <tr>
-                                    <td>
-                                        <div class="d-flex align-items-center">
-                                            <div class="avatar-circle me-2">{{ substr($user->name, 0, 1) }}</div>
-                                            <span class="fw-semibold">{{ $user->name }}</span>
-                                        </div>
-                                    </td>
-                                    <td>{{ $user->username }}</td>
-                                    <td>{{ $user->email }}</td>
-                                    <td>
-                                        @if($user->isSuperAdmin())
-                                            <span class="badge bg-danger">مدير النظام</span>
-                                        @elseif($user->isCompanyOwner())
-                                            <span class="badge bg-primary">صاحب شركة</span>
-                                        @else
-                                            @if($user->isEmployee())
-                                                <span class="badge bg-success">موظف</span>
-                                            @elseif($user->isTechnician())
-                                                <span class="badge bg-warning">فني</span>
-                                            @endif
-                                        @endif
-                                    </td>
-                                    <td>
-                                        @if($user->isSuperAdmin())
-                                            <span class="text-muted">كل المشغلين</span>
-                                        @elseif($user->isCompanyOwner())
-                                            <span class="badge bg-info">{{ $user->ownedOperators->count() }} مشغل</span>
-                                        @else
-                                            <span class="badge bg-secondary">{{ $user->operators->count() }} مشغل</span>
-                                        @endif
-                                    </td>
-                                    <td>
-                                        <small class="text-muted">{{ $user->created_at->format('Y-m-d') }}</small>
-                                    </td>
-                                    <td>
-                                        <div class="d-flex gap-2">
-                                            @can('view', $user)
-                                                <a href="{{ route('admin.users.show', $user) }}" class="btn btn-sm btn-outline-info">
-                                                    <i class="bi bi-eye"></i>
-                                                </a>
-                                            @endcan
-                                            @can('update', $user)
-                                                <a href="{{ route('admin.users.edit', $user) }}" class="btn btn-sm btn-outline-primary">
-                                                    <i class="bi bi-pencil"></i>
-                                                </a>
-                                            @endcan
-                                            @can('delete', $user)
-                                                @if($user->id !== auth()->id())
-                                                    <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ $user->id }}">
-                                                        <i class="bi bi-trash"></i>
-                                                    </button>
-                                                @endif
-                                            @endcan
+                                    <td colspan="7">
+                                        <div class="empty-state">
+                                            <div class="spinner-border" role="status"></div>
+                                            <div class="mt-2">جاري تحميل البيانات...</div>
                                         </div>
                                     </td>
                                 </tr>
+                            </tbody>
+                        </table>
+                    </div>
 
-                                @can('delete', $user)
-                                    @if($user->id !== auth()->id())
-                                        <div class="modal fade" id="deleteModal{{ $user->id }}" tabindex="-1">
-                                            <div class="modal-dialog">
-                                                <div class="modal-content">
-                                                    <div class="modal-header">
-                                                        <h5 class="modal-title">تأكيد الحذف</h5>
-                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                                    </div>
-                                                    <div class="modal-body">
-                                                        <p>هل أنت متأكد من حذف المستخدم <strong>{{ $user->name }}</strong>؟</p>
-                                                        <p class="text-danger"><small>هذا الإجراء لا يمكن التراجع عنه</small></p>
-                                                    </div>
-                                                    <div class="modal-footer">
-                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
-                                                        <form action="{{ route('admin.users.destroy', $user) }}" method="POST" class="d-inline">
-                                                            @csrf
-                                                            @method('DELETE')
-                                                            <button type="submit" class="btn btn-danger">حذف</button>
-                                                        </form>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    @endif
-                                @endcan
-                            @empty
-                                <tr>
-                                    <td colspan="7" class="text-center py-5 text-muted">
-                                        <i class="bi bi-inbox fs-1 d-block mb-2"></i>
-                                        لا توجد مستخدمين
-                                    </td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
+                    <div class="d-flex flex-wrap justify-content-between align-items-center mt-3 gap-2">
+                        <div class="small text-muted" id="usersMeta">—</div>
+                        <nav>
+                            <ul class="pagination mb-0" id="usersPagination"></ul>
+                        </nav>
+                    </div>
                 </div>
             </div>
-            @if($users->hasPages())
-                <div class="card-footer bg-white border-top">
-                    {{ $users->links() }}
-                </div>
-            @endif
         </div>
     </div>
+
+    {{-- Create Modal (AJAX) --}}
+    @can('create', App\Models\User::class)
+    <div class="modal fade" id="userCreateModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold">
+                        <i class="bi bi-person-plus me-1"></i>
+                        إضافة مستخدم
+                    </h5>
+                    <button type="button" class="btn-close ms-0" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body pt-2">
+                    <form id="userCreateForm">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">الاسم <span class="text-danger">*</span></label>
+                                <input type="text" name="name" class="form-control" required>
+                                <div class="invalid-feedback"></div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">اسم المستخدم <span class="text-danger">*</span></label>
+                                <input type="text" name="username" class="form-control" required>
+                                <div class="invalid-feedback"></div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">البريد الإلكتروني <span class="text-danger">*</span></label>
+                                <input type="email" name="email" class="form-control" required>
+                                <div class="invalid-feedback"></div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">الدور <span class="text-danger">*</span></label>
+                                <select name="role" class="form-select" id="createRole" required>
+                                    <option value="">اختر الدور</option>
+                                    @foreach($createRoleKeys as $rk)
+                                        <option value="{{ $rk }}">{{ $roleMeta[$rk]['label'] ?? $rk }}</option>
+                                    @endforeach
+                                </select>
+                                <div class="invalid-feedback"></div>
+                            </div>
+
+                            @if($isSuperAdmin)
+                                <div class="col-md-12 d-none" id="createOperatorWrap">
+                                    <label class="form-label fw-semibold">المشغل</label>
+                                    <select name="operator_id" class="form-select" id="createOperatorSelect"></select>
+                                    <div class="form-text">مطلوب عند إنشاء موظف/فني (حتى نربطه بالمشغل).</div>
+                                    <div class="invalid-feedback"></div>
+                                </div>
+                            @endif
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">كلمة المرور <span class="text-danger">*</span></label>
+                                <input type="password" name="password" class="form-control" minlength="8" required>
+                                <div class="form-text">8 أحرف على الأقل.</div>
+                                <div class="invalid-feedback"></div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">تأكيد كلمة المرور <span class="text-danger">*</span></label>
+                                <input type="password" name="password_confirmation" class="form-control" minlength="8" required>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="button" class="btn btn-primary" id="btnSubmitCreate">
+                        <span class="spinner-border spinner-border-sm me-2 d-none" id="createSpinner"></span>
+                        حفظ
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endcan
+
+    {{-- Delete confirm --}}
+    <div class="modal fade" id="deleteUserModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold text-danger">
+                        <i class="bi bi-trash3 me-1"></i>
+                        تأكيد الحذف
+                    </h5>
+                    <button type="button" class="btn-close ms-0" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body pt-2">
+                    <div class="text-muted">هل أنت متأكد من حذف المستخدم:</div>
+                    <div class="fw-bold mt-2" id="deleteUserName">—</div>
+                    <div class="text-danger small mt-2">هذا الإجراء لا يمكن التراجع عنه.</div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="button" class="btn btn-danger" id="btnConfirmDelete">
+                        <span class="spinner-border spinner-border-sm me-2 d-none" id="deleteSpinner"></span>
+                        حذف
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
 @endsection
 
+@push('scripts')
+    {{-- jQuery + Select2 (نفس صفحة الصلاحيات) --}}
+    <script src="{{ asset('assets/admin/libs/jquery/jquery.min.js') }}"></script>
+    <script src="{{ asset('assets/admin/libs/select2/select2.min.js') }}"></script>
+    @if(file_exists(public_path('assets/admin/libs/select2/i18n/ar.js')))
+        <script src="{{ asset('assets/admin/libs/select2/i18n/ar.js') }}"></script>
+    @endif
+
+    <script>
+        (function () {
+            const ROLE_META = @json($roleMeta);
+
+            const $page = $('#usersPage');
+            const INDEX_URL = $page.data('index-url');
+            const USERS_BASE_URL = $page.data('users-base-url'); // /admin/users
+            const OPERATORS_SEARCH_URL = $page.data('operators-search-url'); // /admin/operators
+            const IS_SUPER_ADMIN = parseInt($page.data('is-super-admin'), 10) === 1;
+
+            // Toast helper (uses your notifications.js)
+            function notify(type, message){
+                if (window.adminNotifications && typeof window.adminNotifications[type] === 'function') {
+                    window.adminNotifications[type](message);
+                    return;
+                }
+                // fallback
+                if(type === 'error') console.error(message);
+                else console.log(message);
+            }
+
+            function escapeHtml(str){
+                return String(str ?? '')
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#039;');
+            }
+
+            function debounce(fn, wait){
+                let t;
+                return function(...args){
+                    clearTimeout(t);
+                    t = setTimeout(() => fn.apply(this, args), wait);
+                }
+            }
+
+            // CSRF for AJAX
+            $.ajaxSetup({
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json',
+                }
+            });
+
+            const state = {
+                q: '',
+                role: '',
+                operator_id: null,
+                page: 1,
+            };
+
+            const $loading = $('#usersLoading');
+            const $tbody = $('#usersTbody');
+            const $meta = $('#usersMeta');
+            const $pagination = $('#usersPagination');
+
+            const $statTotal = $('#statTotal');
+            const $statOwners = $('#statOwners');
+            const $statAdmins = $('#statAdmins');
+            const $statEmployees = $('#statEmployees');
+            const $statTechnicians = $('#statTechnicians');
+
+            function setLoading(on){
+                if(on) $loading.removeClass('d-none');
+                else $loading.addClass('d-none');
+            }
+
+            function roleBadge(roleKey, roleLabelFromServer){
+                const meta = ROLE_META[roleKey] || {label: roleLabelFromServer || roleKey, badge: ''};
+                const label = meta.label || roleLabelFromServer || roleKey;
+                const cls = meta.badge ? meta.badge : 'badge-soft';
+                return `<span class="badge-soft ${escapeHtml(cls)}">${escapeHtml(label)}</span>`;
+            }
+
+            function renderEmpty(text){
+                $tbody.html(`
+                    <tr>
+                        <td colspan="7">
+                            <div class="empty-state">
+                                <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+                                ${escapeHtml(text || 'لا يوجد نتائج')}
+                            </div>
+                        </td>
+                    </tr>
+                `);
+            }
+
+            function renderRows(rows){
+                if(!rows || !rows.length){
+                    renderEmpty('لا يوجد نتائج مطابقة');
+                    return;
+                }
+
+                const html = rows.map(u => {
+                    const name = u.name || '-';
+                    const username = u.username || '-';
+                    const email = u.email || '-';
+                    const roleKey = u.role || u.role_key || '';
+                    const roleLabel = u.role_label || '';
+                    const operatorName = u.operator_name || (u.operator && u.operator.name) || '';
+                    const employeesCount = (u.employees_count !== undefined && u.employees_count !== null) ? u.employees_count : '-';
+
+                    const initials = (name && name !== '-') ? name.trim().charAt(0) : '?';
+
+                    const showUrl = (u.urls && u.urls.show) ? u.urls.show : `${USERS_BASE_URL}/${u.id}`;
+                    const editUrl = (u.urls && u.urls.edit) ? u.urls.edit : `${USERS_BASE_URL}/${u.id}/edit`;
+                    const permsUrl = (u.urls && u.urls.permissions) ? u.urls.permissions : `${USERS_BASE_URL}/${u.id}/permissions`;
+
+                    // can flags (optional) - if not provided, show buttons and let server protect
+                    const canView = (u.can && u.can.view !== undefined) ? !!u.can.view : true;
+                    const canEdit = (u.can && u.can.update !== undefined) ? !!u.can.update : true;
+                    const canDelete = (u.can && u.can.delete !== undefined) ? !!u.can.delete : true;
+
+                    const operatorCell = operatorName
+                        ? `<span class="badge-soft">${escapeHtml(operatorName)}</span>`
+                        : `<span class="text-muted">-</span>`;
+
+                    const employeesCell = (roleKey === 'company_owner')
+                        ? `<span class="fw-bold">${escapeHtml(employeesCount)}</span>`
+                        : `<span class="text-muted">-</span>`;
+
+                    return `
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="avatar-pill">${escapeHtml(initials)}</div>
+                                    <div>
+                                        <div class="fw-bold">${escapeHtml(name)}</div>
+                                        <div class="small text-muted">#${escapeHtml(u.id)}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="fw-semibold">${escapeHtml(username)}</td>
+                            <td>${escapeHtml(email)}</td>
+                            <td>${roleBadge(roleKey, roleLabel)}</td>
+                            <td>${operatorCell}</td>
+                            <td>${employeesCell}</td>
+                            <td>
+                                <div class="d-flex gap-2">
+                                    ${canView ? `<a class="btn btn-light btn-icon" href="${escapeHtml(showUrl)}" title="عرض"><i class="bi bi-eye"></i></a>` : ``}
+                                    ${canEdit ? `<a class="btn btn-light btn-icon" href="${escapeHtml(editUrl)}" title="تعديل"><i class="bi bi-pencil"></i></a>` : ``}
+                                    <a class="btn btn-light btn-icon" href="${escapeHtml(permsUrl)}" title="الصلاحيات"><i class="bi bi-shield-check"></i></a>
+                                    ${canDelete && (parseInt(u.id,10) !== parseInt({{ auth()->id() }},10)) ? `
+                                        <button type="button" class="btn btn-light btn-icon text-danger btn-delete-user"
+                                                data-id="${escapeHtml(u.id)}"
+                                                data-name="${escapeHtml(name)}"
+                                                title="حذف">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    ` : ``}
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+
+                $tbody.html(html);
+            }
+
+            function renderMeta(meta){
+                if(!meta || typeof meta.total === 'undefined'){
+                    $meta.text('—');
+                    return;
+                }
+                $meta.text(`عرض ${meta.from || 0} - ${meta.to || 0} من ${meta.total || 0}`);
+            }
+
+            function renderPagination(meta){
+                if(!meta || !meta.last_page || meta.last_page <= 1){
+                    $pagination.html('');
+                    return;
+                }
+
+                const current = meta.current_page || 1;
+                const last = meta.last_page || 1;
+
+                const makeItem = (page, label, disabled=false, active=false) => `
+                    <li class="page-item ${disabled?'disabled':''} ${active?'active':''}">
+                        <a class="page-link" href="#" data-page="${page}">${label}</a>
+                    </li>
+                `;
+
+                let html = '';
+                html += makeItem(current-1, '‹', current <= 1);
+
+                // window pages
+                const start = Math.max(1, current - 2);
+                const end = Math.min(last, current + 2);
+
+                if(start > 1) html += makeItem(1, '1', false, current === 1);
+                if(start > 2) html += `<li class="page-item disabled"><span class="page-link">…</span></li>`;
+
+                for(let p=start; p<=end; p++){
+                    html += makeItem(p, String(p), false, p === current);
+                }
+
+                if(end < last - 1) html += `<li class="page-item disabled"><span class="page-link">…</span></li>`;
+                if(end < last) html += makeItem(last, String(last), false, current === last);
+
+                html += makeItem(current+1, '›', current >= last);
+
+                $pagination.html(html);
+            }
+
+            function renderStats(stats){
+                if(!stats) return;
+
+                if($statTotal.length) $statTotal.text(stats.total ?? '—');
+                if($statEmployees.length) $statEmployees.text(stats.employees ?? '—');
+                if($statTechnicians.length) $statTechnicians.text(stats.technicians ?? '—');
+
+                if($statOwners.length) $statOwners.text(stats.company_owners ?? '—');
+                if($statAdmins.length) $statAdmins.text(stats.admins ?? '—');
+            }
+
+            function loadUsers(page=1){
+                state.page = page;
+
+                setLoading(true);
+                $.ajax({
+                    url: INDEX_URL,
+                    method: 'GET',
+                    dataType: 'json',
+                    data: {
+                        ajax: 1,
+                        q: state.q,
+                        role: state.role,
+                        operator_id: state.operator_id,
+                        page: state.page,
+                    },
+                    success: function(resp){
+                        // Expected: { ok:true, data:[], meta:{}, stats:{} }
+                        if(resp && resp.ok === false){
+                            notify('error', resp.message || 'حدث خطأ أثناء جلب البيانات');
+                            renderEmpty('تعذر تحميل البيانات');
+                            return;
+                        }
+
+                        renderRows(resp.data || []);
+                        renderMeta(resp.meta || {});
+                        renderPagination(resp.meta || {});
+                        renderStats(resp.stats || {});
+                    },
+                    error: function(xhr){
+                        const msg = (xhr.responseJSON && xhr.responseJSON.message)
+                            ? xhr.responseJSON.message
+                            : 'تعذر تحميل البيانات';
+                        notify('error', msg);
+                        renderEmpty('تعذر تحميل البيانات');
+                    },
+                    complete: function(){
+                        setLoading(false);
+                    }
+                });
+            }
+
+            // ===== Filters
+            const $search = $('#usersSearch');
+            const $clearSearch = $('#btnClearSearch');
+            const $roleFilter = $('#roleFilter');
+
+            const doSearch = debounce(function(){
+                state.q = $search.val().trim();
+                $clearSearch.toggleClass('d-none', state.q.length === 0);
+                loadUsers(1);
+            }, 350);
+
+            $search.on('input', doSearch);
+
+            $clearSearch.on('click', function(){
+                $search.val('');
+                state.q = '';
+                $clearSearch.addClass('d-none');
+                loadUsers(1);
+            });
+
+            $roleFilter.on('change', function(){
+                state.role = $(this).val() || '';
+
+                // SuperAdmin: operator filter is meaningful mostly for employee/technician/all
+                if(IS_SUPER_ADMIN){
+                    const role = state.role;
+                    const shouldShowOperator = (role === '' || role === 'employee' || role === 'technician');
+                    $('#operatorFilterWrap').toggleClass('d-none', !shouldShowOperator);
+
+                    if(!shouldShowOperator){
+                        state.operator_id = null;
+                        try { $('#operatorFilter').val(null).trigger('change'); } catch(e){}
+                    }
+                }
+
+                loadUsers(1);
+            });
+
+            $('#btnResetFilters').on('click', function(){
+                $search.val('');
+                $clearSearch.addClass('d-none');
+                $roleFilter.val('').trigger('change');
+
+                state.q = '';
+                state.role = '';
+                state.operator_id = null;
+
+                if(IS_SUPER_ADMIN){
+                    try { $('#operatorFilter').val(null).trigger('change'); } catch(e){}
+                    $('#operatorFilterWrap').removeClass('d-none');
+                }
+
+                loadUsers(1);
+            });
+
+            $('#btnRefresh').on('click', function(){
+                loadUsers(state.page || 1);
+            });
+
+            // Pagination click
+            $pagination.on('click', 'a.page-link', function(e){
+                e.preventDefault();
+                const p = parseInt($(this).data('page'), 10);
+                if(!p || p < 1) return;
+                loadUsers(p);
+            });
+
+            // ===== Select2: operator filter (super admin)
+            if(IS_SUPER_ADMIN){
+                // init empty select2
+                $('#operatorFilter').select2({
+                    dir: 'rtl',
+                    width: '100%',
+                    placeholder: 'ابحث عن مشغل...',
+                    allowClear: true,
+                    language: 'ar',
+                    ajax: {
+                        url: OPERATORS_SEARCH_URL,
+                        dataType: 'json',
+                        delay: 250,
+                        data: function(params){
+                            return { ajax: 1, term: params.term || '', page: params.page || 1 };
+                        },
+                        processResults: function(resp, params){
+                            // Accept either {results:[{id,text}]} OR {data:[{id,name}], meta:{...}}
+                            if(resp && resp.results){
+                                return resp;
+                            }
+
+                            const items = (resp && resp.data) ? resp.data : [];
+                            const results = items.map(o => ({
+                                id: o.id,
+                                text: o.text || o.name || ('مشغل #' + o.id),
+                            }));
+
+                            const more = resp && resp.meta ? (resp.meta.current_page < resp.meta.last_page) : false;
+                            return { results: results, pagination: { more: more } };
+                        }
+                    }
+                });
+
+                $('#operatorFilter').on('change', function(){
+                    const val = $(this).val();
+                    state.operator_id = val ? parseInt(val, 10) : null;
+                    loadUsers(1);
+                });
+
+                // hide initially only if role is not eligible
+                $('#operatorFilterWrap').removeClass('d-none');
+            }
+
+            // ===== Create Modal (AJAX)
+            @can('create', App\Models\User::class)
+                const createModalEl = document.getElementById('userCreateModal');
+                const createModal = createModalEl ? new bootstrap.Modal(createModalEl) : null;
+
+                const $createForm = $('#userCreateForm');
+                const $createRole = $('#createRole');
+                const $createSpinner = $('#createSpinner');
+
+                function clearCreateErrors(){
+                    $createForm.find('.is-invalid').removeClass('is-invalid');
+                    $createForm.find('.invalid-feedback').text('');
+                }
+
+                function setCreateLoading(on){
+                    $('#btnSubmitCreate').prop('disabled', on);
+                    $createSpinner.toggleClass('d-none', !on);
+                }
+
+                function showCreateError(field, msg){
+                    const $input = $createForm.find(`[name="${field}"]`);
+                    if(!$input.length) return;
+                    $input.addClass('is-invalid');
+                    $input.closest('.col-md-6, .col-md-12, .col-12').find('.invalid-feedback').first().text(msg);
+                }
+
+                function toggleOperatorInCreate(){
+                    if(!IS_SUPER_ADMIN) return;
+
+                    const role = $createRole.val();
+                    const shouldShow = (role === 'employee' || role === 'technician');
+
+                    $('#createOperatorWrap').toggleClass('d-none', !shouldShow);
+
+                    if(!shouldShow){
+                        try { $('#createOperatorSelect').val(null).trigger('change'); } catch(e){}
+                    }
+                }
+
+                $('#btnOpenCreate').on('click', function(){
+                    clearCreateErrors();
+                    $createForm[0].reset();
+
+                    if(IS_SUPER_ADMIN){
+                        toggleOperatorInCreate();
+                    }
+
+                    if(createModal) createModal.show();
+                });
+
+                $createRole.on('change', function(){
+                    toggleOperatorInCreate();
+                });
+
+                // Select2 for operator inside create modal (super admin)
+                if(IS_SUPER_ADMIN){
+                    $('#createOperatorSelect').select2({
+                        dropdownParent: $('#userCreateModal'),
+                        dir: 'rtl',
+                        width: '100%',
+                        placeholder: 'ابحث عن مشغل...',
+                        allowClear: true,
+                        language: 'ar',
+                        ajax: {
+                            url: OPERATORS_SEARCH_URL,
+                            dataType: 'json',
+                            delay: 250,
+                            data: function(params){
+                                return { ajax: 1, term: params.term || '', page: params.page || 1 };
+                            },
+                            processResults: function(resp){
+                                if(resp && resp.results){
+                                    return resp;
+                                }
+                                const items = (resp && resp.data) ? resp.data : [];
+                                const results = items.map(o => ({ id: o.id, text: o.text || o.name || ('مشغل #' + o.id) }));
+                                return { results };
+                            }
+                        }
+                    });
+                }
+
+                $('#btnSubmitCreate').on('click', function(){
+                    clearCreateErrors();
+                    setCreateLoading(true);
+
+                    $.ajax({
+                        url: USERS_BASE_URL,
+                        method: 'POST',
+                        dataType: 'json',
+                        data: $createForm.serialize(),
+                        success: function(resp){
+                            notify('success', resp.message || 'تم إنشاء المستخدم بنجاح');
+                            if(createModal) createModal.hide();
+                            loadUsers(1);
+                        },
+                        error: function(xhr){
+                            if(xhr.status === 422 && xhr.responseJSON && xhr.responseJSON.errors){
+                                const errs = xhr.responseJSON.errors;
+                                Object.keys(errs).forEach(k => showCreateError(k, (errs[k] && errs[k][0]) ? errs[k][0] : 'خطأ'));
+                                notify('error', 'تحقق من البيانات المدخلة');
+                                return;
+                            }
+
+                            const msg = (xhr.responseJSON && xhr.responseJSON.message)
+                                ? xhr.responseJSON.message
+                                : 'تعذر حفظ المستخدم';
+                            notify('error', msg);
+                        },
+                        complete: function(){
+                            setCreateLoading(false);
+                        }
+                    });
+                });
+            @endcan
+
+            // ===== Delete (AJAX)
+            const deleteModalEl = document.getElementById('deleteUserModal');
+            const deleteModal = deleteModalEl ? new bootstrap.Modal(deleteModalEl) : null;
+            let pendingDeleteId = null;
+
+            const $deleteName = $('#deleteUserName');
+            const $deleteSpinner = $('#deleteSpinner');
+
+            function setDeleteLoading(on){
+                $('#btnConfirmDelete').prop('disabled', on);
+                $deleteSpinner.toggleClass('d-none', !on);
+            }
+
+            $tbody.on('click', '.btn-delete-user', function(){
+                const id = $(this).data('id');
+                const name = $(this).data('name');
+
+                pendingDeleteId = id;
+                $deleteName.text(name || '—');
+
+                if(deleteModal) deleteModal.show();
+            });
+
+            $('#btnConfirmDelete').on('click', function(){
+                if(!pendingDeleteId) return;
+
+                setDeleteLoading(true);
+
+                $.ajax({
+                    url: `${USERS_BASE_URL}/${pendingDeleteId}`,
+                    method: 'POST',
+                    dataType: 'json',
+                    data: { _method: 'DELETE' },
+                    success: function(resp){
+                        notify('success', resp.message || 'تم حذف المستخدم');
+                        if(deleteModal) deleteModal.hide();
+                        pendingDeleteId = null;
+                        loadUsers(1);
+                    },
+                    error: function(xhr){
+                        const msg = (xhr.responseJSON && xhr.responseJSON.message)
+                            ? xhr.responseJSON.message
+                            : 'تعذر حذف المستخدم';
+                        notify('error', msg);
+                    },
+                    complete: function(){
+                        setDeleteLoading(false);
+                    }
+                });
+            });
+
+            // ===== Init
+            loadUsers(1);
+
+        })();
+    </script>
+@endpush

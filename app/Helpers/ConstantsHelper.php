@@ -1,0 +1,91 @@
+<?php
+
+namespace App\Helpers;
+
+use App\Models\ConstantDetail;
+use App\Models\ConstantMaster;
+use Illuminate\Support\Facades\Cache;
+
+class ConstantsHelper
+{
+    /**
+     * الحصول على تفاصيل ثابت معين
+     */
+    public static function get(int $constantNumber): \Illuminate\Support\Collection
+    {
+        return Cache::remember("constant_{$constantNumber}", 3600, function () use ($constantNumber) {
+            return ConstantDetail::getByConstantNumber($constantNumber);
+        });
+    }
+
+    /**
+     * الحصول على ثابت من اسمه
+     */
+    public static function getByName(string $constantName): \Illuminate\Support\Collection
+    {
+        $master = ConstantMaster::findByName($constantName);
+
+        if (! $master) {
+            return collect();
+        }
+
+        return Cache::remember("constant_name_{$constantName}", 3600, function () use ($master) {
+            return $master->details;
+        });
+    }
+
+    /**
+     * الحصول على ثابت واحد من رقمه ورقم التفصيل
+     */
+    public static function find(int $constantNumber, int $detailId): ?ConstantDetail
+    {
+        $master = ConstantMaster::findByNumber($constantNumber);
+
+        if (! $master) {
+            return null;
+        }
+
+        return $master->details()->where('id', $detailId)->first();
+    }
+
+    /**
+     * الحصول على ثابت واحد من رقمه وترميز التفصيل
+     */
+    public static function findByCode(int $constantNumber, string $code): ?ConstantDetail
+    {
+        $master = ConstantMaster::findByNumber($constantNumber);
+
+        if (! $master) {
+            return null;
+        }
+
+        return $master->details()->where('code', $code)->first();
+    }
+
+    /**
+     * مسح الكاش
+     */
+    public static function clearCache(?int $constantNumber = null): void
+    {
+        if ($constantNumber) {
+            Cache::forget("constant_{$constantNumber}");
+            $master = ConstantMaster::findByNumber($constantNumber);
+            if ($master) {
+                Cache::forget("constant_name_{$master->constant_name}");
+            }
+        } else {
+            // مسح كل الكاش
+            $masters = ConstantMaster::all();
+            foreach ($masters as $master) {
+                Cache::forget("constant_{$master->constant_number}");
+                Cache::forget("constant_name_{$master->constant_name}");
+            }
+        }
+    }
+}
+
+
+
+
+
+

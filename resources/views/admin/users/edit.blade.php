@@ -6,133 +6,79 @@
     $breadcrumbTitle = 'تعديل المستخدم';
     $breadcrumbParent = 'إدارة المستخدمين';
     $breadcrumbParentUrl = route('admin.users.index');
+
+    $mode = 'edit';
 @endphp
 
+@push('styles')
+    <link rel="stylesheet" href="{{ asset('assets/admin/css/users.css') }}">
+@endpush
+
 @section('content')
-    <div class="container-fluid">
-        <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center">
-                <h5 class="mb-0 fw-bold">
-                    <i class="bi bi-person-gear me-2"></i>
-                    تعديل المستخدم: {{ $user->name }}
-                </h5>
-                <a href="{{ route('admin.users.index') }}" class="btn btn-outline-secondary">
-                    <i class="bi bi-arrow-left me-2"></i>
-                    رجوع
-                </a>
+    <div class="users-page">
+
+        <div class="users-page-header">
+            <div>
+                <h1 class="users-title">تعديل المستخدم</h1>
+                <div class="users-subtitle">تعديل بيانات: <span class="fw-bold">{{ $user->name }}</span></div>
             </div>
+            <a href="{{ route('admin.users.index') }}" class="btn btn-light-subtle">
+                <i class="bi bi-arrow-right me-1"></i> رجوع
+            </a>
+        </div>
+
+        <div class="card ui-card">
+            <div class="card-header">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-person-gear text-primary"></i>
+                    <div class="fw-bold">تعديل المستخدم</div>
+                </div>
+            </div>
+
             <div class="card-body">
                 <form action="{{ route('admin.users.update', $user) }}" method="POST">
                     @csrf
                     @method('PUT')
 
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold">الاسم <span class="text-danger">*</span></label>
-                            <input type="text" name="name" class="form-control @error('name') is-invalid @enderror" value="{{ old('name', $user->name) }}" required>
-                            @error('name')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold">اسم المستخدم <span class="text-danger">*</span></label>
-                            <input type="text" name="username" class="form-control @error('username') is-invalid @enderror" value="{{ old('username', $user->username) }}" required>
-                            @error('username')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold">البريد الإلكتروني <span class="text-danger">*</span></label>
-                            <input type="email" name="email" class="form-control @error('email') is-invalid @enderror" value="{{ old('email', $user->email) }}" required>
-                            @error('email')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold">الصلاحية <span class="text-danger">*</span></label>
-                            <select name="role" class="form-select @error('role') is-invalid @enderror" required>
-                                @foreach($roles as $role)
-                                    <option value="{{ $role->value }}" {{ old('role', $user->role->value) === $role->value ? 'selected' : '' }}>
-                                        @if($role === App\Role::SuperAdmin)
-                                            مدير النظام
-                                        @elseif($role === App\Role::CompanyOwner)
-                                            صاحب شركة
-                                        @else
-                                            موظف
-                                        @endif
-                                    </option>
-                                @endforeach
-                            </select>
-                            @error('role')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold">كلمة المرور</label>
-                            <input type="password" name="password" class="form-control @error('password') is-invalid @enderror" minlength="8">
-                            @error('password')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                            <small class="text-muted">اتركه فارغاً إذا لم ترد تغيير كلمة المرور</small>
-                        </div>
-
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold">تأكيد كلمة المرور</label>
-                            <input type="password" name="password_confirmation" class="form-control" minlength="8">
-                        </div>
-
-                        <div class="col-md-6" id="operatorField" style="display: none;">
-                            <label class="form-label fw-semibold">المشغلون</label>
-                            <select name="operator_id[]" class="form-select @error('operator_id') is-invalid @enderror" multiple>
-                                @foreach($operators as $operator)
-                                    <option value="{{ $operator->id }}" {{ in_array($operator->id, $userOperators) ? 'selected' : '' }}>
-                                        {{ $operator->name }}
-                                    </option>
-                                @endforeach
-                            </select>
-                            @error('operator_id')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                            <small class="text-muted">اختر المشغلين الذين ينتمي إليهم الموظف (يمكن اختيار أكثر من مشغل)</small>
-                        </div>
-                    </div>
+                    @include('admin.users.partials.form', [
+                        'mode' => $mode,
+                        'user' => $user,
+                        'defaultRole' => '',
+                        'operatorFieldName' => 'operator_id[]',  {{-- نخليها Array للـ UpdateRequest إذا كان بتحقق على array --}}
+                    ])
 
                     <div class="mt-4 d-flex justify-content-end gap-2">
-                        <a href="{{ route('admin.users.index') }}" class="btn btn-outline-secondary">إلغاء</a>
+                        <a href="{{ route('admin.users.index') }}" class="btn btn-light-subtle">إلغاء</a>
                         <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-check-lg me-2"></i>
-                            حفظ التغييرات
+                            <i class="bi bi-check-lg me-1"></i> حفظ التغييرات
                         </button>
                     </div>
                 </form>
             </div>
         </div>
+
     </div>
 @endsection
 
 @push('scripts')
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const roleSelect = document.querySelector('select[name="role"]');
-        const operatorField = document.getElementById('operatorField');
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const roleSelect = document.getElementById('roleSelect');
+            const operatorField = document.getElementById('operatorField');
 
-        roleSelect.addEventListener('change', function() {
-            if (this.value === '{{ App\Role::Employee->value }}' || this.value === '{{ App\Role::Technician->value }}') {
-                operatorField.style.display = 'block';
-            } else {
-                operatorField.style.display = 'none';
+            if (!roleSelect || !operatorField) return;
+
+            function toggleOperator() {
+                const val = roleSelect.value;
+                const needOp = (val === '{{ \App\Role::Employee->value }}' || val === '{{ \App\Role::Technician->value }}');
+
+                operatorField.style.display = needOp ? '' : 'none';
+                const star = document.getElementById('opReqStar');
+                if (star) star.style.display = needOp ? '' : 'none';
             }
+
+            roleSelect.addEventListener('change', toggleOperator);
+            toggleOperator();
         });
-
-        // Check on page load
-        if (roleSelect.value === '{{ App\Role::Employee->value }}' || roleSelect.value === '{{ App\Role::Technician->value }}') {
-            operatorField.style.display = 'block';
-        }
-    });
-</script>
+    </script>
 @endpush
-

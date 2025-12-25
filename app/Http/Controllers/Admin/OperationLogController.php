@@ -9,30 +9,81 @@ use App\Models\Generator;
 use App\Models\OperationLog;
 use App\Models\Operator;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class OperationLogController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
         $this->authorize('viewAny', OperationLog::class);
 
         $user = auth()->user();
         $query = OperationLog::with(['generator', 'operator']);
 
+        // Base query restrictions
         if ($user->isCompanyOwner()) {
             $operator = $user->ownedOperators()->first();
             if ($operator) {
                 $query->where('operator_id', $operator->id);
             }
-        } elseif ($user->isEmployee()) {
+        } elseif ($user->isEmployee() || $user->isTechnician()) {
             $operators = $user->operators;
             $query->whereIn('operator_id', $operators->pluck('id'));
         }
 
+        // Search
+        $q = trim((string) $request->input('q', ''));
+        if ($q !== '') {
+            $query->where(function ($sub) use ($q) {
+                $sub->whereHas('generator', function ($gq) use ($q) {
+                    $gq->where('name', 'like', "%{$q}%")
+                       ->orWhere('generator_number', 'like', "%{$q}%");
+                })
+                ->orWhereHas('operator', function ($oq) use ($q) {
+                    $oq->where('name', 'like', "%{$q}%");
+                })
+                ->orWhere('operational_notes', 'like', "%{$q}%");
+            });
+        }
+
+        // Operator filter (SuperAdmin only)
+        if ($user->isSuperAdmin()) {
+            $operatorId = (int) $request->input('operator_id', 0);
+            if ($operatorId > 0) {
+                $query->where('operator_id', $operatorId);
+            }
+        }
+
+        // Date range filter
+        if ($request->filled('date_from')) {
+            $query->whereDate('operation_date', '>=', $request->input('date_from'));
+        }
+        if ($request->filled('date_to')) {
+            $query->whereDate('operation_date', '<=', $request->input('date_to'));
+        }
+
         $operationLogs = $query->latest('operation_date')->latest('start_time')->paginate(15);
 
-        return view('admin.operation-logs.index', compact('operationLogs'));
+        // AJAX: return JSON with HTML
+        if ($request->ajax() || $request->wantsJson()) {
+            $html = view('admin.operation-logs.partials.list', compact('operationLogs'))->render();
+            return response()->json([
+                'success' => true,
+                'html' => $html,
+                'count' => $operationLogs->total(),
+            ]);
+        }
+
+        // Get operators for filter dropdown (SuperAdmin only)
+        $operators = collect();
+        if ($user->isSuperAdmin()) {
+            $operators = Operator::select('id', 'name', 'unit_number')
+                ->orderBy('name')
+                ->get();
+        }
+
+        return view('admin.operation-logs.index', compact('operationLogs', 'operators'));
     }
 
     public function create(): View
@@ -134,13 +185,18 @@ class OperationLogController extends Controller
             ->with('success', 'تم تحديث سجل التشغيل بنجاح.');
     }
 
-    public function destroy(OperationLog $operationLog): RedirectResponse
+    public function destroy(Request $request, OperationLog $operationLog): RedirectResponse
     {
         $this->authorize('delete', $operationLog);
 
         $operationLog->delete();
 
-        return redirect()->route('admin.operation-logs.index')
-            ->with('success', 'تم حذف سجل التشغيل بنجاح.');
+        $msg = 'تم حذف سجل التشغيل بنجاح.';
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json(['success' => true, 'message' => $msg]);
+        }
+
+        return redirect()->route('admin.operation-logs.index')->with('success', $msg);
     }
 }

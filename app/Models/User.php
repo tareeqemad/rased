@@ -2,8 +2,10 @@
 
 namespace App\Models;
 
+use App\Models\Role as RoleModel;
 use App\Role;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -15,34 +17,20 @@ class User extends Authenticatable
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable, SoftDeletes;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
     protected $fillable = [
         'name',
         'email',
         'username',
         'password',
         'role',
+        'role_id',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
@@ -59,12 +47,20 @@ class User extends Authenticatable
 
     public function operators(): BelongsToMany
     {
-        return $this->belongsToMany(Operator::class, 'operator_user');
+        return $this->belongsToMany(Operator::class, 'operator_user')
+            ->withTimestamps();
     }
 
     public function permissions(): BelongsToMany
     {
-        return $this->belongsToMany(Permission::class, 'user_permission');
+        return $this->belongsToMany(Permission::class, 'user_permission')
+            ->withTimestamps();
+    }
+
+    public function revokedPermissions(): BelongsToMany
+    {
+        return $this->belongsToMany(Permission::class, 'user_permission_revoked')
+            ->withTimestamps();
     }
 
     public function permissionAuditLogs(): HasMany
@@ -72,28 +68,53 @@ class User extends Authenticatable
         return $this->hasMany(PermissionAuditLog::class, 'user_id');
     }
 
+    public function roleModel(): BelongsTo
+    {
+        return $this->belongsTo(RoleModel::class, 'role_id');
+    }
+
     public function isSuperAdmin(): bool
     {
+        if ($this->role_id) {
+            return $this->roleModel?->name === 'super_admin';
+        }
+
         return $this->role === Role::SuperAdmin;
     }
 
     public function isCompanyOwner(): bool
     {
+        if ($this->role_id) {
+            return $this->roleModel?->name === 'company_owner';
+        }
+
         return $this->role === Role::CompanyOwner;
     }
 
     public function isEmployee(): bool
     {
+        if ($this->role_id) {
+            return $this->roleModel?->name === 'employee';
+        }
+
         return $this->role === Role::Employee;
     }
 
     public function isTechnician(): bool
     {
+        if ($this->role_id) {
+            return $this->roleModel?->name === 'technician';
+        }
+
         return $this->role === Role::Technician;
     }
 
     public function isAdmin(): bool
     {
+        if ($this->role_id) {
+            return $this->roleModel?->name === 'admin';
+        }
+
         return $this->role === Role::Admin;
     }
 
@@ -104,45 +125,157 @@ class User extends Authenticatable
 
     public function belongsToOperator(Operator $operator): bool
     {
-        return $this->isSuperAdmin() || $this->ownsOperator($operator) || $this->operators()->where('operators.id', $operator->id)->exists();
+        return $this->isSuperAdmin()
+            || $this->ownsOperator($operator)
+            || $this->operators()->where('operators.id', $operator->id)->exists();
     }
 
-    /**
-     * التحقق من وجود صلاحية معينة
-     */
     public function hasPermission(string $permissionName): bool
     {
-        // SuperAdmin و Admin لديهم جميع الصلاحيات (Admin للعرض فقط)
-        if ($this->isSuperAdmin() || $this->isAdmin()) {
+        if ($this->isSuperAdmin()) {
             return true;
         }
 
-        return $this->permissions()->where('name', $permissionName)->exists();
+        if ($this->isAdmin()) {
+            return in_array($permissionName, [
+                'operators.view',
+                'generators.view',
+                'operation_logs.view',
+                'fuel_efficiencies.view',
+                'maintenance_records.view',
+                'compliance_safeties.view',
+            ]);
+        }
+
+        if ($this->revokedPermissions()->where('name', $permissionName)->exists()) {
+            return false;
+        }
+
+        if ($this->permissions()->where('name', $permissionName)->exists()) {
+            return true;
+        }
+
+        if ($this->roleModel) {
+            return $this->roleModel->hasPermission($permissionName);
+        }
+
+        return false;
     }
 
-    /**
-     * التحقق من وجود أي صلاحية من الصلاحيات المحددة
-     */
     public function hasAnyPermission(array $permissionNames): bool
     {
-        if ($this->isSuperAdmin() || $this->isAdmin()) {
+        if ($this->isSuperAdmin()) {
             return true;
         }
 
-        return $this->permissions()->whereIn('name', $permissionNames)->exists();
+        if ($this->isAdmin()) {
+            $adminPermissions = [
+                'operators.view',
+                'generators.view',
+                'operation_logs.view',
+                'fuel_efficiencies.view',
+                'maintenance_records.view',
+                'compliance_safeties.view',
+            ];
+
+            return !empty(array_intersect($permissionNames, $adminPermissions));
+        }
+
+        $revokedPermissionNames = $this->revokedPermissions()
+            ->whereIn('name', $permissionNames)
+            ->pluck('name')
+            ->toArray();
+
+        $availablePermissionNames = array_diff($permissionNames, $revokedPermissionNames);
+
+        if (empty($availablePermissionNames)) {
+            return false;
+        }
+
+        if ($this->permissions()->whereIn('name', $availablePermissionNames)->exists()) {
+            return true;
+        }
+
+        if ($this->roleModel) {
+            foreach ($availablePermissionNames as $permissionName) {
+                if ($this->roleModel->hasPermission($permissionName)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
-    /**
-     * التحقق من وجود جميع الصلاحيات المحددة
-     */
     public function hasAllPermissions(array $permissionNames): bool
     {
-        if ($this->isSuperAdmin() || $this->isAdmin()) {
+        if ($this->isSuperAdmin()) {
             return true;
         }
 
-        $userPermissions = $this->permissions()->whereIn('name', $permissionNames)->pluck('name')->toArray();
+        if ($this->isAdmin()) {
+            $adminPermissions = [
+                'operators.view',
+                'generators.view',
+                'operation_logs.view',
+                'fuel_efficiencies.view',
+                'maintenance_records.view',
+                'compliance_safeties.view',
+            ];
 
-        return count($permissionNames) === count($userPermissions);
+            return count($permissionNames) === count(array_intersect($permissionNames, $adminPermissions));
+        }
+
+        $revokedPermissionNames = $this->revokedPermissions()
+            ->whereIn('name', $permissionNames)
+            ->pluck('name')
+            ->toArray();
+
+        $availablePermissionNames = array_diff($permissionNames, $revokedPermissionNames);
+
+        if (count($availablePermissionNames) !== count($permissionNames)) {
+            return false;
+        }
+
+        $userPermissions = $this->permissions()
+            ->whereIn('name', $availablePermissionNames)
+            ->pluck('name')
+            ->toArray();
+
+        if ($this->roleModel) {
+            $rolePermissions = $this->roleModel->permissions()
+                ->whereIn('name', $availablePermissionNames)
+                ->pluck('name')
+                ->toArray();
+
+            $userPermissions = array_unique(array_merge($userPermissions, $rolePermissions));
+        }
+
+        return count($availablePermissionNames) === count($userPermissions);
+    }
+
+    public function getAvatarUrlAttribute(): string
+    {
+        if (isset($this->attributes['avatar']) && $this->attributes['avatar']) {
+            return asset('storage/'.$this->attributes['avatar']);
+        }
+
+        return 'https://ui-avatars.com/api/?name='.urlencode($this->name).'&background=0066cc&color=fff&size=128';
+    }
+
+    public function getRoleNameAttribute(): string
+    {
+        if ($this->roleModel) {
+            return $this->roleModel->label;
+        }
+
+        return match ($this->role ?? null) {
+            Role::SuperAdmin => 'مدير النظام',
+            Role::Admin => 'مدير سلطة الطاقة',
+            Role::CompanyOwner => 'صاحب مشغل',
+            Role::Employee => 'موظف',
+            Role::Technician => 'فني',
+            default => 'بدون صلاحية',
+        };
     }
 }

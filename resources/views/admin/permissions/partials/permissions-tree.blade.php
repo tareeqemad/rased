@@ -1,39 +1,71 @@
 @if($permissions->count() > 0)
     @foreach($permissions as $group => $groupPermissions)
-        <div class="tree-node mb-2" data-group="{{ $group }}">
-            <!-- Group Header -->
-            <div class="tree-group-header d-flex align-items-center justify-content-between p-2 rounded cursor-pointer bg-white border" 
-                 data-bs-toggle="collapse" 
-                 data-bs-target="#group{{ $loop->index }}" 
+        @php $collapseId = 'perm_group_' . $loop->index; @endphp
+
+        <div class="perm-group" data-group="{{ $group }}">
+            <div class="perm-group-header"
+                 role="button"
+                 data-bs-toggle="collapse"
+                 data-bs-target="#{{ $collapseId }}"
                  aria-expanded="true">
-                <div class="d-flex align-items-center">
-                    <i class="bi bi-chevron-down me-2 text-primary tree-icon" style="font-size: 0.875rem;"></i>
-                    <i class="bi bi-folder-fill me-2 text-primary"></i>
-                    <span class="fw-semibold small">{{ $groupPermissions->first()->group_label }}</span>
-                    <span class="badge bg-primary ms-2 small">{{ $groupPermissions->count() }}</span>
+
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-chevron-down perm-group-chevron"></i>
+                    <i class="bi bi-folder2-open"></i>
+                    <div class="fw-bold">{{ $groupPermissions->first()->group_label }}</div>
+                    <span class="badge text-bg-secondary">{{ $groupPermissions->count() }}</span>
+                </div>
+
+                <div class="perm-group-actions">
+                    <button type="button" class="btn btn-sm btn-outline-success perm-group-enable" data-group="{{ $group }}">
+                        <i class="bi bi-check2-circle me-1"></i>
+                        تفعيل الكل
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-danger perm-group-disable" data-group="{{ $group }}">
+                        <i class="bi bi-slash-circle me-1"></i>
+                        تعطيل الكل
+                    </button>
                 </div>
             </div>
-            <!-- Group Content -->
-            <div class="collapse show ms-3 mt-1" id="group{{ $loop->index }}">
-                <div class="tree-children">
+
+            <div class="collapse show perm-group-collapse" id="{{ $collapseId }}">
+                <div class="perm-list">
                     @foreach($groupPermissions as $permission)
-                        <div class="tree-item d-flex align-items-center p-2 mb-1 rounded bg-white border">
-                            <input class="form-check-input me-2 permission-checkbox" 
-                                   type="checkbox" 
-                                   name="permissions[]" 
-                                   value="{{ $permission->id }}" 
-                                   id="permission_{{ $permission->id }}"
-                                   data-group="{{ $group }}"
-                                   style="width: 18px; height: 18px; cursor: pointer; margin-top: 0;">
-                            <label class="form-check-label flex-grow-1 cursor-pointer small" for="permission_{{ $permission->id }}" style="margin-bottom: 0;">
-                                <div class="d-flex align-items-start">
-                                    <div class="flex-grow-1">
-                                        <div class="fw-semibold mb-0">{{ $permission->label }}</div>
-                                        <div class="text-muted" style="font-size: 0.75rem;">{{ $permission->description }}</div>
-                                        <code class="text-muted" style="font-size: 0.7rem;">{{ $permission->name }}</code>
+                        <div class="perm-row"
+                             data-permission-id="{{ $permission->id }}"
+                             data-group="{{ $group }}"
+                             data-permission-name="{{ $permission->name }}">
+
+                            <div class="perm-row-main">
+                                <div class="perm-row-text">
+                                    <div class="perm-row-title">{{ $permission->label }}</div>
+                                    @if($permission->description)
+                                        <div class="perm-row-desc">{{ $permission->description }}</div>
+                                    @endif
+                                    <div class="perm-row-code">
+                                        <code>{{ $permission->name }}</code>
                                     </div>
                                 </div>
-                            </label>
+
+                                <div class="perm-row-side">
+                                    <div class="perm-badges">
+                                        <span class="badge bg-danger perm-badge perm-badge-revoked d-none">ممنوعة</span>
+                                        <span class="badge bg-success perm-badge perm-badge-direct d-none">مباشرة</span>
+                                        <span class="badge bg-info perm-badge perm-badge-role d-none">من الدور</span>
+                                        <span class="badge bg-secondary perm-badge perm-badge-off d-none">غير مفعلة</span>
+                                    </div>
+
+                                    <div class="form-check form-switch m-0">
+                                        <input class="form-check-input perm-toggle"
+                                               type="checkbox"
+                                               role="switch"
+                                               id="perm_toggle_{{ $permission->id }}"
+                                               data-permission-id="{{ $permission->id }}"
+                                               disabled>
+                                    </div>
+                                </div>
+                            </div>
+
                         </div>
                     @endforeach
                 </div>

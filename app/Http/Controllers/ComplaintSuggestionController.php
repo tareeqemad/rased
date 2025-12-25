@@ -3,7 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Governorate;
+use App\Helpers\ConstantsHelper;
+use App\Helpers\GeneralHelper;
 use App\Models\ComplaintSuggestion;
+use App\Models\Generator;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -22,7 +26,8 @@ class ComplaintSuggestionController extends Controller
      */
     public function create()
     {
-        $governorates = Governorate::all();
+        // جلب المحافظات من الثوابت
+        $governorates = ConstantsHelper::getByName('المحافظة');
 
         return view('complaints-suggestions.create', compact('governorates'));
     }
@@ -105,7 +110,66 @@ class ComplaintSuggestionController extends Controller
     }
 
     /**
-     * الحصول على المولدات حسب المحافظة
+     * الحصول على المشغلين حسب المحافظة (لصفحة الشكاوى)
+     */
+    public function getOperatorsByGovernorate(Request $request, int $governorate): JsonResponse
+    {
+        // التحقق من صحة رقم المحافظة
+        if (!Governorate::tryFrom($governorate)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'رقم المحافظة غير صحيح',
+            ], 400);
+        }
+
+        $activeOnly = $request->boolean('active_only', true);
+        
+        $operators = GeneralHelper::getOperatorsByGovernorateSimple($governorate, $activeOnly);
+
+        return response()->json([
+            'success' => true,
+            'data' => $operators->map(function ($operator) {
+                return [
+                    'id' => $operator->id,
+                    'name' => $operator->name,
+                    'city' => $operator->city,
+                    'unit_number' => $operator->unit_number,
+                    'status' => $operator->status,
+                ];
+            }),
+        ]);
+    }
+
+    /**
+     * الحصول على المولدات حسب المشغل
+     */
+    public function getGeneratorsByOperator(Request $request)
+    {
+        $request->validate([
+            'operator_id' => 'required|exists:operators,id',
+        ]);
+
+        $operatorId = (int) $request->operator_id;
+
+        $generators = Generator::where('operator_id', $operatorId)
+            ->where('status', 'active')
+            ->select('id', 'name', 'generator_number')
+            ->orderBy('name')
+            ->get();
+
+        // تنسيق البيانات للعرض
+        $formattedGenerators = $generators->map(function ($generator) {
+            return [
+                'id' => $generator->id,
+                'name' => $generator->name . ' (' . $generator->generator_number . ')',
+            ];
+        });
+
+        return response()->json($formattedGenerators);
+    }
+
+    /**
+     * الحصول على المولدات حسب المحافظة (للتوافق مع الكود القديم)
      */
     public function getGeneratorsByLocation(Request $request)
     {

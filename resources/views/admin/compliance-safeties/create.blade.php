@@ -1,4 +1,4 @@
-@extends('layouts.admin')
+﻿@extends('layouts.admin')
 
 @section('title', 'إضافة سجل امتثال وسلامة')
 
@@ -42,9 +42,7 @@
                             @if(auth()->user()->isCompanyOwner())
                                 <input type="hidden" name="operator_id" value="{{ auth()->user()->ownedOperators()->first()->id }}">
                             @endif
-                            @error('operator_id')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
+                            
                         </div>
 
                         <div class="col-md-6">
@@ -55,43 +53,33 @@
                                 <option value="expired" {{ old('safety_certificate_status') === 'expired' ? 'selected' : '' }}>منتهية</option>
                                 <option value="not_available" {{ old('safety_certificate_status') === 'not_available' ? 'selected' : '' }}>غير متوفرة</option>
                             </select>
-                            @error('safety_certificate_status')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
+                            
                         </div>
 
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">تاريخ آخر زيارة تفقدية</label>
                             <input type="date" name="last_inspection_date" class="form-control @error('last_inspection_date') is-invalid @enderror" 
                                    value="{{ old('last_inspection_date') }}">
-                            @error('last_inspection_date')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
+                            
                         </div>
 
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">الجهة المنفذة</label>
                             <input type="text" name="inspection_authority" class="form-control @error('inspection_authority') is-invalid @enderror" 
                                    value="{{ old('inspection_authority') }}">
-                            @error('inspection_authority')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
+                            
                         </div>
 
                         <div class="col-md-12">
                             <label class="form-label fw-semibold">نتيجة الزيارة</label>
                             <textarea name="inspection_result" class="form-control @error('inspection_result') is-invalid @enderror" rows="4">{{ old('inspection_result') }}</textarea>
-                            @error('inspection_result')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
+                            
                         </div>
 
                         <div class="col-md-12">
                             <label class="form-label fw-semibold">المخالفات المسجلة</label>
                             <textarea name="violations" class="form-control @error('violations') is-invalid @enderror" rows="4">{{ old('violations') }}</textarea>
-                            @error('violations')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
+                            
                         </div>
                     </div>
 

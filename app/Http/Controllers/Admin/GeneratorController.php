@@ -8,13 +8,16 @@ use App\Http\Requests\Admin\UpdateGeneratorRequest;
 use App\Models\FuelTank;
 use App\Models\Generator;
 use App\Models\Operator;
+use App\Helpers\ConstantsHelper;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class GeneratorController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View|JsonResponse
     {
         $this->authorize('viewAny', Generator::class);
 
@@ -31,9 +34,53 @@ class GeneratorController extends Controller
             $query->whereIn('operator_id', $operators->pluck('id'));
         }
 
+        // Search
+        $q = trim((string) $request->input('q', ''));
+        if ($q !== '') {
+            $query->where(function ($sub) use ($q) {
+                $sub->where('name', 'like', "%{$q}%")
+                    ->orWhere('generator_number', 'like', "%{$q}%")
+                    ->orWhereHas('operator', function ($oq) use ($q) {
+                        $oq->where('name', 'like', "%{$q}%");
+                    });
+            });
+        }
+
+        // Status filter
+        $status = trim((string) $request->input('status', ''));
+        if ($status !== '' && in_array($status, ['active', 'inactive'], true)) {
+            $query->where('status', $status);
+        }
+
+        // Operator filter (SuperAdmin only)
+        if ($user->isSuperAdmin()) {
+            $operatorId = (int) $request->input('operator_id', 0);
+            if ($operatorId > 0) {
+                $query->where('operator_id', $operatorId);
+            }
+        }
+
         $generators = $query->latest()->paginate(15);
 
-        return view('admin.generators.index', compact('generators'));
+        // AJAX: return JSON with HTML
+        if ($request->ajax() || $request->wantsJson()) {
+            $html = view('admin.generators.partials.list', compact('generators'))->render();
+            return response()->json([
+                'success' => true,
+                'html' => $html,
+                'count' => $generators->total(),
+            ]);
+        }
+
+        // Get operators for filter dropdown (SuperAdmin only)
+        $operators = collect();
+        if ($user->isSuperAdmin()) {
+            $operators = Operator::select('id', 'name', 'unit_number')
+                ->orderBy('name')
+                ->get();
+        }
+
+        return view('admin.generators.index', compact('generators', 'operators'));
     }
 
     public function create(): View|RedirectResponse
@@ -79,7 +126,22 @@ class GeneratorController extends Controller
             }
         }
 
-        return view('admin.generators.create', compact('operators'));
+        // جلب الثوابت
+        $constants = [
+            'status' => ConstantsHelper::getByName('حالة المولد'),
+            'engine_type' => ConstantsHelper::getByName('نوع المحرك'),
+            'injection_system' => ConstantsHelper::getByName('نظام الحقن'),
+            'measurement_indicator' => ConstantsHelper::getByName('مؤشر القياس'),
+            'technical_condition' => ConstantsHelper::getByName('الحالة الفنية'),
+            'control_panel_type' => ConstantsHelper::getByName('نوع لوحة التحكم'),
+            'control_panel_status' => ConstantsHelper::getByName('حالة لوحة التحكم'),
+            'material' => ConstantsHelper::getByName('مادة التصنيع'),
+            'usage' => ConstantsHelper::getByName('الاستخدام'),
+            'measurement_method' => ConstantsHelper::getByName('طريقة القياس'),
+            'location' => ConstantsHelper::getByName('موقع الخزان'),
+        ];
+
+        return view('admin.generators.create', compact('operators', 'constants'));
     }
 
     public function store(StoreGeneratorRequest $request): RedirectResponse
@@ -135,6 +197,18 @@ class GeneratorController extends Controller
         $fuelTanksData = $data['fuel_tanks'] ?? [];
         unset($data['fuel_tanks']);
 
+        // التأكد من وجود قيمة لـ fuel_tanks_count
+        if (!isset($data['fuel_tanks_count']) || $data['fuel_tanks_count'] === null || $data['fuel_tanks_count'] === '') {
+            $data['fuel_tanks_count'] = 0;
+        }
+
+        // التأكد من وجود قيمة لـ external_fuel_tank
+        if (!isset($data['external_fuel_tank']) || $data['external_fuel_tank'] === null || $data['external_fuel_tank'] === '') {
+            $data['external_fuel_tank'] = false;
+        } else {
+            $data['external_fuel_tank'] = (bool) $data['external_fuel_tank'];
+        }
+
         // إنشاء المولد
         $generator = Generator::create($data);
 
@@ -172,6 +246,8 @@ class GeneratorController extends Controller
     {
         $this->authorize('update', $generator);
 
+        $generator->load('fuelTanks');
+
         $user = auth()->user();
         $operators = collect();
 
@@ -183,7 +259,22 @@ class GeneratorController extends Controller
             $operators = $user->operators;
         }
 
-        return view('admin.generators.edit', compact('generator', 'operators'));
+        // جلب الثوابت
+        $constants = [
+            'status' => ConstantsHelper::getByName('حالة المولد'),
+            'engine_type' => ConstantsHelper::getByName('نوع المحرك'),
+            'injection_system' => ConstantsHelper::getByName('نظام الحقن'),
+            'measurement_indicator' => ConstantsHelper::getByName('مؤشر القياس'),
+            'technical_condition' => ConstantsHelper::getByName('الحالة الفنية'),
+            'control_panel_type' => ConstantsHelper::getByName('نوع لوحة التحكم'),
+            'control_panel_status' => ConstantsHelper::getByName('حالة لوحة التحكم'),
+            'material' => ConstantsHelper::getByName('مادة التصنيع'),
+            'usage' => ConstantsHelper::getByName('الاستخدام'),
+            'measurement_method' => ConstantsHelper::getByName('طريقة القياس'),
+            'location' => ConstantsHelper::getByName('موقع الخزان'),
+        ];
+
+        return view('admin.generators.edit', compact('generator', 'operators', 'constants'));
     }
 
     public function update(UpdateGeneratorRequest $request, Generator $generator): RedirectResponse
@@ -217,6 +308,18 @@ class GeneratorController extends Controller
         $fuelTanksData = $data['fuel_tanks'] ?? [];
         unset($data['fuel_tanks']);
 
+        // التأكد من وجود قيمة لـ fuel_tanks_count
+        if (!isset($data['fuel_tanks_count']) || $data['fuel_tanks_count'] === null || $data['fuel_tanks_count'] === '') {
+            $data['fuel_tanks_count'] = 0;
+        }
+
+        // التأكد من وجود قيمة لـ external_fuel_tank
+        if (!isset($data['external_fuel_tank']) || $data['external_fuel_tank'] === null || $data['external_fuel_tank'] === '') {
+            $data['external_fuel_tank'] = false;
+        } else {
+            $data['external_fuel_tank'] = (bool) $data['external_fuel_tank'];
+        }
+
         // تحديث المولد
         $generator->update($data);
 
@@ -244,7 +347,7 @@ class GeneratorController extends Controller
             ->with('success', 'تم تحديث بيانات المولد بنجاح.');
     }
 
-    public function destroy(Generator $generator): RedirectResponse
+    public function destroy(Request $request, Generator $generator): RedirectResponse|JsonResponse
     {
         $this->authorize('delete', $generator);
 
@@ -259,7 +362,15 @@ class GeneratorController extends Controller
             Storage::disk('public')->delete($generator->control_panel_image);
         }
 
+        $generatorName = $generator->name;
         $generator->delete();
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'تم حذف المولد بنجاح.',
+            ]);
+        }
 
         return redirect()->route('admin.generators.index')
             ->with('success', 'تم حذف المولد بنجاح.');

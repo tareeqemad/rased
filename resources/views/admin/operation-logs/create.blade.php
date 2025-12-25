@@ -1,4 +1,4 @@
-@extends('layouts.admin')
+﻿@extends('layouts.admin')
 
 @section('title', 'إضافة سجل تشغيل')
 
@@ -42,130 +42,104 @@
                             @if(auth()->user()->isCompanyOwner())
                                 <input type="hidden" name="operator_id" value="{{ auth()->user()->ownedOperators()->first()->id }}">
                             @endif
-                            @error('operator_id')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
+                            
                         </div>
 
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">المولد <span class="text-danger">*</span></label>
-                            <select name="generator_id" class="form-select @error('generator_id') is-invalid @enderror" required>
+                            <select name="generator_id" id="generator_id" class="form-select @error('generator_id') is-invalid @enderror" required>
                                 <option value="">اختر المولد</option>
                                 @foreach($generators as $generator)
-                                    <option value="{{ $generator->id }}" {{ old('generator_id') == $generator->id ? 'selected' : '' }}>
+                                    <option value="{{ $generator->id }}" 
+                                            data-operator-id="{{ $generator->operator_id }}"
+                                            {{ old('generator_id') == $generator->id ? 'selected' : '' }}>
                                         {{ $generator->generator_number }} - {{ $generator->name }}
                                     </option>
                                 @endforeach
                             </select>
-                            @error('generator_id')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
+                            
                         </div>
 
                         <div class="col-md-4">
                             <label class="form-label fw-semibold">تاريخ التشغيل <span class="text-danger">*</span></label>
                             <input type="date" name="operation_date" class="form-control @error('operation_date') is-invalid @enderror" 
                                    value="{{ old('operation_date', date('Y-m-d')) }}" required>
-                            @error('operation_date')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
+                            
                         </div>
 
                         <div class="col-md-4">
                             <label class="form-label fw-semibold">وقت البدء <span class="text-danger">*</span></label>
                             <input type="time" name="start_time" class="form-control @error('start_time') is-invalid @enderror" 
                                    value="{{ old('start_time') }}" required>
-                            @error('start_time')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
+                            
                         </div>
 
                         <div class="col-md-4">
                             <label class="form-label fw-semibold">وقت الإيقاف <span class="text-danger">*</span></label>
                             <input type="time" name="end_time" class="form-control @error('end_time') is-invalid @enderror" 
                                    value="{{ old('end_time') }}" required>
-                            @error('end_time')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
+                            
                         </div>
 
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">نسبة التحميل (%)</label>
                             <input type="number" step="0.01" name="load_percentage" class="form-control @error('load_percentage') is-invalid @enderror" 
                                    value="{{ old('load_percentage') }}" min="0" max="100">
-                            @error('load_percentage')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
+                            
                         </div>
 
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">قراءة عداد الوقود عند البدء</label>
                             <input type="number" step="0.01" name="fuel_meter_start" class="form-control @error('fuel_meter_start') is-invalid @enderror" 
                                    value="{{ old('fuel_meter_start') }}" min="0">
-                            @error('fuel_meter_start')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
+                            
                         </div>
 
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">قراءة عداد الوقود عند الانتهاء</label>
                             <input type="number" step="0.01" name="fuel_meter_end" class="form-control @error('fuel_meter_end') is-invalid @enderror" 
                                    value="{{ old('fuel_meter_end') }}" min="0">
-                            @error('fuel_meter_end')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
+                            
                         </div>
 
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">كمية الوقود المستهلك (لتر)</label>
                             <input type="number" step="0.01" name="fuel_consumed" class="form-control @error('fuel_consumed') is-invalid @enderror" 
                                    value="{{ old('fuel_consumed') }}" min="0">
-                            @error('fuel_consumed')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
+                            
                         </div>
 
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">قراءة عداد الطاقة عند البدء</label>
                             <input type="number" step="0.01" name="energy_meter_start" class="form-control @error('energy_meter_start') is-invalid @enderror" 
                                    value="{{ old('energy_meter_start') }}" min="0">
-                            @error('energy_meter_start')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
+                            
                         </div>
 
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">قراءة عداد الطاقة عند الإيقاف</label>
                             <input type="number" step="0.01" name="energy_meter_end" class="form-control @error('energy_meter_end') is-invalid @enderror" 
                                    value="{{ old('energy_meter_end') }}" min="0">
-                            @error('energy_meter_end')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
+                            
                         </div>
 
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">كمية الطاقة المنتجة (kWh)</label>
                             <input type="number" step="0.01" name="energy_produced" class="form-control @error('energy_produced') is-invalid @enderror" 
                                    value="{{ old('energy_produced') }}" min="0">
-                            @error('energy_produced')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
+                            
                         </div>
 
                         <div class="col-md-12">
                             <label class="form-label fw-semibold">ملاحظات تشغيلية</label>
                             <textarea name="operational_notes" class="form-control @error('operational_notes') is-invalid @enderror" rows="3">{{ old('operational_notes') }}</textarea>
-                            @error('operational_notes')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
+                            
                         </div>
 
                         <div class="col-md-12">
                             <label class="form-label fw-semibold">الأعطال المسجلة (إن وجدت)</label>
                             <textarea name="malfunctions" class="form-control @error('malfunctions') is-invalid @enderror" rows="3">{{ old('malfunctions') }}</textarea>
-                            @error('malfunctions')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
+                            
                         </div>
                     </div>
 
@@ -181,4 +155,100 @@
         </div>
     </div>
 @endsection
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const operatorSelect = document.querySelector('select[name="operator_id"]');
+        const generatorSelect = document.querySelector('select[name="generator_id"]');
+        
+        if (operatorSelect && generatorSelect && !operatorSelect.disabled) {
+            // إخفاء جميع المولدات في البداية
+            Array.from(generatorSelect.options).forEach(option => {
+                if (option.value) {
+                    const generatorData = @json($generators->map(fn($g) => ['id' => $g->id, 'operator_id' => $g->operator_id]));
+                    const gen = generatorData.find(g => g.id == option.value);
+                    if (gen) {
+                        option.dataset.operatorId = gen.operator_id;
+                    }
+                }
+            });
+            
+            operatorSelect.addEventListener('change', function() {
+                const operatorId = parseInt(this.value);
+                
+                if (operatorId) {
+                    // إظهار/إخفاء المولدات حسب المشغل
+                    Array.from(generatorSelect.options).forEach(option => {
+                        if (option.value) {
+                            if (option.dataset.operatorId == operatorId) {
+                                option.style.display = '';
+                            } else {
+                                option.style.display = 'none';
+                            }
+                        }
+                    });
+                    
+                    // إعادة تعيين القيمة إذا كانت المولد المختار لا ينتمي للمشغل الجديد
+                    if (generatorSelect.value) {
+                        const selectedOption = generatorSelect.options[generatorSelect.selectedIndex];
+                        if (selectedOption.dataset.operatorId != operatorId) {
+                            generatorSelect.value = '';
+                        }
+                    }
+                } else {
+                    // إظهار جميع المولدات
+                    Array.from(generatorSelect.options).forEach(option => {
+                        option.style.display = '';
+                    });
+                }
+            });
+            
+            // تشغيل عند التحميل إذا كان هناك مشغل محدد
+            @if(old('operator_id'))
+                operatorSelect.dispatchEvent(new Event('change'));
+            @endif
+        }
+    });
+</script>
+@endpush
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const operatorSelect = document.querySelector('select[name="operator_id"]');
+        const generatorSelect = document.getElementById('generator_id');
+        
+        if (operatorSelect && generatorSelect && !operatorSelect.disabled) {
+            operatorSelect.addEventListener('change', function() {
+                const operatorId = parseInt(this.value);
+                const currentValue = generatorSelect.value;
+                
+                // إظهار/إخفاء المولدات حسب المشغل المختار
+                Array.from(generatorSelect.options).forEach(option => {
+                    if (option.value) {
+                        const optionOperatorId = parseInt(option.dataset.operatorId);
+                        if (operatorId && optionOperatorId === operatorId) {
+                            option.style.display = '';
+                        } else if (!operatorId) {
+                            option.style.display = '';
+                        } else {
+                            option.style.display = 'none';
+                            // إلغاء تحديد المولد إذا لم يعد ينتمي للمشغل المختار
+                            if (option.value === currentValue) {
+                                generatorSelect.value = '';
+                            }
+                        }
+                    }
+                });
+            });
+            
+            // تشغيل عند التحميل إذا كان هناك مشغل محدد
+            @if(old('operator_id') || auth()->user()->isCompanyOwner())
+                operatorSelect.dispatchEvent(new Event('change'));
+            @endif
+        }
+    });
+</script>
+@endpush
 

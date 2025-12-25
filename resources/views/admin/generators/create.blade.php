@@ -1,4 +1,4 @@
-@extends('layouts.admin')
+﻿@extends('layouts.admin')
 
 @section('title', 'إضافة مولد جديد')
 
@@ -6,38 +6,36 @@
     $breadcrumbTitle = 'إضافة مولد جديد';
 @endphp
 
-@section('content')
-    <div class="container-fluid">
-        <div class="card border-0 shadow-lg">
-            <!-- كارد هيدر بتصميم جميل -->
-            <div class="card-header border-0" style="background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); padding: 1.25rem 1.5rem;">
-                <div class="d-flex align-items-center">
-                    <div class="rounded-circle d-flex align-items-center justify-content-center me-3" 
-                         style="width: 45px; height: 45px; background: rgba(255,255,255,0.2);">
-                        <i class="bi bi-lightning-charge-fill text-white fs-5"></i>
-                    </div>
-                    <div>
-                        <h5 class="mb-0 fw-bold text-white">إضافة مولد جديد</h5>
-                        <p class="mb-0 text-white-50 small">قم بإدخال جميع بيانات المولد الكهربائي</p>
-                    </div>
-                </div>
-            </div>
+@push('styles')
+    <link rel="stylesheet" href="{{ asset('assets/admin/css/generators.css') }}">
+@endpush
 
-            <div class="card-body p-4">
-                <!-- Session Timer Alert -->
-                <div class="alert alert-info alert-dismissible fade show border-0 shadow-sm mb-4" role="alert" style="background: linear-gradient(135deg, #3b82f615 0%, #2563eb15 100%);">
-                    <div class="d-flex align-items-center">
-                        <i class="bi bi-info-circle-fill fs-5 me-3" style="color: #2563eb;"></i>
-                        <div class="flex-grow-1">
-                            <strong>تنبيه:</strong> يتم تحديث الصفحة تلقائياً كل 10 دقائق للحفاظ على جلستك نشطة.
-                            <span id="sessionTimer" class="badge bg-primary ms-2">نشط</span>
+@section('content')
+    <div class="generators-page">
+        <div class="row g-3">
+            <div class="col-12">
+                <div class="card gen-card">
+                    <div class="gen-card-header gen-toolbar-header">
+                        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+                            <div>
+                                <div class="gen-title">
+                                    <i class="bi bi-lightning-charge me-2"></i>
+                                    إضافة مولد جديد
+                                </div>
+                                <div class="gen-subtitle">
+                                    قم بإدخال جميع بيانات المولد الكهربائي
+                                </div>
+                            </div>
+                            <a href="{{ route('admin.generators.index') }}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-right me-2"></i>
+                                العودة للقائمة
+                            </a>
                         </div>
                     </div>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
 
-                <form action="{{ route('admin.generators.store') }}" method="POST" enctype="multipart/form-data">
-                    @csrf
+                    <div class="card-body p-4">
+                        <form action="{{ route('admin.generators.store') }}" method="POST" enctype="multipart/form-data">
+                            @csrf
 
                     <!-- Navigation Tabs -->
                     <ul class="nav nav-pills mb-4 bg-light p-2 rounded-3" id="generatorTabs" role="tablist">
@@ -95,17 +93,13 @@
                                 <label class="form-label fw-semibold">اسم المولد <span class="text-danger">*</span></label>
                                 <input type="text" name="name" class="form-control @error('name') is-invalid @enderror" 
                                        value="{{ old('name') }}" required>
-                                @error('name')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
+                                
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">رقم المولد (رقم فريد) <span class="text-danger">*</span></label>
                                 <input type="text" name="generator_number" class="form-control @error('generator_number') is-invalid @enderror" 
                                        value="{{ old('generator_number') }}" required>
-                                @error('generator_number')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
+                                
                             </div>
                             @if(auth()->user()->isSuperAdmin())
                                 <div class="col-md-6">
@@ -118,9 +112,7 @@
                                             </option>
                                         @endforeach
                                     </select>
-                                    @error('operator_id')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
+                                    
                                 </div>
                             @else
                                 <input type="hidden" name="operator_id" value="{{ auth()->user()->ownedOperators()->first()->id }}">
@@ -128,8 +120,12 @@
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">حالة المولد <span class="text-danger">*</span></label>
                                 <select name="status" class="form-select @error('status') is-invalid @enderror" required>
-                                    <option value="active" {{ old('status', 'active') === 'active' ? 'selected' : '' }}>فعال</option>
-                                    <option value="inactive" {{ old('status') === 'inactive' ? 'selected' : '' }}>غير فعال</option>
+                                    <option value="">اختر الحالة</option>
+                                    @foreach($constants['status'] ?? [] as $status)
+                                        <option value="{{ $status->value }}" {{ old('status', 'active') == $status->value ? 'selected' : '' }}>
+                                            {{ $status->label }}
+                                        </option>
+                                    @endforeach
                                 </select>
                                 @error('status')
                                     <div class="invalid-feedback">{{ $message }}</div>
@@ -138,9 +134,7 @@
                             <div class="col-md-12">
                                 <label class="form-label fw-semibold">الوصف</label>
                                 <textarea name="description" class="form-control @error('description') is-invalid @enderror" rows="3">{{ old('description') }}</textarea>
-                                @error('description')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
+                                
                             </div>
                         </div>
                     </div>
@@ -154,44 +148,44 @@
                                 <label class="form-label fw-semibold">قدرة المولد (KVA)</label>
                                 <input type="number" step="0.01" name="capacity_kva" class="form-control @error('capacity_kva') is-invalid @enderror" 
                                        value="{{ old('capacity_kva') }}" min="0">
-                                @error('capacity_kva')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
+                                
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">معامل القدرة (P.F)</label>
                                 <input type="number" step="0.01" name="power_factor" class="form-control @error('power_factor') is-invalid @enderror" 
                                        value="{{ old('power_factor') }}" min="0" max="1">
-                                @error('power_factor')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
+                                
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">الجهد الناتج (V)</label>
                                 <input type="number" name="voltage" class="form-control @error('voltage') is-invalid @enderror" 
                                        value="{{ old('voltage') }}" min="0">
-                                @error('voltage')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
+                                
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">التردد (Hz)</label>
                                 <input type="number" name="frequency" class="form-control @error('frequency') is-invalid @enderror" 
                                        value="{{ old('frequency') }}" min="0">
-                                @error('frequency')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
+                                
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">نوع المحرك</label>
                                 <select name="engine_type" class="form-select @error('engine_type') is-invalid @enderror">
                                     <option value="">اختر نوع المحرك</option>
-                                    <option value="Perkins" {{ old('engine_type') === 'Perkins' ? 'selected' : '' }}>Perkins</option>
-                                    <option value="Volvo" {{ old('engine_type') === 'Volvo' ? 'selected' : '' }}>Volvo</option>
-                                    <option value="Caterpillar" {{ old('engine_type') === 'Caterpillar' ? 'selected' : '' }}>Caterpillar</option>
-                                    <option value="DAF" {{ old('engine_type') === 'DAF' ? 'selected' : '' }}>DAF</option>
-                                    <option value="MAN" {{ old('engine_type') === 'MAN' ? 'selected' : '' }}>MAN</option>
-                                    <option value="SCAINA" {{ old('engine_type') === 'SCAINA' ? 'selected' : '' }}>SCAINA</option>
+                                    @foreach($constants['engine_type'] ?? [] as $engineType)
+                                        <option value="{{ $engineType->value }}" {{ old('engine_type') == $engineType->value ? 'selected' : '' }}>
+                                            {{ $engineType->label }}
+                                        </option>
+                                    @endforeach
+                                    {{-- Fallback للقيم القديمة --}}
+                                    @if(($constants['engine_type'] ?? collect())->isEmpty())
+                                        <option value="Perkins" {{ old('engine_type') === 'Perkins' ? 'selected' : '' }}>Perkins</option>
+                                        <option value="Volvo" {{ old('engine_type') === 'Volvo' ? 'selected' : '' }}>Volvo</option>
+                                        <option value="Caterpillar" {{ old('engine_type') === 'Caterpillar' ? 'selected' : '' }}>Caterpillar</option>
+                                        <option value="DAF" {{ old('engine_type') === 'DAF' ? 'selected' : '' }}>DAF</option>
+                                        <option value="MAN" {{ old('engine_type') === 'MAN' ? 'selected' : '' }}>MAN</option>
+                                        <option value="SCAINA" {{ old('engine_type') === 'SCAINA' ? 'selected' : '' }}>SCAINA</option>
+                                    @endif
                                 </select>
                                 @error('engine_type')
                                     <div class="invalid-feedback">{{ $message }}</div>
@@ -209,17 +203,23 @@
                                 <label class="form-label fw-semibold">سنة التصنيع (YYYY)</label>
                                 <input type="text" name="manufacturing_year" id="manufacturing_year" class="form-control @error('manufacturing_year') is-invalid @enderror" 
                                        value="{{ old('manufacturing_year') }}" placeholder="اختر السنة">
-                                @error('manufacturing_year')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
+                                
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">نظام الحقن</label>
                                 <select name="injection_system" class="form-select @error('injection_system') is-invalid @enderror">
                                     <option value="">اختر نظام الحقن</option>
-                                    <option value="عادي" {{ old('injection_system') === 'عادي' ? 'selected' : '' }}>عادي</option>
-                                    <option value="كهربائي" {{ old('injection_system') === 'كهربائي' ? 'selected' : '' }}>كهربائي</option>
-                                    <option value="هجين" {{ old('injection_system') === 'هجين' ? 'selected' : '' }}>هجين</option>
+                                    @foreach($constants['injection_system'] ?? [] as $injection)
+                                        <option value="{{ $injection->value }}" {{ old('injection_system') == $injection->value ? 'selected' : '' }}>
+                                            {{ $injection->label }}
+                                        </option>
+                                    @endforeach
+                                    {{-- Fallback للقيم القديمة --}}
+                                    @if(($constants['injection_system'] ?? collect())->isEmpty())
+                                        <option value="عادي" {{ old('injection_system') === 'عادي' ? 'selected' : '' }}>عادي</option>
+                                        <option value="كهربائي" {{ old('injection_system') === 'كهربائي' ? 'selected' : '' }}>كهربائي</option>
+                                        <option value="هجين" {{ old('injection_system') === 'هجين' ? 'selected' : '' }}>هجين</option>
+                                    @endif
                                 </select>
                                 @error('injection_system')
                                     <div class="invalid-feedback">{{ $message }}</div>
@@ -229,25 +229,29 @@
                                 <label class="form-label fw-semibold">معدل استهلاك الوقود (لتر/ساعة)</label>
                                 <input type="number" step="0.01" name="fuel_consumption_rate" class="form-control @error('fuel_consumption_rate') is-invalid @enderror" 
                                        value="{{ old('fuel_consumption_rate') }}" min="0">
-                                @error('fuel_consumption_rate')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
+                                
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">سعة خزان الوقود الداخلي (لتر)</label>
                                 <input type="number" name="internal_tank_capacity" class="form-control @error('internal_tank_capacity') is-invalid @enderror" 
                                        value="{{ old('internal_tank_capacity') }}" min="0">
-                                @error('internal_tank_capacity')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
+                                
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">مؤشر القياس</label>
                                 <select name="measurement_indicator" class="form-select @error('measurement_indicator') is-invalid @enderror">
                                     <option value="">اختر الحالة</option>
-                                    <option value="غير متوفر" {{ old('measurement_indicator') === 'غير متوفر' ? 'selected' : '' }}>غير متوفر</option>
-                                    <option value="متوفر ويعمل" {{ old('measurement_indicator') === 'متوفر ويعمل' ? 'selected' : '' }}>متوفر ويعمل</option>
-                                    <option value="متوفر ولا يعمل" {{ old('measurement_indicator') === 'متوفر ولا يعمل' ? 'selected' : '' }}>متوفر ولا يعمل</option>
+                                    @foreach($constants['measurement_indicator'] ?? [] as $indicator)
+                                        <option value="{{ $indicator->value }}" {{ old('measurement_indicator') == $indicator->value ? 'selected' : '' }}>
+                                            {{ $indicator->label }}
+                                        </option>
+                                    @endforeach
+                                    {{-- Fallback للقيم القديمة --}}
+                                    @if(($constants['measurement_indicator'] ?? collect())->isEmpty())
+                                        <option value="غير متوفر" {{ old('measurement_indicator') === 'غير متوفر' ? 'selected' : '' }}>غير متوفر</option>
+                                        <option value="متوفر ويعمل" {{ old('measurement_indicator') === 'متوفر ويعمل' ? 'selected' : '' }}>متوفر ويعمل</option>
+                                        <option value="متوفر ولا يعمل" {{ old('measurement_indicator') === 'متوفر ولا يعمل' ? 'selected' : '' }}>متوفر ولا يعمل</option>
+                                    @endif
                                 </select>
                                 @error('measurement_indicator')
                                     <div class="invalid-feedback">{{ $message }}</div>
@@ -265,11 +269,19 @@
                                 <label class="form-label fw-semibold">الحالة الفنية</label>
                                 <select name="technical_condition" class="form-select @error('technical_condition') is-invalid @enderror">
                                     <option value="">اختر الحالة</option>
-                                    <option value="ممتازة" {{ old('technical_condition') === 'ممتازة' ? 'selected' : '' }}>ممتازة</option>
-                                    <option value="جيدة جدا" {{ old('technical_condition') === 'جيدة جدا' ? 'selected' : '' }}>جيدة جدا</option>
-                                    <option value="جيدة" {{ old('technical_condition') === 'جيدة' ? 'selected' : '' }}>جيدة</option>
-                                    <option value="متوسطة" {{ old('technical_condition') === 'متوسطة' ? 'selected' : '' }}>متوسطة</option>
-                                    <option value="سيئة" {{ old('technical_condition') === 'سيئة' ? 'selected' : '' }}>سيئة</option>
+                                    @foreach($constants['technical_condition'] ?? [] as $condition)
+                                        <option value="{{ $condition->value }}" {{ old('technical_condition') == $condition->value ? 'selected' : '' }}>
+                                            {{ $condition->label }}
+                                        </option>
+                                    @endforeach
+                                    {{-- Fallback للقيم القديمة --}}
+                                    @if(($constants['technical_condition'] ?? collect())->isEmpty())
+                                        <option value="ممتازة" {{ old('technical_condition') === 'ممتازة' ? 'selected' : '' }}>ممتازة</option>
+                                        <option value="جيدة جدا" {{ old('technical_condition') === 'جيدة جدا' ? 'selected' : '' }}>جيدة جدا</option>
+                                        <option value="جيدة" {{ old('technical_condition') === 'جيدة' ? 'selected' : '' }}>جيدة</option>
+                                        <option value="متوسطة" {{ old('technical_condition') === 'متوسطة' ? 'selected' : '' }}>متوسطة</option>
+                                        <option value="سيئة" {{ old('technical_condition') === 'سيئة' ? 'selected' : '' }}>سيئة</option>
+                                    @endif
                                 </select>
                                 @error('technical_condition')
                                     <div class="invalid-feedback">{{ $message }}</div>
@@ -279,9 +291,7 @@
                                 <label class="form-label fw-semibold">تاريخ آخر صيانة كبرى</label>
                                 <input type="date" name="last_major_maintenance_date" class="form-control @error('last_major_maintenance_date') is-invalid @enderror" 
                                        value="{{ old('last_major_maintenance_date') }}">
-                                @error('last_major_maintenance_date')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
+                                
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">صورة لوحة البيانات للمحرك</label>
@@ -293,9 +303,7 @@
                                         <i class="bi bi-x-circle"></i> إزالة
                                     </button>
                                 </div>
-                                @error('engine_data_plate_image')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
+                                
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">صورة لوحة البيانات للمولد</label>
@@ -307,9 +315,7 @@
                                         <i class="bi bi-x-circle"></i> إزالة
                                     </button>
                                 </div>
-                                @error('generator_data_plate_image')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
+                                
                             </div>
                         </div>
                     </div>
@@ -325,18 +331,24 @@
                                     <option value="0" {{ old('control_panel_available', '0') == '0' ? 'selected' : '' }}>غير متوفرة</option>
                                     <option value="1" {{ old('control_panel_available') == '1' ? 'selected' : '' }}>متوفرة</option>
                                 </select>
-                                @error('control_panel_available')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
+                                
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">نوع لوحة التحكم</label>
                                 <select name="control_panel_type" class="form-select @error('control_panel_type') is-invalid @enderror">
                                     <option value="">اختر النوع</option>
-                                    <option value="Deep Sea" {{ old('control_panel_type') === 'Deep Sea' ? 'selected' : '' }}>Deep Sea</option>
-                                    <option value="ComAp" {{ old('control_panel_type') === 'ComAp' ? 'selected' : '' }}>ComAp</option>
-                                    <option value="Datakom" {{ old('control_panel_type') === 'Datakom' ? 'selected' : '' }}>Datakom</option>
-                                    <option value="Analog" {{ old('control_panel_type') === 'Analog' ? 'selected' : '' }}>Analog</option>
+                                    @foreach($constants['control_panel_type'] ?? [] as $panelType)
+                                        <option value="{{ $panelType->value }}" {{ old('control_panel_type') == $panelType->value ? 'selected' : '' }}>
+                                            {{ $panelType->label }}
+                                        </option>
+                                    @endforeach
+                                    {{-- Fallback للقيم القديمة --}}
+                                    @if(($constants['control_panel_type'] ?? collect())->isEmpty())
+                                        <option value="Deep Sea" {{ old('control_panel_type') === 'Deep Sea' ? 'selected' : '' }}>Deep Sea</option>
+                                        <option value="ComAp" {{ old('control_panel_type') === 'ComAp' ? 'selected' : '' }}>ComAp</option>
+                                        <option value="Datakom" {{ old('control_panel_type') === 'Datakom' ? 'selected' : '' }}>Datakom</option>
+                                        <option value="Analog" {{ old('control_panel_type') === 'Analog' ? 'selected' : '' }}>Analog</option>
+                                    @endif
                                 </select>
                                 @error('control_panel_type')
                                     <div class="invalid-feedback">{{ $message }}</div>
@@ -346,8 +358,16 @@
                                 <label class="form-label fw-semibold">حالة لوحة التحكم</label>
                                 <select name="control_panel_status" class="form-select @error('control_panel_status') is-invalid @enderror">
                                     <option value="">اختر الحالة</option>
-                                    <option value="تعمل" {{ old('control_panel_status') === 'تعمل' ? 'selected' : '' }}>تعمل</option>
-                                    <option value="لا تعمل" {{ old('control_panel_status') === 'لا تعمل' ? 'selected' : '' }}>لا تعمل</option>
+                                    @foreach($constants['control_panel_status'] ?? [] as $panelStatus)
+                                        <option value="{{ $panelStatus->value }}" {{ old('control_panel_status') == $panelStatus->value ? 'selected' : '' }}>
+                                            {{ $panelStatus->label }}
+                                        </option>
+                                    @endforeach
+                                    {{-- Fallback للقيم القديمة --}}
+                                    @if(($constants['control_panel_status'] ?? collect())->isEmpty())
+                                        <option value="تعمل" {{ old('control_panel_status') === 'تعمل' ? 'selected' : '' }}>تعمل</option>
+                                        <option value="لا تعمل" {{ old('control_panel_status') === 'لا تعمل' ? 'selected' : '' }}>لا تعمل</option>
+                                    @endif
                                 </select>
                                 @error('control_panel_status')
                                     <div class="invalid-feedback">{{ $message }}</div>
@@ -363,17 +383,13 @@
                                         <i class="bi bi-x-circle"></i> إزالة
                                     </button>
                                 </div>
-                                @error('control_panel_image')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
+                                
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">قراءة ساعات التشغيل الحالية</label>
                                 <input type="number" name="operating_hours" class="form-control @error('operating_hours') is-invalid @enderror" 
                                        value="{{ old('operating_hours') }}" min="0">
-                                @error('operating_hours')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
+                                
                             </div>
                         </div>
                     </div>
@@ -392,22 +408,20 @@
                                                     <option value="0" {{ old('external_fuel_tank', '0') == '0' ? 'selected' : '' }}>لا</option>
                                                     <option value="1" {{ old('external_fuel_tank') == '1' ? 'selected' : '' }}>نعم</option>
                                                 </select>
-                                                @error('external_fuel_tank')
-                                                    <div class="invalid-feedback">{{ $message }}</div>
-                                                @enderror
+                                                
                                             </div>
                                             <div class="col-md-6" id="fuel_tanks_count_wrapper" style="display: none;">
                                                 <label class="form-label fw-semibold">عدد خزانات الوقود (1-10) <span class="text-danger">*</span></label>
                                                 <select name="fuel_tanks_count" id="fuel_tanks_count" class="form-select @error('fuel_tanks_count') is-invalid @enderror">
-                                                    <option value="">اختر العدد</option>
+                                                    <option value="0">اختر العدد</option>
                                                     @for($i = 1; $i <= 10; $i++)
                                                         <option value="{{ $i }}" {{ old('fuel_tanks_count') == $i ? 'selected' : '' }}>{{ $i }}</option>
                                                     @endfor
                                                 </select>
-                                                @error('fuel_tanks_count')
-                                                    <div class="invalid-feedback">{{ $message }}</div>
-                                                @enderror
+                                                
                                             </div>
+                                            <!-- حقل hidden لإرسال القيمة الافتراضية عندما يكون external_fuel_tank = 0 -->
+                                            <input type="hidden" id="fuel_tanks_count_hidden" value="0">
                                         </div>
                                     </div>
                                 </div>
@@ -434,8 +448,9 @@
                                 <i class="bi bi-check-lg me-2"></i>حفظ البيانات
                             </button>
                         </div>
-                    </div>
-                </form>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
@@ -443,6 +458,7 @@
 
 @push('styles')
 <style>
+    /* استخدام نفس تصميم generators.css */
     /* تحسين التابات */
     .nav-pills .nav-link {
         color: #6c757d;
@@ -486,23 +502,6 @@
         }
     }
     
-    /* تحسين الفورم */
-    .form-label {
-        color: #495057;
-        margin-bottom: 0.5rem;
-    }
-    
-    .form-control, .form-select {
-        border: 2px solid #e9ecef;
-        border-radius: 0.5rem;
-        padding: 0.625rem 0.875rem;
-        transition: all 0.3s ease;
-    }
-    
-    .form-control:focus, .form-select:focus {
-        border-color: #3b82f6;
-        box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.15);
-    }
     
     /* تحسين الأزرار */
     .btn {
@@ -663,6 +662,14 @@
 
 @push('scripts')
 <script>
+    // تمرير الثوابت للـ JavaScript
+    window.GENERATOR_CONSTANTS = {
+        location: @json(($constants['location'] ?? collect())->map(fn($c) => ['value' => $c->value, 'label' => $c->label])->values()),
+        material: @json(($constants['material'] ?? collect())->map(fn($c) => ['value' => $c->value, 'label' => $c->label])->values()),
+        usage: @json(($constants['usage'] ?? collect())->map(fn($c) => ['value' => $c->value, 'label' => $c->label])->values()),
+        measurement_method: @json(($constants['measurement_method'] ?? collect())->map(fn($c) => ['value' => $c->value, 'label' => $c->label])->values()),
+    };
+
     document.addEventListener('DOMContentLoaded', function() {
         let currentTab = 0;
         const tabs = ['basic', 'specs', 'fuel', 'technical', 'control', 'tanks'];
@@ -752,6 +759,26 @@
         // إزالة التحذير عند إرسال الفورم
         document.querySelector('form').addEventListener('submit', function(e) {
             formModified = false;
+            
+            // إدارة حقول fuel_tanks_count قبل الإرسال
+            const externalFuelTankValue = externalFuelTankSelect ? externalFuelTankSelect.value : '0';
+            if (externalFuelTankValue === '0') {
+                // إذا كان external_fuel_tank = 0، استخدم الحقل المخفي فقط
+                if (fuelTanksCountSelect) {
+                    fuelTanksCountSelect.removeAttribute('name');
+                }
+                if (fuelTanksCountHidden) {
+                    fuelTanksCountHidden.setAttribute('name', 'fuel_tanks_count');
+                }
+            } else {
+                // إذا كان external_fuel_tank = 1، استخدم الـ select فقط
+                if (fuelTanksCountHidden) {
+                    fuelTanksCountHidden.removeAttribute('name');
+                }
+                if (fuelTanksCountSelect) {
+                    fuelTanksCountSelect.setAttribute('name', 'fuel_tanks_count');
+                }
+            }
             
             // التحقق من صلاحية الـ token قبل الإرسال
             const token = document.querySelector('input[name="_token"]').value;
@@ -854,7 +881,7 @@
                 if (file) {
                     // التحقق من نوع الملف
                     if (!file.type.startsWith('image/')) {
-                        alert('يرجى اختيار ملف صورة صالح');
+                        window.adminNotifications.error('يرجى اختيار ملف صورة صالح', 'خطأ');
                         this.value = '';
                         previewContainer.style.display = 'none';
                         return;
@@ -862,7 +889,7 @@
                     
                     // التحقق من حجم الملف (أقل من 5MB)
                     if (file.size > 5 * 1024 * 1024) {
-                        alert('حجم الصورة كبير جداً. يرجى اختيار صورة أقل من 5 ميجابايت');
+                        window.adminNotifications.error('حجم الصورة كبير جداً. يرجى اختيار صورة أقل من 5 ميجابايت', 'خطأ');
                         this.value = '';
                         previewContainer.style.display = 'none';
                         return;
@@ -961,6 +988,7 @@
         const externalFuelTankSelect = document.getElementById('external_fuel_tank');
         const fuelTanksCountWrapper = document.getElementById('fuel_tanks_count_wrapper');
         const fuelTanksCountSelect = document.getElementById('fuel_tanks_count');
+        const fuelTanksCountHidden = document.getElementById('fuel_tanks_count_hidden');
         const fuelTanksContainer = document.getElementById('fuel_tanks_container');
 
         // عند تغيير "خزان وقود خارجي"
@@ -969,11 +997,21 @@
                 if (this.value === '1') {
                     fuelTanksCountWrapper.style.display = 'block';
                     fuelTanksCountSelect.required = true;
+                    // إخفاء الحقل المخفي وإظهار الـ select
+                    if (fuelTanksCountHidden) {
+                        fuelTanksCountHidden.disabled = true;
+                    }
+                    fuelTanksCountSelect.disabled = false;
                 } else {
                     fuelTanksCountWrapper.style.display = 'none';
                     fuelTanksCountSelect.required = false;
-                    fuelTanksCountSelect.value = '';
+                    fuelTanksCountSelect.value = '0';
                     fuelTanksContainer.innerHTML = '';
+                    // إظهار الحقل المخفي وإخفاء الـ select
+                    if (fuelTanksCountHidden) {
+                        fuelTanksCountHidden.disabled = false;
+                    }
+                    fuelTanksCountSelect.disabled = true;
                 }
             });
 
@@ -981,9 +1019,18 @@
             if (externalFuelTankSelect.value === '1') {
                 fuelTanksCountWrapper.style.display = 'block';
                 fuelTanksCountSelect.required = true;
-                if (fuelTanksCountSelect.value) {
+                if (fuelTanksCountHidden) {
+                    fuelTanksCountHidden.disabled = true;
+                }
+                fuelTanksCountSelect.disabled = false;
+                if (fuelTanksCountSelect.value && fuelTanksCountSelect.value !== '0') {
                     renderFuelTanks(parseInt(fuelTanksCountSelect.value));
                 }
+            } else {
+                if (fuelTanksCountHidden) {
+                    fuelTanksCountHidden.disabled = false;
+                }
+                fuelTanksCountSelect.disabled = true;
             }
         }
 
@@ -1027,9 +1074,10 @@
                                     <label class="form-label fw-semibold">موقع الخزان ${i} <span class="text-danger">*</span></label>
                                     <select name="fuel_tanks[${i-1}][location]" class="form-select" required>
                                         <option value="">اختر الموقع</option>
-                                        <option value="ارضي">ارضي</option>
-                                        <option value="علوي">علوي</option>
-                                        <option value="تحت الارض">تحت الارض</option>
+                                        ${(window.GENERATOR_CONSTANTS.location && window.GENERATOR_CONSTANTS.location.length > 0) 
+                                            ? window.GENERATOR_CONSTANTS.location.map(loc => `<option value="${loc.value}">${loc.label}</option>`).join('')
+                                            : '<option value="ارضي">ارضي</option><option value="علوي">علوي</option><option value="تحت الارض">تحت الارض</option>'
+                                        }
                                     </select>
                                 </div>
                                 <div class="col-md-6">
@@ -1047,29 +1095,30 @@
                                     <label class="form-label fw-semibold">مادة التصنيع ${i}</label>
                                     <select name="fuel_tanks[${i-1}][material]" class="form-select">
                                         <option value="">اختر المادة</option>
-                                        <option value="حديد">حديد</option>
-                                        <option value="بلاستيك">بلاستيك</option>
-                                        <option value="مقوى">مقوى</option>
-                                        <option value="فايبر">فايبر</option>
+                                        ${(window.GENERATOR_CONSTANTS.material && window.GENERATOR_CONSTANTS.material.length > 0) 
+                                            ? window.GENERATOR_CONSTANTS.material.map(mat => `<option value="${mat.value}">${mat.label}</option>`).join('')
+                                            : '<option value="حديد">حديد</option><option value="بلاستيك">بلاستيك</option><option value="مقوى">مقوى</option><option value="فايبر">فايبر</option>'
+                                        }
                                     </select>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label fw-semibold">استخدامه ${i}</label>
                                     <select name="fuel_tanks[${i-1}][usage]" class="form-select">
                                         <option value="">اختر الاستخدام</option>
-                                        <option value="مركزي">مركزي</option>
-                                        <option value="احتياطي">احتياطي</option>
+                                        ${(window.GENERATOR_CONSTANTS.usage && window.GENERATOR_CONSTANTS.usage.length > 0) 
+                                            ? window.GENERATOR_CONSTANTS.usage.map(use => `<option value="${use.value}">${use.label}</option>`).join('')
+                                            : '<option value="مركزي">مركزي</option><option value="احتياطي">احتياطي</option>'
+                                        }
                                     </select>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label fw-semibold">طريقة القياس ${i}</label>
                                     <select name="fuel_tanks[${i-1}][measurement_method]" class="form-select">
                                         <option value="">اختر الطريقة</option>
-                                        <option value="سيخ">سيخ</option>
-                                        <option value="مدرج">مدرج</option>
-                                        <option value="ساعه ميكانيكية">ساعه ميكانيكية</option>
-                                        <option value="حساس الكتروني">حساس الكتروني</option>
-                                        <option value="خرطوم شفاف">خرطوم شفاف</option>
+                                        ${(window.GENERATOR_CONSTANTS.measurement_method && window.GENERATOR_CONSTANTS.measurement_method.length > 0) 
+                                            ? window.GENERATOR_CONSTANTS.measurement_method.map(method => `<option value="${method.value}">${method.label}</option>`).join('')
+                                            : '<option value="سيخ">سيخ</option><option value="مدرج">مدرج</option><option value="ساعه ميكانيكية">ساعه ميكانيكية</option><option value="حساس الكتروني">حساس الكتروني</option><option value="خرطوم شفاف">خرطوم شفاف</option>'
+                                        }
                                     </select>
                                 </div>
                             </div>

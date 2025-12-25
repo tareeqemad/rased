@@ -303,11 +303,23 @@
                         <option value="">اختر المحافظة</option>
                         @foreach($governorates as $gov)
                             <option value="{{ $gov->value }}" {{ old('governorate') == $gov->value ? 'selected' : '' }}>
-                                {{ $gov->label() }}
+                                {{ $gov->label }}
                             </option>
                         @endforeach
                     </select>
                     @error('governorate')
+                        <div class="error-message">{{ $message }}</div>
+                    @enderror
+                </div>
+                
+                <div class="form-group" id="operator-group" style="display: none;">
+                    <label for="operator_id" class="form-label">
+                        المشغل <span class="required">*</span>
+                    </label>
+                    <select id="operator_id" name="operator_id" class="form-select">
+                        <option value="">اختر المشغل</option>
+                    </select>
+                    @error('operator_id')
                         <div class="error-message">{{ $message }}</div>
                     @enderror
                 </div>
@@ -352,15 +364,102 @@
         </div>
     </div>
     
+    <!-- General Helpers JS -->
+    <script src="{{ asset('assets/admin/js/general-helpers.js') }}"></script>
+    
     <script>
         const governorateSelect = document.getElementById('governorate');
+        const operatorGroup = document.getElementById('operator-group');
+        const operatorSelect = document.getElementById('operator_id');
         const generatorGroup = document.getElementById('generator-group');
         const generatorSelect = document.getElementById('generator_id');
         
+        // عند تغيير المحافظة
         governorateSelect.addEventListener('change', function() {
-            const governorate = this.value;
+            const governorate = parseInt(this.value);
+            
+            // إخفاء حقول المشغل والمولد
+            operatorGroup.style.display = 'none';
+            operatorSelect.required = false;
+            operatorSelect.innerHTML = '<option value="">اختر المشغل</option>';
+            generatorGroup.style.display = 'none';
+            generatorSelect.required = false;
+            generatorSelect.innerHTML = '<option value="">اختر المولد</option>';
             
             if (governorate) {
+                // إظهار حقل المشغل وملؤه بالمشغلين
+                operatorGroup.style.display = 'block';
+                operatorSelect.required = true;
+                
+                // مسح الخيارات السابقة
+                operatorSelect.innerHTML = '<option value="">جاري التحميل...</option>';
+                operatorSelect.disabled = true;
+                
+                // جلب المشغلين من السيرفر
+                const operatorsUrl = `{{ route('complaints-suggestions.operators-by-governorate', ':governorate') }}`.replace(':governorate', governorate);
+                
+                fetch(operatorsUrl, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json',
+                    },
+                    credentials: 'same-origin',
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok: ' + response.status);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    operatorSelect.innerHTML = '<option value="">اختر المشغل</option>';
+                    operatorSelect.disabled = false;
+                    
+                    if (data.success && data.data && Array.isArray(data.data) && data.data.length > 0) {
+                        data.data.forEach(operator => {
+                            const option = document.createElement('option');
+                            option.value = operator.id;
+                            option.textContent = operator.name + (operator.city ? ` - ${operator.city}` : '');
+                            @if(old('operator_id'))
+                                if (operator.id == {{ old('operator_id') }}) {
+                                    option.selected = true;
+                                }
+                            @endif
+                            operatorSelect.appendChild(option);
+                        });
+                        
+                        // trigger change event إذا كان هناك مشغل محدد مسبقاً
+                        @if(old('operator_id'))
+                            const oldOperatorId = {{ old('operator_id') }};
+                            if (oldOperatorId) {
+                                operatorSelect.value = oldOperatorId;
+                                operatorSelect.dispatchEvent(new Event('change'));
+                            }
+                        @endif
+                    } else {
+                        operatorSelect.innerHTML = '<option value="">لا توجد مشغلين في هذه المحافظة</option>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching operators:', error);
+                    operatorSelect.innerHTML = '<option value="">حدث خطأ في تحميل المشغلين</option>';
+                    operatorSelect.disabled = false;
+                });
+            }
+        });
+        
+        // عند تغيير المشغل
+        operatorSelect.addEventListener('change', function() {
+            const operatorId = parseInt(this.value);
+            
+            // إخفاء حقل المولد
+            generatorGroup.style.display = 'none';
+            generatorSelect.required = false;
+            generatorSelect.innerHTML = '<option value="">اختر المولد</option>';
+            
+            if (operatorId) {
                 // إظهار حقل المولد
                 generatorGroup.style.display = 'block';
                 generatorSelect.required = true;
@@ -368,53 +467,69 @@
                 // مسح الخيارات السابقة
                 generatorSelect.innerHTML = '<option value="">جاري التحميل...</option>';
                 
-                // جلب المولدات من السيرفر
-                const url = `{{ route('complaints-suggestions.generators') }}?governorate=${encodeURIComponent(governorate)}`;
-                console.log('Fetching generators from:', url);
+                // جلب المولدات من السيرفر حسب المشغل
+                const url = `{{ route('complaints-suggestions.generators-by-operator') }}?operator_id=${encodeURIComponent(operatorId)}`;
                 
-                fetch(url)
-                    .then(response => {
-                        console.log('Response status:', response.status);
-                        if (!response.ok) {
-                            throw new Error('Network response was not ok: ' + response.status);
-                        }
-                        return response.json();
-                    })
-                    .then(data => {
-                        console.log('Generators data:', data);
-                        generatorSelect.innerHTML = '<option value="">اختر المولد</option>';
-                        
-                        if (data && Array.isArray(data) && data.length > 0) {
-                            data.forEach(generator => {
-                                const option = document.createElement('option');
-                                option.value = generator.id;
-                                option.textContent = generator.name;
-                                @if(old('generator_id'))
-                                    if (generator.id == {{ old('generator_id') }}) {
-                                        option.selected = true;
-                                    }
-                                @endif
-                                generatorSelect.appendChild(option);
-                            });
-                        } else {
-                            generatorSelect.innerHTML = '<option value="">لا توجد مولدات في هذه المحافظة</option>';
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error fetching generators:', error);
-                        generatorSelect.innerHTML = '<option value="">حدث خطأ في تحميل المولدات</option>';
-                    });
-            } else {
-                // إخفاء حقل المولد
-                generatorGroup.style.display = 'none';
-                generatorSelect.required = false;
-                generatorSelect.innerHTML = '<option value="">اختر المولد</option>';
+                fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json',
+                    },
+                    credentials: 'same-origin',
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok: ' + response.status);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    generatorSelect.innerHTML = '<option value="">اختر المولد</option>';
+                    
+                    if (data && Array.isArray(data) && data.length > 0) {
+                        data.forEach(generator => {
+                            const option = document.createElement('option');
+                            option.value = generator.id;
+                            option.textContent = generator.name;
+                            @if(old('generator_id'))
+                                if (generator.id == {{ old('generator_id') }}) {
+                                    option.selected = true;
+                                }
+                            @endif
+                            generatorSelect.appendChild(option);
+                        });
+                    } else {
+                        generatorSelect.innerHTML = '<option value="">لا توجد مولدات لهذا المشغل</option>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching generators:', error);
+                    generatorSelect.innerHTML = '<option value="">حدث خطأ في تحميل المولدات</option>';
+                });
             }
         });
         
         // إذا كانت المحافظة محددة مسبقاً (عند وجود أخطاء في النموذج)
         @if(old('governorate'))
-            governorateSelect.dispatchEvent(new Event('change'));
+            // انتظر تحميل GeneralHelpers ثم قم بملء المشغلين
+            if (typeof GeneralHelpers !== 'undefined') {
+                governorateSelect.dispatchEvent(new Event('change'));
+            } else {
+                // انتظر تحميل GeneralHelpers
+                const checkGeneralHelpers = setInterval(function() {
+                    if (typeof GeneralHelpers !== 'undefined') {
+                        clearInterval(checkGeneralHelpers);
+                        governorateSelect.dispatchEvent(new Event('change'));
+                    }
+                }, 100);
+                
+                // timeout بعد 5 ثوان
+                setTimeout(function() {
+                    clearInterval(checkGeneralHelpers);
+                }, 5000);
+            }
         @endif
         
         // معاينة الصورة
