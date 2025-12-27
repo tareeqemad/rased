@@ -13,6 +13,7 @@ class OperationLog extends Model
     protected $fillable = [
         'generator_id',
         'operator_id',
+        'sequence',
         'operation_date',
         'start_time',
         'end_time',

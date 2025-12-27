@@ -133,6 +133,7 @@
 @endsection
 
 @push('styles')
+    <link rel="stylesheet" href="{{ asset('assets/admin/css/roles-forms.css') }}">
 <link rel="stylesheet" href="{{ asset('assets/admin/css/custom.css') }}">
 <link rel="stylesheet" href="{{ asset('assets/admin/css/roles-forms.css') }}">
 @endpush
@@ -140,7 +141,6 @@
 @push('scripts')
 <script>
     $(document).ready(function() {
-        // Group checkbox functionality
         $('.group-checkbox').on('change', function() {
             const group = $(this).data('group');
             const isChecked = $(this).is(':checked');
@@ -148,7 +148,6 @@
             $('.permission-checkbox[data-group="' + group + '"]').prop('checked', isChecked);
         });
         
-        // Individual checkbox - update group checkbox
         $('.permission-checkbox').on('change', function() {
             const group = $(this).data('group');
             const groupCheckbox = $('#group_' + group);
@@ -164,7 +163,6 @@
             }
         });
         
-        // Initialize group checkboxes
         $('.group-checkbox').each(function() {
             const group = $(this).data('group');
             const groupPermissions = $('.permission-checkbox[data-group="' + group + '"]');

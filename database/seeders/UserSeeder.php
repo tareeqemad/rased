@@ -22,12 +22,48 @@ class UserSeeder extends Seeder
         $companyOwnerRole = RoleModel::where('name', 'company_owner')->first();
         $employeeRole = RoleModel::where('name', 'employee')->first();
 
-        // Super Admin
+        // Super Admins - 5 super admins
         User::create([
-            'name' => 'مدير النظام',
+            'name' => 'طارق',
             'username' => 'tareeqemad',
+            'email' => 'tareq@rased.ps',
+            'password' => Hash::make('tareq123'),
+            'role' => Role::SuperAdmin,
+            'role_id' => $superAdminRole?->id,
+        ]);
+
+        User::create([
+            'name' => 'فهيم',
+            'username' => 'faheem',
+            'email' => 'faheem@rased.ps',
+            'password' => Hash::make('tareq123'),
+            'role' => Role::SuperAdmin,
+            'role_id' => $superAdminRole?->id,
+        ]);
+
+        User::create([
+            'name' => 'أدهم',
+            'username' => 'adham',
+            'email' => 'adham@rased.ps',
+            'password' => Hash::make('tareq123'),
+            'role' => Role::SuperAdmin,
+            'role_id' => $superAdminRole?->id,
+        ]);
+
+        User::create([
+            'name' => 'أدمن',
+            'username' => 'admin',
             'email' => 'admin@rased.ps',
-            'password' => Hash::make('Tar@2025'),
+            'password' => Hash::make('tareq123'),
+            'role' => Role::SuperAdmin,
+            'role_id' => $superAdminRole?->id,
+        ]);
+
+        User::create([
+            'name' => 'خالد',
+            'username' => 'khalid',
+            'email' => 'khalid@rased.ps',
+            'password' => Hash::make('tareq123'),
             'role' => Role::SuperAdmin,
             'role_id' => $superAdminRole?->id,
         ]);
@@ -165,7 +201,7 @@ class UserSeeder extends Seeder
         ])->pluck('id'));
 
         $this->command->info('تم إنشاء المستخدمين بنجاح!');
-        $this->command->info('Super Admin: tareeqemad / Tar@2025');
+        $this->command->info('Super Admins: tareeqemad, faheem, adham, admin, khalid / tareq123');
         $this->command->info('Admin: admin_power / password');
         $this->command->info('Company Owner (mmluk): mmluk / tareq123');
         $this->command->info('Employees: emp1_mmluk, emp2_mmluk, emp3_mmluk, emp4_mmluk, emp5_mmluk / password');

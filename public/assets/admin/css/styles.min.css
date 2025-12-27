@@ -1,43 +1,19 @@
-@font-face {
-    font-family: 'Tajawal';
-    src: url('../../fonts/tajawal/Tajawal-Light.ttf') format('truetype');
-    font-weight: 300;
-}
-@font-face {
-    font-family: 'Tajawal';
-    src: url('../../fonts/tajawal/Tajawal-Regular.ttf') format('truetype');
-    font-weight: 400;
-}
-@font-face {
-    font-family: 'Tajawal';
-    src: url('../../fonts/tajawal/Tajawal-Medium.ttf') format('truetype');
-    font-weight: 500;
-}
-@font-face {
-    font-family: 'Tajawal';
-    src: url('../../fonts/tajawal/Tajawal-Bold.ttf') format('truetype');
-    font-weight: 700;
-}
-@font-face {
-    font-family: 'Tajawal';
-    src: url('../../fonts/tajawal/Tajawal-Black.ttf') format('truetype');
-    font-weight: 900;
-}
-:root {
+@import url('./tajawal-font.css');
 
-    --body-bg-rgb: 249, 251, 251; /* خلفية ناعمة جدًا */
-    --primary-rgb: 0, 102, 204;    /* Primary Blue (#0066cc) */
-    --secondary-rgb: 85, 110, 230; /* أزرق مائل للبنفسجي */
-    --warning-rgb: 255, 183, 77;  /* ذهبي محايد */
-    --info-rgb: 64, 156, 255;     /* أزرق سماوي أنيق */
-    --success-rgb: 46, 204, 113;  /* أخضر تركوازي ناعم */
-    --danger-rgb: 231, 76, 60;    /* أحمر عصري */
-    --light-rgb: 242, 245, 249;   /* رمادي فاتح شبه أبيض */
-    --dark-rgb: 33, 47, 72;       /* درجة أدكن من الأساسي */
-    --orange-rgb: 255, 140, 66;   /* برتقالي دافئ */
-    --pink-rgb: 236, 72, 153;     /* وردي غني */
-    --teal-rgb: 41, 182, 246;     /* تركوازي ناعم */
-    --purple-rgb: 155, 89, 182;   /* بنفسجي متوازن */
+:root {
+    --body-bg-rgb: 249, 251, 251;
+    --primary-rgb: 25, 34, 143;
+    --secondary-rgb: 247, 79, 117;
+    --warning-rgb: 255, 189, 90;
+    --info-rgb: 78, 194, 240;
+    --success-rgb: 26, 175, 172;
+    --danger-rgb: 243, 67, 67;
+    --light-rgb: 240, 240, 248;
+    --dark-rgb: 59, 72, 99;
+    --orange-rgb: 253, 126, 20;
+    --pink-rgb: 247, 84, 250;
+    --teal-rgb: 41, 221, 238;
+    --purple-rgb: 173, 79, 250;
     --default-body-bg-color: rgb(var(--body-bg-rgb));
     --primary-color: rgb(var(--primary-rgb));
     --primary-border: rgb(var(--primary-rgb));
@@ -52,7 +28,7 @@
     --primary09: rgba(var(--primary-rgb), 0.9);
     --primary005: rgba(var(--primary-rgb), 0.05);
     --default-font-family: "Tajawal", sans-serif;
-    --default-font-weight: 500;
+    --default-font-weight: 400;
     --default-text-color: #333335;
     --default-border: #ededf5;
     --default-background: #f7f8f9;
@@ -671,6 +647,42 @@
     --menu-prime-color: #a3aed1
 }
 
+[data-menu-styles=dark][data-theme-mode=light] .app-sidebar .slide-menu.child1 .side-menu__item:hover,
+[data-menu-styles=dark][data-theme-mode=light] .app-sidebar .slide-menu.child2 .side-menu__item:hover,
+[data-menu-styles=dark][data-theme-mode=light] .app-sidebar .slide-menu.child3 .side-menu__item:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-menu-styles=dark][data-theme-mode=light] .app-sidebar .slide-menu.child1 .side-menu__item:hover .side-menu__label,
+[data-menu-styles=dark][data-theme-mode=light] .app-sidebar .slide-menu.child2 .side-menu__item:hover .side-menu__label,
+[data-menu-styles=dark][data-theme-mode=light] .app-sidebar .slide-menu.child3 .side-menu__item:hover .side-menu__label {
+    color: #fff;
+}
+
+[data-menu-styles=dark][data-theme-mode=light] .app-sidebar .slide-menu.child1 .side-menu__item.active,
+[data-menu-styles=dark][data-theme-mode=light] .app-sidebar .slide-menu.child2 .side-menu__item.active,
+[data-menu-styles=dark][data-theme-mode=light] .app-sidebar .slide-menu.child3 .side-menu__item.active {
+    background-color: rgba(25, 34, 143, 0.2);
+}
+
+[data-menu-styles=dark][data-theme-mode=light] .app-sidebar .slide-menu.child1 .side-menu__item.active .side-menu__label,
+[data-menu-styles=dark][data-theme-mode=light] .app-sidebar .slide-menu.child2 .side-menu__item.active .side-menu__label,
+[data-menu-styles=dark][data-theme-mode=light] .app-sidebar .slide-menu.child3 .side-menu__item.active .side-menu__label {
+    color: #fff;
+    font-weight: 600;
+}
+
+[data-menu-styles=dark][data-theme-mode=light] .app-sidebar .main-menu > .slide > .side-menu__item:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-menu-styles=dark][data-theme-mode=light] .app-sidebar .main-menu > .slide > .side-menu__item:hover .side-menu__label,
+[data-menu-styles=dark][data-theme-mode=light] .app-sidebar .main-menu > .slide > .side-menu__item:hover .side-menu__icon,
+[data-menu-styles=dark][data-theme-mode=light] .app-sidebar .main-menu > .slide > .side-menu__item:hover .side-menu__angle {
+    color: #fff;
+    fill: #fff;
+}
+
 [data-menu-styles=color] {
     --menu-bg: var(--primary-color);
     --menu-prime-color: rgba(255, 255, 255, 0.9);
@@ -804,7 +816,7 @@
 }
 
 [data-menu-styles=gradient] .app-sidebar .main-sidebar-header {
-    background: var(--primary-color)
+    background: linear-gradient(to right, var(--primary-color) 0, rgb(var(--secondary-rgb)) 100%)
 }
 
 [data-menu-styles=gradient][data-nav-layout=vertical] .app-sidebar .main-sidebar-header .header-logo .desktop-white {
@@ -4685,7 +4697,7 @@
     content: "";
     width: 3px;
     height: 16px;
-    background: var(--primary-color);
+    background: linear-gradient(to right, var(--primary-color) 0, rgb(var(--secondary-rgb)) 100%);
     position: absolute;
     inset-inline-start: 11px;
     display: block;
@@ -5274,76 +5286,61 @@
     color: var(--text-muted) !important
 }
 
-
-
-
 .form-control {
-    border: 1px solid var(--input-border);
-    color: var(--input-text);
-    background-color: var(--input-bg);
-    font-size: .875rem;
-    font-weight: var(--default-font-weight, 500);
+    border-color: var(--input-border);
+    color: #0f0d0d;
+    background-color: var(--custom-white);
+    font-size: .895rem;
+    font-weight: var(--default-font-weight);
     line-height: 1.6;
     border-radius: .35rem;
-    padding: .55rem .85rem;
-    transition: all .25s ease;
-}
-
-.form-control::placeholder {
-    color: var(--input-placeholder);
-    opacity: 1;
+    padding: .5rem .85rem
 }
 
 .form-control:focus {
-    border-color: var(--input-focus);
-    background-color: var(--input-bg-focus);
-    box-shadow: 0 0 0 .15rem rgba(46, 140, 255, 0.25);
-    color: var(--input-text);
+    box-shadow: none;
+    border-color: var(--input-border);
+    background-color: var(--custom-white);
+    box-shadow: 0 .0625rem .125rem 0 rgba(0, 0, 0, .05);
+    color: var(--default-text-color)
 }
 
 .form-label {
     font-size: .875rem;
     font-weight: 500;
-    color: var(--label-color);
+    color: var(--default-text-color)
 }
 
 .form-text {
-    color: var(--text-muted);
+    color: var(--text-muted)
 }
 
 .form-control-light {
-    background-color: rgba(255, 255, 255, 0.05);
-    border: 1px solid var(--input-border);
-    color: var(--input-text);
+    background-color: rgb(var(--light-rgb));
+    border: 0
 }
 
 .form-control-light:focus {
-    background-color: rgba(255, 255, 255, 0.08);
-    border-color: var(--input-focus);
-    color: #ffffff;
+    background-color: rgb(var(--light-rgb))
 }
 
-/* 🔵 النمط الأساسي (Primary fields) */
 .form-control-primary {
     background-color: var(--primary01);
-    border: 1px solid var(--primary-color);
-    color: var(--primary-color);
+    border: 0;
+    color: var(--primary-color)
 }
 
 .form-control-primary:focus {
-    background-color: rgba(46, 140, 255, 0.15);
-    border-color: var(--primary-color);
-    color: #ffffff;
+    background-color: var(--primary01);
+    color: var(--primary-color)
 }
 
 .form-input-color {
     height: 2.25rem;
     width: 2.25rem;
-    border-radius: 4px;
+    border-radius: 3px;
     overflow: hidden;
-    padding: 0;
-    border: 1px solid var(--input-border);
-    background-color: var(--input-bg);
+    padding: 0
 }
 
 .form-floating > .form-control:not(:-moz-placeholder-shown) ~ label {
@@ -5366,9 +5363,12 @@
     background-color: var(--custom-white);
     border: 1px solid var(--input-border);
     color: var(--default-text-color);
-    font-size: .813rem;
+    font-size: .875rem;
     background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
-    background-size: 1.25rem
+    background-size: 1.25rem;
+    padding: .5rem .85rem;
+    line-height: 1.6;
+    border-radius: .35rem
 }
 
 .form-select option {
@@ -5854,7 +5854,7 @@ fieldset:disabled .btn {
 }
 
 .label-primary {
-    background: var(--primary-color);
+    background: linear-gradient(to right, var(--primary-color) 0, rgb(var(--secondary-rgb)) 100%);
     color: #fff
 }
 
@@ -7162,7 +7162,7 @@ input[type=range]::-webkit-slider-runnable-track {
 }
 
 .nav-tabs-footer .nav-item .nav-link.active {
-    background: var(--primary-color);
+    background: linear-gradient(to right, var(--primary-color) 0, rgb(var(--secondary-rgb)) 100%);
     color: #fff;
     border: 1px solid var(--primary-color)
 }
@@ -7241,14 +7241,14 @@ input[type=range]::-webkit-slider-runnable-track {
     line-height: 2rem;
     text-align: center;
     font-size: 1rem;
-    background: var(--primary-color);
+    background: linear-gradient(to right, var(--primary-color) 0, rgb(var(--secondary-rgb)) 100%);
     color: #fff;
     border-radius: 3.125rem;
     font-weight: 500
 }
 
 .vertical-tabs-3 .nav-item .nav-link.active {
-    background: var(--primary-color);
+    background: linear-gradient(to right, var(--primary-color) 0, rgb(var(--secondary-rgb)) 100%);
     border: 1px solid var(--primary-color);
     color: #fff
 }
@@ -7515,7 +7515,7 @@ input[type=range]::-webkit-slider-runnable-track {
 }
 
 .tab-style-5 .nav-item .nav-link.active {
-    background: var(--primary-color)
+    background: linear-gradient(to right, var(--primary-color) 0, rgb(var(--secondary-rgb)) 100%)
 }
 
 .tab-style-6 {
@@ -8453,7 +8453,7 @@ input[type=range]::-webkit-slider-runnable-track {
 .progress-custom .progress-bar-title {
     padding: .183rem .625rem;
     margin: 0;
-    background: var(--primary-color);
+    background: linear-gradient(to right, var(--primary-color) 0, rgb(var(--secondary-rgb)) 100%);
     border-radius: .313rem 0 0 .313rem;
     font-size: .625rem;
     font-weight: 600;
@@ -8520,7 +8520,7 @@ input[type=range]::-webkit-slider-runnable-track {
     height: 1.25rem;
     line-height: 1.25rem;
     border-radius: .188rem;
-    background: var(--primary-color);
+    background: linear-gradient(to right, var(--primary-color) 0, rgb(var(--secondary-rgb)) 100%);
     box-shadow: 0 .313rem .313rem rgba(0, 0, 0, .4);
     font-size: .625rem;
     font-weight: 600;
@@ -9677,7 +9677,7 @@ caption {
 }
 
 body {
-    font-size: 1.1rem;
+    font-size: .813rem;
     font-family: var(--default-font-family);
     font-weight: var(--default-font-weight);
     background-color: var(--default-body-bg-color);
@@ -11839,9 +11839,11 @@ ul.timelines li {
 
 .breadcrumb-header {
     display: flex;
-    margin-top: 20px;
+    margin-top: 1.5rem;
     margin-bottom: 16px;
-    width: 100%
+    width: 100%;
+    padding-inline-start: 1rem;
+    padding-inline-end: 1rem
 }
 
 .breadcrumb-header .breadcrumb {
@@ -12064,7 +12066,7 @@ ul.timelines li {
 
 .main-nav-line-chat .nav-link.active {
     color: #fff;
-    background: var(--primary-color)
+    background: linear-gradient(to right, var(--primary-color) 0, rgb(var(--secondary-rgb)) 100%)
 }
 
 .main-nav-line-chat .nav-link {
@@ -14143,7 +14145,7 @@ ul.inbox-pagination {
     border: solid var(--default-border) 1px;
     border-radius: 5px;
     padding: 5px 10px;
-    background: var(--primary-color)
+    background: linear-gradient(to right, var(--primary-color) 0, rgb(var(--secondary-rgb)) 100%)
 }
 
 .pricing-card .list-unstyled {
@@ -14285,7 +14287,7 @@ ul.inbox-pagination {
 }
 
 .pricing-tabs ul.nav-price li a.active {
-    background: var(--primary-color)
+    background: linear-gradient(to right, var(--primary-color) 0, rgb(var(--secondary-rgb)) 100%)
 }
 
 .pricing-tabs ul.nav-price li a.active {
@@ -14579,7 +14581,7 @@ ul.inbox-pagination {
 }
 
 .card-pay .tabs-menu li a.active {
-    background: var(--primary-color);
+    background: linear-gradient(to right, var(--primary-color) 0, rgb(var(--secondary-rgb)) 100%);
     color: #fff
 }
 
@@ -15503,7 +15505,7 @@ body {
 }
 
 .sidebar .tabs-menu ul li .active {
-    background: var(--primary-color);
+    background: linear-gradient(to right, var(--primary-color) 0, rgb(var(--secondary-rgb)) 100%);
     color: #fff;
     border: 1px solid var(--primary-color)
 }
@@ -16065,7 +16067,7 @@ body {
 }
 
 .flatpickr-day.endRange, .flatpickr-day.endRange.inRange, .flatpickr-day.endRange.nextMonthDay, .flatpickr-day.endRange.prevMonthDay, .flatpickr-day.endRange:focus, .flatpickr-day.endRange:hover, .flatpickr-day.selected, .flatpickr-day.selected.inRange, .flatpickr-day.selected.nextMonthDay, .flatpickr-day.selected.prevMonthDay, .flatpickr-day.selected:focus, .flatpickr-day.selected:hover, .flatpickr-day.startRange, .flatpickr-day.startRange.inRange, .flatpickr-day.startRange.nextMonthDay, .flatpickr-day.startRange.prevMonthDay, .flatpickr-day.startRange:focus, .flatpickr-day.startRange:hover {
-    background: var(--primary-color) !important;
+    background: linear-gradient(to right, var(--primary-color) 0, rgb(var(--secondary-rgb)) 100%) !important;
     color: #fff !important;
     border-color: var(--primary-color) !important
 }
@@ -16315,7 +16317,7 @@ span.flatpickr-weekday {
 }
 
 .noUi-connect {
-    background: var(--primary-color) !important
+    background: linear-gradient(to right, var(--primary-color) 0, rgb(var(--secondary-rgb)) 100%) !important
 }
 
 .noUi-vertical .noUi-handle {
@@ -16369,7 +16371,7 @@ span.flatpickr-weekday {
     border: 0 !important;
     box-shadow: none !important;
     border-radius: 0 !important;
-    background: var(--primary-color) !important;
+    background: linear-gradient(to right, var(--primary-color) 0, rgb(var(--secondary-rgb)) 100%) !important;
     height: 1.125rem !important;
     width: 1.125rem !important;
     inset-block-start: -.45rem !important;
@@ -16415,7 +16417,7 @@ span.flatpickr-weekday {
 }
 
 #color3 .noUi-connect {
-    background: var(--primary-color) !important
+    background: linear-gradient(to right, var(--primary-color) 0, rgb(var(--secondary-rgb)) 100%) !important
 }
 
 #slider-hide .noUi-tooltip {
@@ -16527,7 +16529,7 @@ span.flatpickr-weekday {
     font-size: 1.25rem;
     line-height: .875rem;
     opacity: .8;
-    background: var(--primary-color);
+    background: linear-gradient(to right, var(--primary-color) 0, rgb(var(--secondary-rgb)) 100%);
     border: solid .188rem var(--primary-color);
     border-radius: .25rem;
     box-shadow: .125rem .125rem .625rem var(--black-3);
@@ -17926,7 +17928,7 @@ code[class*=language-] {
 }
 
 .timeline-wrapper-primary .timeline-badge, .timeline-wrapper-primary .timeline-panel:before {
-    background: var(--primary-color)
+    background: linear-gradient(to right, var(--primary-color) 0, rgb(var(--secondary-rgb)) 100%)
 }
 
 .timeline-wrapper-secondary .timeline-badge, .timeline-wrapper-secondary .timeline-panel:before {
@@ -18139,7 +18141,7 @@ code[class*=language-] {
 }
 
 .latest-tasks .task-line.primary:before {
-    background: var(--primary-color)
+    background: linear-gradient(to right, var(--primary-color) 0, rgb(var(--secondary-rgb)) 100%)
 }
 
 .latest-tasks .task-line.pink:before {
@@ -20120,6 +20122,24 @@ code[class*=language-] {
     color: var(--menu-prime-color)
 }
 
+[data-menu-styles=dark][data-theme-mode=light] .app-sidebar .side-menu__item.active,
+[data-menu-styles=dark][data-theme-mode=light] .app-sidebar .side-menu__item:hover {
+    color: #8ba3f0;
+}
+
+[data-menu-styles=dark][data-theme-mode=light] .app-sidebar .side-menu__item.active .side-menu__angle,
+[data-menu-styles=dark][data-theme-mode=light] .app-sidebar .side-menu__item.active .side-menu__label,
+[data-menu-styles=dark][data-theme-mode=light] .app-sidebar .side-menu__item:hover .side-menu__angle,
+[data-menu-styles=dark][data-theme-mode=light] .app-sidebar .side-menu__item:hover .side-menu__label {
+    color: #8ba3f0;
+}
+
+[data-menu-styles=dark][data-theme-mode=light] .app-sidebar .side-menu__item.active .side-menu__icon,
+[data-menu-styles=dark][data-theme-mode=light] .app-sidebar .side-menu__item:hover .side-menu__icon {
+    fill: #8ba3f0;
+    color: #8ba3f0;
+}
+
 .app-sidebar .side-menu__item.active {
     font-weight: 600;
     border-inline-end: 3px solid var(--primary-color)
@@ -20367,7 +20387,7 @@ code[class*=language-] {
 
 .main-nav-line-chat .nav-link.active {
     color: #fff;
-    background: var(--primary-color)
+    background: linear-gradient(to right, var(--primary-color) 0, rgb(var(--secondary-rgb)) 100%)
 }
 
 @media (min-width: 992px) {
@@ -20865,7 +20885,7 @@ code[class*=language-] {
     border: solid var(--default-border) 1px;
     border-radius: 5px;
     padding: 5px 10px;
-    background: var(--primary-color)
+    background: linear-gradient(to right, var(--primary-color) 0, rgb(var(--secondary-rgb)) 100%)
 }
 
 .main-msg-send i {
@@ -20952,7 +20972,7 @@ code[class*=language-] {
 
 .action-header {
     position: relative;
-    background: var(--primary-color);
+    background: linear-gradient(to right, var(--primary-color) 0, rgb(var(--secondary-rgb)) 100%);
     padding: 15px 13px 15px 17px
 }
 
@@ -21192,7 +21212,7 @@ code[class*=language-] {
 
 .main-msg-wrapper.right {
     position: relative;
-    background: var(--primary-color);
+    background: linear-gradient(to right, var(--primary-color) 0, rgb(var(--secondary-rgb)) 100%);
     border: 1px solid var(--primary-color)
 }
 
@@ -21276,7 +21296,7 @@ code[class*=language-] {
     border: solid var(--default-border) 1px;
     border-radius: 5px;
     padding: 5px 10px;
-    background: var(--primary-color)
+    background: linear-gradient(to right, var(--primary-color) 0, rgb(var(--secondary-rgb)) 100%)
 }
 
 .main-chat-footer .main-msg-send i {

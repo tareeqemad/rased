@@ -97,12 +97,13 @@ class ComplaintSuggestionController extends Controller
      */
     public function track(Request $request)
     {
-        $code = $request->query('code');
+        $code = trim($request->query('code', ''));
         $complaintSuggestion = null;
 
         if ($code) {
+            // البحث بدون حساسية لحالة الأحرف وtrim
             $complaintSuggestion = ComplaintSuggestion::with('generator')
-                ->where('tracking_code', $code)
+                ->whereRaw('UPPER(TRIM(tracking_code)) = ?', [strtoupper(trim($code))])
                 ->first();
         }
 
@@ -215,12 +216,16 @@ class ComplaintSuggestionController extends Controller
             'code.required' => 'يرجى إدخال رمز التتبع',
         ]);
 
-        $complaintSuggestion = ComplaintSuggestion::where('tracking_code', $request->code)->first();
+        $code = trim($request->code);
+        
+        // البحث بدون حساسية لحالة الأحرف
+        $complaintSuggestion = ComplaintSuggestion::whereRaw('UPPER(TRIM(tracking_code)) = ?', [strtoupper($code)])->first();
 
         if (! $complaintSuggestion) {
-            return back()->with('error', 'لم يتم العثور على طلب بهذا الرمز. يرجى التحقق من الرمز والمحاولة مرة أخرى.');
+            return back()->with('error', 'لم يتم العثور على طلب بهذا الرمز. يرجى التحقق من الرمز والمحاولة مرة أخرى.')
+                ->withInput(['code' => $code]);
         }
 
-        return redirect()->route('complaints-suggestions.track', ['code' => $request->code]);
+        return redirect()->route('complaints-suggestions.track', ['code' => $code]);
     }
 }

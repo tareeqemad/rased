@@ -61,8 +61,14 @@
                                     </select>
                                 </div>
 
-                                <div class="col-lg-3 d-flex justify-content-lg-end">
-                                    <button class="btn btn-outline-secondary w-100 w-lg-auto" id="opRefreshBtn">
+                                <div class="col-lg-2">
+                                    <button class="btn btn-primary w-100" id="btnOpSearch">
+                                        <i class="bi bi-search me-1"></i>
+                                        بحث
+                                    </button>
+                                </div>
+                                <div class="col-lg-2 d-flex justify-content-lg-end">
+                                    <button class="btn btn-outline-secondary w-100" id="opRefreshBtn">
                                         <i class="bi bi-arrow-clockwise me-1"></i>
                                         تحديث
                                     </button>
@@ -538,9 +544,23 @@
 
     $('#opStatus').on('change', function () { loadList({ page: 1 }); });
 
-    $('#opSearch').on('input', debounce(function () {
+    // Search on button click
+    $('#btnOpSearch').on('click', function () {
         loadList({ page: 1 });
-    }, 350));
+    });
+    
+    // Search on Enter key
+    $('#opSearch').on('keypress', function (e) {
+        if (e.which === 13) {
+            e.preventDefault();
+            loadList({ page: 1 });
+        }
+    });
+    
+    // Show/hide clear button when typing (without auto search)
+    $('#opSearch').on('input', function () {
+        toggleClearBtn();
+    });
 
     // initial
     wireListEvents();

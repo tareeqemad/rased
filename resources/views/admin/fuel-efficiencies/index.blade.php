@@ -6,144 +6,154 @@
     $breadcrumbTitle = 'كفاءة الوقود';
 @endphp
 
-@section('content')
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0 fw-bold">
-                        <i class="bi bi-speedometer2 me-2"></i>
-                        كفاءة الوقود
-                    </h5>
-                    @can('create', App\Models\FuelEfficiency::class)
-                        <a href="{{ route('admin.fuel-efficiencies.create') }}" class="btn btn-sm">
-                            <i class="bi bi-plus-circle me-1"></i>
-                            إضافة سجل جديد
-                        </a>
-                    @endcan
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-hover mb-0">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>#</th>
-                                    <th>رقم المولد</th>
-                                    <th>تاريخ الاستهلاك</th>
-                                    <th>ساعات التشغيل</th>
-                                    <th>كفاءة الوقود</th>
-                                    <th>كفاءة الطاقة</th>
-                                    <th>التكلفة الإجمالية</th>
-                                    <th>الإجراءات</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @forelse($fuelEfficiencies as $efficiency)
-                                    <tr>
-                                        <td>{{ $efficiency->id }}</td>
-                                        <td>
-                                            @if($efficiency->generator)
-                                                <span class="badge bg-secondary">{{ $efficiency->generator->generator_number }}</span>
-                                            @else
-                                                <span class="text-muted">-</span>
-                                            @endif
-                                        </td>
-                                        <td>{{ $efficiency->consumption_date->format('Y-m-d') }}</td>
-                                        <td>
-                                            @if($efficiency->operating_hours)
-                                                {{ number_format($efficiency->operating_hours, 2) }} ساعة
-                                            @else
-                                                <span class="text-muted">-</span>
-                                            @endif
-                                        </td>
-                                        <td>
-                                            @if($efficiency->fuel_efficiency_percentage)
-                                                <span class="badge bg-{{ $efficiency->fuel_efficiency_comparison === 'within_standard' ? 'success' : ($efficiency->fuel_efficiency_comparison === 'above' ? 'warning' : 'danger') }}">
-                                                    {{ $efficiency->fuel_efficiency_percentage }}%
-                                                </span>
-                                            @else
-                                                <span class="text-muted">-</span>
-                                            @endif
-                                        </td>
-                                        <td>
-                                            @if($efficiency->energy_distribution_efficiency)
-                                                <span class="badge bg-{{ $efficiency->energy_efficiency_comparison === 'within_standard' ? 'success' : ($efficiency->energy_efficiency_comparison === 'above' ? 'warning' : 'danger') }}">
-                                                    {{ $efficiency->energy_distribution_efficiency }}%
-                                                </span>
-                                            @else
-                                                <span class="text-muted">-</span>
-                                            @endif
-                                        </td>
-                                        <td>
-                                            @if($efficiency->total_operating_cost)
-                                                {{ number_format($efficiency->total_operating_cost, 2) }} ₪
-                                            @else
-                                                <span class="text-muted">-</span>
-                                            @endif
-                                        </td>
-                                        <td>
-                                            <div class="d-flex gap-2">
-                                                @can('view', $efficiency)
-                                                    <a href="{{ route('admin.fuel-efficiencies.show', $efficiency) }}" class="btn btn-sm btn-outline-info">
-                                                        <i class="bi bi-eye"></i>
-                                                    </a>
-                                                @endcan
-                                                @can('update', $efficiency)
-                                                    <a href="{{ route('admin.fuel-efficiencies.edit', $efficiency) }}" class="btn btn-sm btn-outline-primary">
-                                                        <i class="bi bi-pencil"></i>
-                                                    </a>
-                                                @endcan
-                                                @can('delete', $efficiency)
-                                                    <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ $efficiency->id }}">
-                                                        <i class="bi bi-trash"></i>
-                                                    </button>
-                                                @endcan
-                                            </div>
-                                        </td>
-                                    </tr>
+@push('styles')
+    <link rel="stylesheet" href="{{ asset('assets/admin/css/fuel-efficiencies.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/admin/css/data-table-loading.css') }}">
+@endpush
 
-                                    @can('delete', $efficiency)
-                                        <div class="modal fade" id="deleteModal{{ $efficiency->id }}" tabindex="-1">
-                                            <div class="modal-dialog">
-                                                <div class="modal-content">
-                                                    <div class="modal-header">
-                                                        <h5 class="modal-title">تأكيد الحذف</h5>
-                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                                    </div>
-                                                    <div class="modal-body">
-                                                        <p>هل أنت متأكد من حذف سجل كفاءة الوقود #{{ $efficiency->id }}؟</p>
-                                                        <p class="text-danger"><small>هذا الإجراء لا يمكن التراجع عنه</small></p>
-                                                    </div>
-                                                    <div class="modal-footer">
-                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
-                                                        <form action="{{ route('admin.fuel-efficiencies.destroy', $efficiency) }}" method="POST" class="d-inline">
-                                                            @csrf
-                                                            @method('DELETE')
-                                                            <button type="submit" class="btn btn-danger">حذف</button>
-                                                        </form>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    @endcan
-                                @empty
-                                    <tr>
-                                        <td colspan="8" class="text-center py-5 text-muted">
-                                            <i class="bi bi-inbox fs-1 d-block mb-2"></i>
-                                            لا توجد سجلات كفاءة وقود
-                                        </td>
-                                    </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
+@section('content')
+    <div class="fuel-efficiencies-page">
+        <div class="row g-3">
+            {{-- Main: قائمة كفاءة الوقود --}}
+            <div class="col-12">
+                <div class="card log-card">
+                    <div class="log-card-header log-toolbar-header">
+                        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+                            <div>
+                                <div class="log-title">
+                                    <i class="bi bi-speedometer2 me-2"></i>
+                                    كفاءة الوقود
+                                </div>
+                                <div class="log-subtitle">
+                                    إدارة سجلات كفاءة الوقود. العدد: <span id="fuelEfficienciesCount">{{ $fuelEfficiencies->total() }}</span>
+                                </div>
+                            </div>
+
+                            @can('create', App\Models\FuelEfficiency::class)
+                                <a href="{{ route('admin.fuel-efficiencies.create') }}" class="btn btn-primary">
+                                    <i class="bi bi-plus-circle me-2"></i>
+                                    إضافة سجل جديد
+                                </a>
+                            @endcan
+                        </div>
+
+                        {{-- Row 1: الفلاتر --}}
+                        <div class="row g-3 mb-3">
+                            {{-- البحث --}}
+                            <div class="{{ (auth()->user()->isSuperAdmin() && isset($operators) && $operators->count() > 0) || (isset($generators) && $generators->count() > 0) ? 'col-md-3' : 'col-md-4' }}">
+                                <label class="form-label small text-muted">البحث</label>
+                                <div class="log-searchfield">
+                                    <i class="bi bi-search log-search-icon"></i>
+                                    <input
+                                        type="text"
+                                        id="searchInput"
+                                        class="form-control log-search-input"
+                                        placeholder="ابحث عن سجل بالمولد..."
+                                        value="{{ request('q', '') }}"
+                                    >
+                                </div>
+                            </div>
+
+                            {{-- المشغل (SuperAdmin فقط) --}}
+                            @if(auth()->user()->isSuperAdmin() && isset($operators) && $operators->count() > 0)
+                                <div class="col-md-3">
+                                    <label class="form-label small text-muted">المشغل</label>
+                                    <select id="operatorFilter" class="form-select">
+                                        <option value="">كل المشغلين</option>
+                                        @foreach($operators as $op)
+                                            <option value="{{ $op->id }}" {{ request('operator_id') == $op->id ? 'selected' : '' }}>
+                                                {{ $op->unit_number ? $op->unit_number . ' - ' : '' }}{{ $op->name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            @endif
+
+                            {{-- المولد --}}
+                            @if(isset($generators) && $generators->count() > 0)
+                                <div class="col-md-3">
+                                    <label class="form-label small text-muted">
+                                        <i class="bi bi-lightning-charge me-1"></i>
+                                        المولد
+                                    </label>
+                                    <select id="generatorFilter" class="form-select">
+                                        <option value="">كل المولدات</option>
+                                        @foreach($generators as $gen)
+                                            <option value="{{ $gen->id }}" {{ request('generator_id') == $gen->id ? 'selected' : '' }}>
+                                                {{ $gen->generator_number }} - {{ $gen->name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            @endif
+
+                            {{-- تاريخ من --}}
+                            <div class="{{ ((auth()->user()->isSuperAdmin() && isset($operators) && $operators->count() > 0) || (isset($generators) && $generators->count() > 0)) ? 'col-md-3' : 'col-md-4' }}">
+                                <label class="form-label small text-muted">من تاريخ</label>
+                                <input type="date" id="dateFromFilter" class="form-control" 
+                                       value="{{ request('date_from', '') }}">
+                            </div>
+
+                            {{-- تاريخ إلى --}}
+                            <div class="{{ ((auth()->user()->isSuperAdmin() && isset($operators) && $operators->count() > 0) || (isset($generators) && $generators->count() > 0)) ? 'col-md-3' : 'col-md-4' }}">
+                                <label class="form-label small text-muted">إلى تاريخ</label>
+                                <input type="date" id="dateToFilter" class="form-control" 
+                                       value="{{ request('date_to', '') }}">
+                            </div>
+                        </div>
+
+                        {{-- Row 2: زر البحث وخيارات العرض --}}
+                        <div class="row mb-3">
+                            <div class="col-12 d-flex gap-2 align-items-center flex-wrap">
+                                <button class="btn btn-primary" type="button" id="searchBtn">
+                                    <i class="bi bi-search me-2"></i>
+                                    بحث
+                                </button>
+                                <button
+                                    class="btn btn-outline-secondary {{ request('q') || request('operator_id') || request('generator_id') || request('date_from') || request('date_to') ? '' : 'd-none' }}"
+                                    type="button"
+                                    id="clearSearchBtn"
+                                >
+                                    <i class="bi bi-x me-2"></i>
+                                    إلغاء الفلاتر
+                                </button>
+                                <div class="form-check form-switch ms-auto">
+                                    <input class="form-check-input" type="checkbox" id="groupByGeneratorToggle" {{ request('group_by_generator') ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="groupByGeneratorToggle">
+                                        <i class="bi bi-grid-3x3-gap me-1"></i>
+                                        تجميع حسب المولد
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card-body log-list-body data-table-container">
+                        <div id="fuelEfficienciesListContainer">
+                            @if(isset($groupedLogs) && $groupedLogs->isNotEmpty())
+                                @include('admin.fuel-efficiencies.partials.grouped-list', ['groupedLogs' => $groupedLogs, 'fuelEfficiencies' => $fuelEfficiencies])
+                            @else
+                                @include('admin.fuel-efficiencies.partials.list', ['fuelEfficiencies' => $fuelEfficiencies])
+                            @endif
+                        </div>
                     </div>
                 </div>
-                @if($fuelEfficiencies->hasPages())
-                    <div class="card-footer">
-                        {{ $fuelEfficiencies->links() }}
-                    </div>
-                @endif
             </div>
         </div>
     </div>
 @endsection
+
+@push('scripts')
+    <script src="{{ asset('assets/admin/libs/jquery/jquery.min.js') }}"></script>
+    <script src="{{ asset('assets/admin/js/data-table-loading.js') }}"></script>
+    <script>
+        window.FUEL_EFF = {
+            routes: {
+                index: @json(route('admin.fuel-efficiencies.index')),
+                search: @json(route('admin.fuel-efficiencies.index')),
+                delete: @json(route('admin.fuel-efficiencies.destroy', ['fuel_efficiency' => '__ID__'])),
+            }
+        };
+    </script>
+    <script src="{{ asset('assets/admin/js/fuel-efficiencies.js') }}"></script>
+@endpush

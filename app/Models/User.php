@@ -68,6 +68,11 @@ class User extends Authenticatable
         return $this->hasMany(PermissionAuditLog::class, 'user_id');
     }
 
+    public function notifications(): HasMany
+    {
+        return $this->hasMany(Notification::class);
+    }
+
     public function roleModel(): BelongsTo
     {
         return $this->belongsTo(RoleModel::class, 'role_id');

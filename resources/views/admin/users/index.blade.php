@@ -26,234 +26,9 @@
 @endphp
 
 @push('styles')
-    {{-- Select2 (نفس مسار صفحة الصلاحيات) --}}
     <link rel="stylesheet" href="{{ asset('assets/admin/libs/select2/select2.min.css') }}">
-
-    <style>
-        /* ===== Users Page (Neutral / Minimal Blue) ===== */
-        .users-page{
-            --u-border:#e5e7eb;
-            --u-border2:#eef2f7;
-            --u-surface:#ffffff;
-            --u-subtle:#f8fafc;
-            --u-text:#0f172a;
-            --u-muted:#64748b;
-        }
-        .users-page .users-card{
-            position: relative;
-            border: 1px solid var(--u-border);
-            border-radius: 14px;
-            background: var(--u-surface);
-            overflow: hidden;
-            box-shadow: 0 2px 10px rgba(15,23,42,.04);
-        }
-        .users-page .users-card::before{
-            content:"";
-            position:absolute;
-            top:0; left:0; right:0;
-            height: 3px;
-            background: rgba(var(--primary-rgb), .85);
-        }
-
-        .users-page .users-card-header{
-            padding: 1rem 1.25rem;
-            border-bottom: 1px solid var(--u-border2);
-            background: var(--u-surface);
-            display:flex;
-            align-items:flex-start;
-            justify-content:space-between;
-            gap:1rem;
-        }
-        .users-page .users-title{
-            font-weight: 900;
-            font-size: 1.05rem;
-            margin: 0;
-            color: var(--u-text);
-        }
-        .users-page .users-subtitle{
-            margin-top: .25rem;
-            color: var(--u-muted);
-            font-size: .85rem;
-        }
-
-        .users-page .users-note{
-            background: var(--u-subtle);
-            border: 1px dashed var(--u-border);
-            border-radius: 12px;
-            padding: .75rem 1rem;
-            color: #334155;
-        }
-
-        /* Search input (icon inside + subtle clear) */
-        .users-page .users-search{
-            position: relative;
-        }
-        .users-page .users-search .bi-search{
-            position:absolute;
-            top:50%;
-            transform:translateY(-50%);
-            right:12px;
-            color:#94a3b8;
-            pointer-events:none;
-            font-size: 1.05rem;
-        }
-        .users-page .users-search .form-control{
-            padding-right: 42px !important;
-            padding-left: 42px !important;
-        }
-        .users-page .users-search .users-clear{
-            position:absolute;
-            top:50%;
-            transform:translateY(-50%);
-            left:10px;
-            border:0;
-            background:transparent;
-            color:#94a3b8;
-            padding:0;
-        }
-        .users-page .users-search .users-clear:hover{
-            color:#64748b;
-        }
-
-        /* Stats */
-        .users-page .users-stats{
-            display:flex;
-            flex-wrap:wrap;
-            gap:.5rem;
-        }
-        .users-page .users-stat{
-            background: var(--u-subtle);
-            border: 1px solid var(--u-border2);
-            border-radius: 12px;
-            padding: .65rem .8rem;
-            min-width: 140px;
-        }
-        .users-page .users-stat .label{
-            font-size: .75rem;
-            color: var(--u-muted);
-        }
-        .users-page .users-stat .value{
-            font-size: 1.1rem;
-            font-weight: 900;
-            color: var(--u-text);
-            margin-top: .15rem;
-        }
-
-        /* Table */
-        .users-page .users-table thead th{
-            background: var(--u-subtle);
-            border-bottom: 1px solid var(--u-border2);
-            color:#475569;
-            font-size:.75rem;
-            letter-spacing:.4px;
-            text-transform: uppercase;
-            white-space: nowrap;
-        }
-        .users-page .avatar-pill{
-            width:34px; height:34px;
-            border-radius: 999px;
-            background: rgba(var(--primary-rgb), .12);
-            color: rgba(var(--primary-rgb), .95);
-            display:flex;
-            align-items:center;
-            justify-content:center;
-            font-weight:900;
-        }
-
-        .users-page .btn-icon{
-            width: 38px;
-            height: 38px;
-            padding: 0;
-            border-radius: 10px;
-            display:inline-flex;
-            align-items:center;
-            justify-content:center;
-        }
-
-        .users-page .badge-soft{
-            border: 1px solid var(--u-border2);
-            background: var(--u-surface);
-            color: var(--u-text);
-            font-weight: 800;
-            border-radius: 999px;
-            padding: .35rem .6rem;
-            font-size: .75rem;
-            white-space: nowrap;
-        }
-
-        /* Role badges (soft) */
-        .users-page .badge-role-owner{
-            background: rgba(var(--primary-rgb), .12);
-            border: 1px solid rgba(var(--primary-rgb), .25);
-            color: rgba(var(--primary-rgb), 1);
-        }
-        .users-page .badge-role-employee{
-            background: rgba(var(--success-rgb), .12);
-            border: 1px solid rgba(var(--success-rgb), .25);
-            color: rgba(var(--success-rgb), 1);
-        }
-        .users-page .badge-role-tech{
-            background: rgba(var(--warning-rgb), .12);
-            border: 1px solid rgba(var(--warning-rgb), .25);
-            color: rgba(var(--warning-rgb), 1);
-        }
-        .users-page .badge-role-admin{
-            background: rgba(var(--info-rgb), .12);
-            border: 1px solid rgba(var(--info-rgb), .25);
-            color: rgba(var(--info-rgb), 1);
-        }
-        .users-page .badge-role-sa{
-            background: rgba(var(--danger-rgb), .10);
-            border: 1px solid rgba(var(--danger-rgb), .25);
-            color: rgba(var(--danger-rgb), 1);
-        }
-
-        /* Loading overlay */
-        .users-page .users-loading{
-            position:absolute;
-            inset:0;
-            background: rgba(255,255,255,.92);
-            backdrop-filter: blur(3px);
-            display:flex;
-            align-items:center;
-            justify-content:center;
-            z-index: 50;
-        }
-
-        .users-page .empty-state{
-            padding: 2rem 0;
-            text-align:center;
-            color: var(--u-muted);
-        }
-
-        /* Select2 (RTL friendly) */
-        .users-page .select2-container{ width:100% !important; }
-        .users-page .select2-container--default .select2-selection--single{
-            height: 44px !important;
-            border: 1px solid var(--u-border) !important;
-            border-radius: 12px !important;
-            background: var(--u-surface) !important;
-            display:flex !important;
-            align-items:center !important;
-        }
-        .users-page .select2-container--default .select2-selection--single .select2-selection__rendered{
-            line-height: 44px !important;
-            padding-right: 12px !important;
-            padding-left: 40px !important;
-            font-weight: 800;
-        }
-        .users-page .select2-container--default .select2-selection--single .select2-selection__arrow{
-            height: 44px !important;
-            left: 10px !important;
-            right: auto !important;
-        }
-        .users-page .select2-dropdown{
-            border: 1px solid var(--u-border) !important;
-            border-radius: 12px !important;
-            overflow:hidden;
-            box-shadow: 0 8px 20px rgba(0,0,0,.08) !important;
-        }
-    </style>
+    <link rel="stylesheet" href="{{ asset('assets/admin/css/data-table-loading.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/admin/css/users.css') }}">
 @endpush
 
 @section('content')
@@ -268,12 +43,6 @@
     <div class="row g-3">
         <div class="col-12">
             <div class="users-card">
-                <div class="users-loading d-none" id="usersLoading">
-                    <div class="text-center">
-                        <div class="spinner-border" role="status"></div>
-                        <div class="small text-muted mt-2">جاري التحميل...</div>
-                    </div>
-                </div>
 
                 <div class="users-card-header">
                     <div>
@@ -301,7 +70,7 @@
                     </div>
                 </div>
 
-                <div class="card-body">
+                <div class="card-body pb-4">
                     @if($isCompanyOwner)
                         <div class="users-note mb-3">
                             <i class="bi bi-shield-lock me-1"></i>
@@ -367,6 +136,12 @@
                         @endif
 
                         <div class="col-lg-2">
+                            <button class="btn btn-primary w-100" id="btnSearch">
+                                <i class="bi bi-search me-1"></i>
+                                بحث
+                            </button>
+                        </div>
+                        <div class="col-lg-2">
                             <button class="btn btn-outline-primary w-100" id="btnRefresh">
                                 <i class="bi bi-arrow-repeat me-1"></i>
                                 تحديث
@@ -376,7 +151,7 @@
 
                     <hr class="my-3">
 
-                    <div class="table-responsive">
+                    <div class="table-responsive" id="usersTableContainer">
                         <table class="table table-hover align-middle mb-0 users-table">
                             <thead>
                             <tr>
@@ -528,6 +303,7 @@
 @push('scripts')
     {{-- jQuery + Select2 (نفس صفحة الصلاحيات) --}}
     <script src="{{ asset('assets/admin/libs/jquery/jquery.min.js') }}"></script>
+    <script src="{{ asset('assets/admin/js/data-table-loading.js') }}"></script>
     <script src="{{ asset('assets/admin/libs/select2/select2.min.js') }}"></script>
     @if(file_exists(public_path('assets/admin/libs/select2/i18n/ar.js')))
         <script src="{{ asset('assets/admin/libs/select2/i18n/ar.js') }}"></script>
@@ -587,7 +363,7 @@
                 page: 1,
             };
 
-            const $loading = $('#usersLoading');
+            const $container = $('#usersTableContainer');
             const $tbody = $('#usersTbody');
             const $meta = $('#usersMeta');
             const $pagination = $('#usersPagination');
@@ -599,8 +375,15 @@
             const $statTechnicians = $('#statTechnicians');
 
             function setLoading(on){
-                if(on) $loading.removeClass('d-none');
-                else $loading.addClass('d-none');
+                if(on) {
+                    if(window.DataTableLoading) {
+                        window.DataTableLoading.show($container[0]);
+                    }
+                } else {
+                    if(window.DataTableLoading) {
+                        window.DataTableLoading.hide($container[0]);
+                    }
+                }
             }
 
             function roleBadge(roleKey, roleLabelFromServer){
@@ -648,6 +431,9 @@
                     const canView = (u.can && u.can.view !== undefined) ? !!u.can.view : true;
                     const canEdit = (u.can && u.can.update !== undefined) ? !!u.can.update : true;
                     const canDelete = (u.can && u.can.delete !== undefined) ? !!u.can.delete : true;
+                    const isSuperAdmin = {{ $isSuperAdmin ? 'true' : 'false' }};
+                    const currentUserId = parseInt({{ auth()->id() }}, 10);
+                    const targetUserId = parseInt(u.id, 10);
 
                     const operatorCell = operatorName
                         ? `<span class="badge-soft">${escapeHtml(operatorName)}</span>`
@@ -656,6 +442,16 @@
                     const employeesCell = (roleKey === 'company_owner')
                         ? `<span class="fw-bold">${escapeHtml(employeesCount)}</span>`
                         : `<span class="text-muted">-</span>`;
+
+                    // زر الدخول بحساب (للسوبر أدمن فقط وليس لنفسه)
+                    const impersonateBtn = (isSuperAdmin && targetUserId !== currentUserId) ? `
+                        <form action="${escapeHtml(USERS_BASE_URL)}/${escapeHtml(u.id)}/impersonate" method="POST" class="d-inline" onsubmit="return confirm('هل أنت متأكد من الدخول بحساب ${escapeHtml(name)}؟');">
+                            <input type="hidden" name="_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-light btn-icon text-info" title="الدخول بحساب هذا المستخدم">
+                                <i class="bi bi-person-check"></i>
+                            </button>
+                        </form>
+                    ` : '';
 
                     return `
                         <tr>
@@ -678,7 +474,8 @@
                                     ${canView ? `<a class="btn btn-light btn-icon" href="${escapeHtml(showUrl)}" title="عرض"><i class="bi bi-eye"></i></a>` : ``}
                                     ${canEdit ? `<a class="btn btn-light btn-icon" href="${escapeHtml(editUrl)}" title="تعديل"><i class="bi bi-pencil"></i></a>` : ``}
                                     <a class="btn btn-light btn-icon" href="${escapeHtml(permsUrl)}" title="الصلاحيات"><i class="bi bi-shield-check"></i></a>
-                                    ${canDelete && (parseInt(u.id,10) !== parseInt({{ auth()->id() }},10)) ? `
+                                    ${impersonateBtn}
+                                    ${canDelete && (targetUserId !== currentUserId) ? `
                                         <button type="button" class="btn btn-light btn-icon text-danger btn-delete-user"
                                                 data-id="${escapeHtml(u.id)}"
                                                 data-name="${escapeHtml(name)}"
@@ -797,13 +594,27 @@
             const $clearSearch = $('#btnClearSearch');
             const $roleFilter = $('#roleFilter');
 
-            const doSearch = debounce(function(){
+            const doSearch = function(){
                 state.q = $search.val().trim();
                 $clearSearch.toggleClass('d-none', state.q.length === 0);
                 loadUsers(1);
-            }, 350);
+            };
 
-            $search.on('input', doSearch);
+            // Search on button click
+            $('#btnSearch').on('click', doSearch);
+            
+            // Search on Enter key
+            $search.on('keypress', function(e) {
+                if (e.which === 13) {
+                    e.preventDefault();
+                    doSearch();
+                }
+            });
+            
+            // Show/hide clear button when typing (without auto search)
+            $search.on('input', function() {
+                $clearSearch.toggleClass('d-none', $(this).val().trim().length === 0);
+            });
 
             $clearSearch.on('click', function(){
                 $search.val('');

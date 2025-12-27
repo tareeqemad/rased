@@ -7,12 +7,17 @@ use App\Http\Requests\Admin\StoreComplianceSafetyRequest;
 use App\Http\Requests\Admin\UpdateComplianceSafetyRequest;
 use App\Models\ComplianceSafety;
 use App\Models\Operator;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class ComplianceSafetyController extends Controller
 {
-    public function index(): View
+    /**
+     * Display paginated list of compliance safety records filtered by user role.
+     */
+    public function index(Request $request): View|JsonResponse
     {
         $this->authorize('viewAny', ComplianceSafety::class);
 
@@ -24,16 +29,86 @@ class ComplianceSafetyController extends Controller
             if ($operator) {
                 $query->where('operator_id', $operator->id);
             }
-        } elseif ($user->isEmployee()) {
+        } elseif ($user->isEmployee() || $user->isTechnician()) {
             $operators = $user->operators;
             $query->whereIn('operator_id', $operators->pluck('id'));
         }
 
-        $complianceSafeties = $query->latest('last_inspection_date')->paginate(15);
+        // Search
+        $q = trim((string) $request->input('q', ''));
+        if ($q !== '') {
+            $query->whereHas('operator', function ($oq) use ($q) {
+                $oq->where('name', 'like', "%{$q}%");
+            })
+            ->orWhere('inspection_authority', 'like', "%{$q}%")
+            ->orWhere('inspection_result', 'like', "%{$q}%")
+            ->orWhere('violations', 'like', "%{$q}%");
+        }
 
-        return view('admin.compliance-safeties.index', compact('complianceSafeties'));
+        // Filter by operator
+        $operatorId = (int) $request->input('operator_id', 0);
+        if ($operatorId > 0) {
+            $query->where('operator_id', $operatorId);
+        }
+
+        // Date filters
+        if ($request->filled('date_from')) {
+            $query->whereDate('last_inspection_date', '>=', $request->input('date_from'));
+        }
+        if ($request->filled('date_to')) {
+            $query->whereDate('last_inspection_date', '<=', $request->input('date_to'));
+        }
+
+        // Group by operator if requested
+        $groupByOperator = $request->boolean('group_by_operator', false);
+        $groupedLogs = null;
+        
+        if ($groupByOperator) {
+            // Paginate first, then group the current page's logs
+            $complianceSafeties = $query->latest('last_inspection_date')->paginate(15);
+            // Group the current page's logs by operator
+            $groupedLogs = $complianceSafeties->groupBy('operator_id');
+        } else {
+            $complianceSafeties = $query->latest('last_inspection_date')->paginate(15);
+        }
+
+        if ($request->ajax() || $request->wantsJson()) {
+            if ($groupByOperator && $groupedLogs) {
+                $html = view('admin.compliance-safeties.partials.grouped-list', [
+                    'groupedLogs' => $groupedLogs,
+                    'complianceSafeties' => $complianceSafeties
+                ])->render();
+            } else {
+                $html = view('admin.compliance-safeties.partials.list', compact('complianceSafeties'))->render();
+            }
+            return response()->json([
+                'success' => true,
+                'html' => $html,
+                'count' => $complianceSafeties->total(),
+            ]);
+        }
+
+        $operators = collect();
+        
+        if ($user->isSuperAdmin()) {
+            $operators = Operator::select('id', 'name', 'unit_number')
+                ->orderBy('name')
+                ->get();
+        } elseif ($user->isCompanyOwner()) {
+            $operator = $user->ownedOperators()->first();
+            if ($operator) {
+                $operators = collect([$operator]);
+            }
+        } elseif ($user->isEmployee() || $user->isTechnician()) {
+            $operators = $user->operators;
+        }
+
+        return view('admin.compliance-safeties.index', compact('complianceSafeties', 'operators', 'groupedLogs'));
     }
 
+    /**
+     * Show form for creating a new compliance safety record entry.
+     */
     public function create(): View
     {
         $this->authorize('create', ComplianceSafety::class);
@@ -55,7 +130,10 @@ class ComplianceSafetyController extends Controller
         return view('admin.compliance-safeties.create', compact('operators'));
     }
 
-    public function store(StoreComplianceSafetyRequest $request): RedirectResponse
+    /**
+     * Store newly created compliance safety record in database.
+     */
+    public function store(StoreComplianceSafetyRequest $request): RedirectResponse|JsonResponse
     {
         $this->authorize('create', ComplianceSafety::class);
 
@@ -71,10 +149,20 @@ class ComplianceSafetyController extends Controller
 
         ComplianceSafety::create($data);
 
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'تم إنشاء سجل الامتثال والسلامة بنجاح.',
+            ]);
+        }
+
         return redirect()->route('admin.compliance-safeties.index')
             ->with('success', 'تم إنشاء سجل الامتثال والسلامة بنجاح.');
     }
 
+    /**
+     * Display detailed information about the specified compliance safety record.
+     */
     public function show(ComplianceSafety $complianceSafety): View
     {
         $this->authorize('view', $complianceSafety);
@@ -84,6 +172,9 @@ class ComplianceSafetyController extends Controller
         return view('admin.compliance-safeties.show', compact('complianceSafety'));
     }
 
+    /**
+     * Show form for editing the specified compliance safety record.
+     */
     public function edit(ComplianceSafety $complianceSafety): View
     {
         $this->authorize('update', $complianceSafety);
@@ -105,7 +196,10 @@ class ComplianceSafetyController extends Controller
         return view('admin.compliance-safeties.edit', compact('complianceSafety', 'operators'));
     }
 
-    public function update(UpdateComplianceSafetyRequest $request, ComplianceSafety $complianceSafety): RedirectResponse
+    /**
+     * Update the specified compliance safety record data in database.
+     */
+    public function update(UpdateComplianceSafetyRequest $request, ComplianceSafety $complianceSafety): RedirectResponse|JsonResponse
     {
         $this->authorize('update', $complianceSafety);
 
@@ -121,15 +215,32 @@ class ComplianceSafetyController extends Controller
 
         $complianceSafety->update($data);
 
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'تم تحديث سجل الامتثال والسلامة بنجاح.',
+            ]);
+        }
+
         return redirect()->route('admin.compliance-safeties.index')
             ->with('success', 'تم تحديث سجل الامتثال والسلامة بنجاح.');
     }
 
-    public function destroy(ComplianceSafety $complianceSafety): RedirectResponse
+    /**
+     * Remove the specified compliance safety record from database.
+     */
+    public function destroy(Request $request, ComplianceSafety $complianceSafety): RedirectResponse|JsonResponse
     {
         $this->authorize('delete', $complianceSafety);
 
         $complianceSafety->delete();
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'تم حذف سجل الامتثال والسلامة بنجاح.',
+            ]);
+        }
 
         return redirect()->route('admin.compliance-safeties.index')
             ->with('success', 'تم حذف سجل الامتثال والسلامة بنجاح.');

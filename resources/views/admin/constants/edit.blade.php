@@ -278,6 +278,84 @@
 <script src="{{ asset('assets/admin/libs/jquery/jquery.min.js') }}"></script>
 <script>
     $(document).ready(function() {
+        // Main form AJAX submission
+        const $mainForm = $('#constantForm');
+        const $submitBtns = $('[form="constantForm"], #constantForm button[type="submit"]');
+
+        $mainForm.on('submit', function(e) {
+            e.preventDefault();
+
+            if (!$mainForm[0].checkValidity()) {
+                $mainForm[0].reportValidity();
+                return false;
+            }
+
+            $submitBtns.prop('disabled', true);
+            const originalText = $submitBtns.first().html();
+            $submitBtns.html('<span class="spinner-border spinner-border-sm me-2"></span>جاري الحفظ...');
+
+            const formData = new FormData(this);
+
+            $.ajax({
+                url: $mainForm.attr('action'),
+                method: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                },
+                success: function(response) {
+                    if (response.success) {
+                        if (typeof window.showToast === 'function') {
+                            window.showToast(response.message || 'تم تحديث الثابت بنجاح', 'success');
+                        } else {
+                            alert(response.message || 'تم تحديث الثابت بنجاح');
+                        }
+                        setTimeout(function() {
+                            window.location.href = '{{ route('admin.constants.index') }}';
+                        }, 500);
+                    }
+                },
+                error: function(xhr) {
+                    $submitBtns.prop('disabled', false);
+                    $submitBtns.html(originalText);
+
+                    if (xhr.status === 422) {
+                        const errors = xhr.responseJSON?.errors || {};
+                        let firstError = '';
+
+                        $mainForm.find('.is-invalid').removeClass('is-invalid');
+                        $mainForm.find('.invalid-feedback').remove();
+
+                        $.each(errors, function(field, messages) {
+                            const $field = $mainForm.find('[name="' + field + '"]');
+                            if ($field.length) {
+                                $field.addClass('is-invalid');
+                                const errorMsg = Array.isArray(messages) ? messages[0] : messages;
+                                if (!firstError) firstError = errorMsg;
+                                $field.after('<div class="invalid-feedback d-block">' + errorMsg + '</div>');
+                            }
+                        });
+
+                        if (typeof window.showToast === 'function') {
+                            window.showToast(firstError || 'يرجى التحقق من الحقول المطلوبة', 'error');
+                        } else {
+                            alert(firstError || 'يرجى التحقق من الحقول المطلوبة');
+                        }
+                    } else {
+                        const errorMsg = xhr.responseJSON?.message || 'حدث خطأ أثناء حفظ البيانات';
+                        if (typeof window.showToast === 'function') {
+                            window.showToast(errorMsg, 'error');
+                        } else {
+                            alert(errorMsg);
+                        }
+                    }
+                }
+            });
+        });
+
         // إضافة تفصيل
         $('#addDetailForm').on('submit', function(e) {
             e.preventDefault();

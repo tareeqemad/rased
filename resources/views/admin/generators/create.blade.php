@@ -34,7 +34,7 @@
                     </div>
 
                     <div class="card-body p-4">
-                        <form action="{{ route('admin.generators.store') }}" method="POST" enctype="multipart/form-data">
+                        <form action="{{ route('admin.generators.store') }}" method="POST" enctype="multipart/form-data" id="generatorForm">
                             @csrf
 
                     <!-- Navigation Tabs -->
@@ -122,7 +122,7 @@
                                 <select name="status" class="form-select @error('status') is-invalid @enderror" required>
                                     <option value="">اختر الحالة</option>
                                     @foreach($constants['status'] ?? [] as $status)
-                                        <option value="{{ $status->value }}" {{ old('status', 'active') == $status->value ? 'selected' : '' }}>
+                                        <option value="{{ $status->id }}" {{ old('status', 'active') == $status->id ? 'selected' : '' }}>
                                             {{ $status->label }}
                                         </option>
                                     @endforeach
@@ -173,7 +173,7 @@
                                 <select name="engine_type" class="form-select @error('engine_type') is-invalid @enderror">
                                     <option value="">اختر نوع المحرك</option>
                                     @foreach($constants['engine_type'] ?? [] as $engineType)
-                                        <option value="{{ $engineType->value }}" {{ old('engine_type') == $engineType->value ? 'selected' : '' }}>
+                                        <option value="{{ $engineType->id }}" {{ old('engine_type') == $engineType->id ? 'selected' : '' }}>
                                             {{ $engineType->label }}
                                         </option>
                                     @endforeach
@@ -210,7 +210,7 @@
                                 <select name="injection_system" class="form-select @error('injection_system') is-invalid @enderror">
                                     <option value="">اختر نظام الحقن</option>
                                     @foreach($constants['injection_system'] ?? [] as $injection)
-                                        <option value="{{ $injection->value }}" {{ old('injection_system') == $injection->value ? 'selected' : '' }}>
+                                        <option value="{{ $injection->id }}" {{ old('injection_system') == $injection->id ? 'selected' : '' }}>
                                             {{ $injection->label }}
                                         </option>
                                     @endforeach
@@ -242,7 +242,7 @@
                                 <select name="measurement_indicator" class="form-select @error('measurement_indicator') is-invalid @enderror">
                                     <option value="">اختر الحالة</option>
                                     @foreach($constants['measurement_indicator'] ?? [] as $indicator)
-                                        <option value="{{ $indicator->value }}" {{ old('measurement_indicator') == $indicator->value ? 'selected' : '' }}>
+                                        <option value="{{ $indicator->id }}" {{ old('measurement_indicator') == $indicator->id ? 'selected' : '' }}>
                                             {{ $indicator->label }}
                                         </option>
                                     @endforeach
@@ -270,7 +270,7 @@
                                 <select name="technical_condition" class="form-select @error('technical_condition') is-invalid @enderror">
                                     <option value="">اختر الحالة</option>
                                     @foreach($constants['technical_condition'] ?? [] as $condition)
-                                        <option value="{{ $condition->value }}" {{ old('technical_condition') == $condition->value ? 'selected' : '' }}>
+                                        <option value="{{ $condition->id }}" {{ old('technical_condition') == $condition->id ? 'selected' : '' }}>
                                             {{ $condition->label }}
                                         </option>
                                     @endforeach
@@ -338,7 +338,7 @@
                                 <select name="control_panel_type" class="form-select @error('control_panel_type') is-invalid @enderror">
                                     <option value="">اختر النوع</option>
                                     @foreach($constants['control_panel_type'] ?? [] as $panelType)
-                                        <option value="{{ $panelType->value }}" {{ old('control_panel_type') == $panelType->value ? 'selected' : '' }}>
+                                        <option value="{{ $panelType->id }}" {{ old('control_panel_type') == $panelType->id ? 'selected' : '' }}>
                                             {{ $panelType->label }}
                                         </option>
                                     @endforeach
@@ -359,7 +359,7 @@
                                 <select name="control_panel_status" class="form-select @error('control_panel_status') is-invalid @enderror">
                                     <option value="">اختر الحالة</option>
                                     @foreach($constants['control_panel_status'] ?? [] as $panelStatus)
-                                        <option value="{{ $panelStatus->value }}" {{ old('control_panel_status') == $panelStatus->value ? 'selected' : '' }}>
+                                        <option value="{{ $panelStatus->id }}" {{ old('control_panel_status') == $panelStatus->id ? 'selected' : '' }}>
                                             {{ $panelStatus->label }}
                                         </option>
                                     @endforeach
@@ -661,13 +661,14 @@
 @endpush
 
 @push('scripts')
+<script src="{{ asset('assets/admin/libs/jquery/jquery.min.js') }}"></script>
 <script>
     // تمرير الثوابت للـ JavaScript
     window.GENERATOR_CONSTANTS = {
-        location: @json(($constants['location'] ?? collect())->map(fn($c) => ['value' => $c->value, 'label' => $c->label])->values()),
-        material: @json(($constants['material'] ?? collect())->map(fn($c) => ['value' => $c->value, 'label' => $c->label])->values()),
-        usage: @json(($constants['usage'] ?? collect())->map(fn($c) => ['value' => $c->value, 'label' => $c->label])->values()),
-        measurement_method: @json(($constants['measurement_method'] ?? collect())->map(fn($c) => ['value' => $c->value, 'label' => $c->label])->values()),
+        location: @json(($constants['location'] ?? collect())->map(fn($c) => ['id' => $c->id, 'label' => $c->label])->values()),
+        material: @json(($constants['material'] ?? collect())->map(fn($c) => ['id' => $c->id, 'label' => $c->label])->values()),
+        usage: @json(($constants['usage'] ?? collect())->map(fn($c) => ['id' => $c->id, 'label' => $c->label])->values()),
+        measurement_method: @json(($constants['measurement_method'] ?? collect())->map(fn($c) => ['id' => $c->id, 'label' => $c->label])->values()),
     };
 
     document.addEventListener('DOMContentLoaded', function() {
@@ -756,14 +757,22 @@
             }
         });
         
-        // إزالة التحذير عند إرسال الفورم
-        document.querySelector('form').addEventListener('submit', function(e) {
+        // AJAX form submission
+        const $form = $('#generatorForm');
+        const $submitBtn = $('#submitBtn');
+
+        $form.on('submit', function(e) {
+            e.preventDefault();
             formModified = false;
-            
+
+            if (!$form[0].checkValidity()) {
+                $form[0].reportValidity();
+                return false;
+            }
+
             // إدارة حقول fuel_tanks_count قبل الإرسال
             const externalFuelTankValue = externalFuelTankSelect ? externalFuelTankSelect.value : '0';
             if (externalFuelTankValue === '0') {
-                // إذا كان external_fuel_tank = 0، استخدم الحقل المخفي فقط
                 if (fuelTanksCountSelect) {
                     fuelTanksCountSelect.removeAttribute('name');
                 }
@@ -771,7 +780,6 @@
                     fuelTanksCountHidden.setAttribute('name', 'fuel_tanks_count');
                 }
             } else {
-                // إذا كان external_fuel_tank = 1، استخدم الـ select فقط
                 if (fuelTanksCountHidden) {
                     fuelTanksCountHidden.removeAttribute('name');
                 }
@@ -779,28 +787,91 @@
                     fuelTanksCountSelect.setAttribute('name', 'fuel_tanks_count');
                 }
             }
-            
-            // التحقق من صلاحية الـ token قبل الإرسال
-            const token = document.querySelector('input[name="_token"]').value;
-            if (!token || token.length < 10) {
-                e.preventDefault();
-                
-                // عرض رسالة تحذيرية
-                if (confirm('انتهت صلاحية الجلسة. هل تريد تحديث الصفحة والمحاولة مرة أخرى؟\n\nملاحظة: سيتم حفظ البيانات المدخلة مؤقتاً.')) {
-                    // حفظ البيانات في localStorage قبل إعادة التحميل
-                    const formData = new FormData(this);
-                    const savedData = {};
-                    for (let [key, value] of formData.entries()) {
-                        if (key !== '_token') {
-                            savedData[key] = value;
+
+            $submitBtn.prop('disabled', true);
+            const originalText = $submitBtn.html();
+            $submitBtn.html('<span class="spinner-border spinner-border-sm me-2"></span>جاري الحفظ...');
+
+            const formData = new FormData(this);
+
+            $.ajax({
+                url: $form.attr('action'),
+                method: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                },
+                success: function(response) {
+                    if (response.success) {
+                        if (typeof window.showToast === 'function') {
+                            window.showToast(response.message || 'تم إنشاء المولد بنجاح', 'success');
+                        } else {
+                            alert(response.message || 'تم إنشاء المولد بنجاح');
+                        }
+                        setTimeout(function() {
+                            window.location.href = '{{ route('admin.generators.index') }}';
+                        }, 500);
+                    }
+                },
+                error: function(xhr) {
+                    $submitBtn.prop('disabled', false);
+                    $submitBtn.html(originalText);
+
+                    if (xhr.status === 422) {
+                        const errors = xhr.responseJSON?.errors || {};
+                        let firstError = '';
+
+                        $form.find('.is-invalid').removeClass('is-invalid');
+                        $form.find('.invalid-feedback').remove();
+
+                        $.each(errors, function(field, messages) {
+                            const $field = $form.find('[name="' + field + '"]');
+                            if ($field.length) {
+                                $field.addClass('is-invalid');
+                                const errorMsg = Array.isArray(messages) ? messages[0] : messages;
+                                if (!firstError) firstError = errorMsg;
+                                $field.after('<div class="invalid-feedback d-block">' + errorMsg + '</div>');
+                            } else {
+                                const fieldParts = field.split('.');
+                                if (fieldParts[0] === 'fuel_tanks' && fieldParts.length >= 3) {
+                                    const tankIndex = fieldParts[1];
+                                    const tankField = fieldParts[2];
+                                    const $tankField = $form.find('[name="fuel_tanks[' + tankIndex + '][' + tankField + ']"]');
+                                    if ($tankField.length) {
+                                        $tankField.addClass('is-invalid');
+                                        const errorMsg = Array.isArray(messages) ? messages[0] : messages;
+                                        if (!firstError) firstError = errorMsg;
+                                        $tankField.after('<div class="invalid-feedback d-block">' + errorMsg + '</div>');
+                                    }
+                                }
+                            }
+                        });
+
+                        const $firstError = $form.find('.is-invalid').first();
+                        if ($firstError.length) {
+                            $('html, body').animate({
+                                scrollTop: $firstError.offset().top - 100
+                            }, 500);
+                        }
+
+                        if (typeof window.showToast === 'function') {
+                            window.showToast(firstError || 'يرجى التحقق من الحقول المطلوبة', 'error');
+                        } else {
+                            alert(firstError || 'يرجى التحقق من الحقول المطلوبة');
+                        }
+                    } else {
+                        const errorMsg = xhr.responseJSON?.message || 'حدث خطأ أثناء حفظ البيانات';
+                        if (typeof window.showToast === 'function') {
+                            window.showToast(errorMsg, 'error');
+                        } else {
+                            alert(errorMsg);
                         }
                     }
-                    localStorage.setItem('generator_form_backup', JSON.stringify(savedData));
-                    
-                    // إعادة تحميل الصفحة
-                    window.location.reload();
                 }
-            }
+            });
         });
         
         // استعادة البيانات المحفوظة إن وُجدت
@@ -1075,7 +1146,7 @@
                                     <select name="fuel_tanks[${i-1}][location]" class="form-select" required>
                                         <option value="">اختر الموقع</option>
                                         ${(window.GENERATOR_CONSTANTS.location && window.GENERATOR_CONSTANTS.location.length > 0) 
-                                            ? window.GENERATOR_CONSTANTS.location.map(loc => `<option value="${loc.value}">${loc.label}</option>`).join('')
+                                            ? window.GENERATOR_CONSTANTS.location.map(loc => `<option value="${loc.id}">${loc.label}</option>`).join('')
                                             : '<option value="ارضي">ارضي</option><option value="علوي">علوي</option><option value="تحت الارض">تحت الارض</option>'
                                         }
                                     </select>
@@ -1096,7 +1167,7 @@
                                     <select name="fuel_tanks[${i-1}][material]" class="form-select">
                                         <option value="">اختر المادة</option>
                                         ${(window.GENERATOR_CONSTANTS.material && window.GENERATOR_CONSTANTS.material.length > 0) 
-                                            ? window.GENERATOR_CONSTANTS.material.map(mat => `<option value="${mat.value}">${mat.label}</option>`).join('')
+                                            ? window.GENERATOR_CONSTANTS.material.map(mat => `<option value="${mat.id}">${mat.label}</option>`).join('')
                                             : '<option value="حديد">حديد</option><option value="بلاستيك">بلاستيك</option><option value="مقوى">مقوى</option><option value="فايبر">فايبر</option>'
                                         }
                                     </select>
@@ -1106,7 +1177,7 @@
                                     <select name="fuel_tanks[${i-1}][usage]" class="form-select">
                                         <option value="">اختر الاستخدام</option>
                                         ${(window.GENERATOR_CONSTANTS.usage && window.GENERATOR_CONSTANTS.usage.length > 0) 
-                                            ? window.GENERATOR_CONSTANTS.usage.map(use => `<option value="${use.value}">${use.label}</option>`).join('')
+                                            ? window.GENERATOR_CONSTANTS.usage.map(use => `<option value="${use.id}">${use.label}</option>`).join('')
                                             : '<option value="مركزي">مركزي</option><option value="احتياطي">احتياطي</option>'
                                         }
                                     </select>
@@ -1116,7 +1187,7 @@
                                     <select name="fuel_tanks[${i-1}][measurement_method]" class="form-select">
                                         <option value="">اختر الطريقة</option>
                                         ${(window.GENERATOR_CONSTANTS.measurement_method && window.GENERATOR_CONSTANTS.measurement_method.length > 0) 
-                                            ? window.GENERATOR_CONSTANTS.measurement_method.map(method => `<option value="${method.value}">${method.label}</option>`).join('')
+                                            ? window.GENERATOR_CONSTANTS.measurement_method.map(method => `<option value="${method.id}">${method.label}</option>`).join('')
                                             : '<option value="سيخ">سيخ</option><option value="مدرج">مدرج</option><option value="ساعه ميكانيكية">ساعه ميكانيكية</option><option value="حساس الكتروني">حساس الكتروني</option><option value="خرطوم شفاف">خرطوم شفاف</option>'
                                         }
                                     </select>

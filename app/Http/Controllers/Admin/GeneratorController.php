@@ -17,6 +17,9 @@ use Illuminate\View\View;
 
 class GeneratorController extends Controller
 {
+    /**
+     * Display paginated generators list with search and status filters.
+     */
     public function index(Request $request): View|JsonResponse
     {
         $this->authorize('viewAny', Generator::class);
@@ -34,7 +37,6 @@ class GeneratorController extends Controller
             $query->whereIn('operator_id', $operators->pluck('id'));
         }
 
-        // Search
         $q = trim((string) $request->input('q', ''));
         if ($q !== '') {
             $query->where(function ($sub) use ($q) {
@@ -46,13 +48,11 @@ class GeneratorController extends Controller
             });
         }
 
-        // Status filter
         $status = trim((string) $request->input('status', ''));
         if ($status !== '' && in_array($status, ['active', 'inactive'], true)) {
             $query->where('status', $status);
         }
 
-        // Operator filter (SuperAdmin only)
         if ($user->isSuperAdmin()) {
             $operatorId = (int) $request->input('operator_id', 0);
             if ($operatorId > 0) {
@@ -62,7 +62,6 @@ class GeneratorController extends Controller
 
         $generators = $query->latest()->paginate(15);
 
-        // AJAX: return JSON with HTML
         if ($request->ajax() || $request->wantsJson()) {
             $html = view('admin.generators.partials.list', compact('generators'))->render();
             return response()->json([
@@ -72,7 +71,6 @@ class GeneratorController extends Controller
             ]);
         }
 
-        // Get operators for filter dropdown (SuperAdmin only)
         $operators = collect();
         if ($user->isSuperAdmin()) {
             $operators = Operator::select('id', 'name', 'unit_number')
@@ -83,6 +81,9 @@ class GeneratorController extends Controller
         return view('admin.generators.index', compact('generators', 'operators'));
     }
 
+    /**
+     * Show form for creating a new generator with validation checks.
+     */
     public function create(): View|RedirectResponse
     {
         $this->authorize('create', Generator::class);
@@ -96,7 +97,6 @@ class GeneratorController extends Controller
             $operators = $user->ownedOperators;
         }
 
-        // التحقق من إمكانية إضافة مولدات
         if ($user->isCompanyOwner()) {
             $operator = $user->ownedOperators()->first();
 
@@ -105,13 +105,11 @@ class GeneratorController extends Controller
                     ->with('error', 'لا يوجد مشغل مرتبط بحسابك. يرجى التواصل مع مدير النظام.');
             }
 
-            // التحقق من اكتمال بيانات المشغل
             if (! $operator->isProfileComplete()) {
                 return redirect()->route('admin.operators.profile')
                     ->with('error', 'يجب إكمال بيانات المشغل أولاً قبل إضافة المولدات.');
             }
 
-            // التحقق من عدد المولدات
             $currentCount = $operator->generators()->count();
             $maxCount = $operator->generators_count ?? 0;
 
@@ -126,7 +124,6 @@ class GeneratorController extends Controller
             }
         }
 
-        // جلب الثوابت
         $constants = [
             'status' => ConstantsHelper::getByName('حالة المولد'),
             'engine_type' => ConstantsHelper::getByName('نوع المحرك'),
@@ -144,13 +141,15 @@ class GeneratorController extends Controller
         return view('admin.generators.create', compact('operators', 'constants'));
     }
 
-    public function store(StoreGeneratorRequest $request): RedirectResponse
+    /**
+     * Store newly created generator with images and fuel tanks data.
+     */
+    public function store(StoreGeneratorRequest $request): RedirectResponse|JsonResponse
     {
         $this->authorize('create', Generator::class);
 
         $user = auth()->user();
 
-        // التحقق من عدد المولدات
         if ($user->isCompanyOwner()) {
             $operator = $user->ownedOperators()->first();
             if ($operator) {
@@ -167,7 +166,6 @@ class GeneratorController extends Controller
 
         $data = $request->validated();
 
-        // رفع الصور
         if ($request->hasFile('engine_data_plate_image')) {
             $data['engine_data_plate_image'] = $request->file('engine_data_plate_image')->store('generators/engine-plates', 'public');
         }
@@ -178,7 +176,6 @@ class GeneratorController extends Controller
             $data['control_panel_image'] = $request->file('control_panel_image')->store('generators/control-panels', 'public');
         }
 
-        // إذا كان المستخدم CompanyOwner أو Technician، استخدم مشغله تلقائياً
         $authUser = auth()->user();
         if ($authUser->isCompanyOwner()) {
             $operator = $authUser->ownedOperators()->first();
@@ -186,33 +183,27 @@ class GeneratorController extends Controller
                 $data['operator_id'] = $operator->id;
             }
         } elseif ($authUser->isTechnician()) {
-            // الفني يمكنه إضافة مولدات للمشغلين المخصصين له
             $operators = $authUser->operators;
             if ($operators->count() === 1) {
                 $data['operator_id'] = $operators->first()->id;
             }
         }
 
-        // استخراج بيانات خزانات الوقود
         $fuelTanksData = $data['fuel_tanks'] ?? [];
         unset($data['fuel_tanks']);
 
-        // التأكد من وجود قيمة لـ fuel_tanks_count
         if (!isset($data['fuel_tanks_count']) || $data['fuel_tanks_count'] === null || $data['fuel_tanks_count'] === '') {
             $data['fuel_tanks_count'] = 0;
         }
 
-        // التأكد من وجود قيمة لـ external_fuel_tank
         if (!isset($data['external_fuel_tank']) || $data['external_fuel_tank'] === null || $data['external_fuel_tank'] === '') {
             $data['external_fuel_tank'] = false;
         } else {
             $data['external_fuel_tank'] = (bool) $data['external_fuel_tank'];
         }
 
-        // إنشاء المولد
         $generator = Generator::create($data);
 
-        // حفظ خزانات الوقود
         if (! empty($fuelTanksData)) {
             foreach ($fuelTanksData as $index => $tankData) {
                 FuelTank::create([
@@ -229,10 +220,20 @@ class GeneratorController extends Controller
             }
         }
 
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'تم إنشاء المولد بنجاح.',
+            ]);
+        }
+
         return redirect()->route('admin.generators.index')
             ->with('success', 'تم إنشاء المولد بنجاح.');
     }
 
+    /**
+     * Display detailed information about the specified generator.
+     */
     public function show(Generator $generator): View
     {
         $this->authorize('view', $generator);
@@ -242,6 +243,9 @@ class GeneratorController extends Controller
         return view('admin.generators.show', compact('generator'));
     }
 
+    /**
+     * Show form for editing the specified generator record.
+     */
     public function edit(Generator $generator): View
     {
         $this->authorize('update', $generator);
@@ -259,7 +263,6 @@ class GeneratorController extends Controller
             $operators = $user->operators;
         }
 
-        // جلب الثوابت
         $constants = [
             'status' => ConstantsHelper::getByName('حالة المولد'),
             'engine_type' => ConstantsHelper::getByName('نوع المحرك'),
@@ -277,15 +280,16 @@ class GeneratorController extends Controller
         return view('admin.generators.edit', compact('generator', 'operators', 'constants'));
     }
 
-    public function update(UpdateGeneratorRequest $request, Generator $generator): RedirectResponse
+    /**
+     * Update generator data including images and fuel tanks information.
+     */
+    public function update(UpdateGeneratorRequest $request, Generator $generator): RedirectResponse|JsonResponse
     {
         $this->authorize('update', $generator);
 
         $data = $request->validated();
 
-        // رفع الصور الجديدة
         if ($request->hasFile('engine_data_plate_image')) {
-            // حذف الصورة القديمة
             if ($generator->engine_data_plate_image) {
                 Storage::disk('public')->delete($generator->engine_data_plate_image);
             }
@@ -304,29 +308,22 @@ class GeneratorController extends Controller
             $data['control_panel_image'] = $request->file('control_panel_image')->store('generators/control-panels', 'public');
         }
 
-        // استخراج بيانات خزانات الوقود
         $fuelTanksData = $data['fuel_tanks'] ?? [];
         unset($data['fuel_tanks']);
 
-        // التأكد من وجود قيمة لـ fuel_tanks_count
         if (!isset($data['fuel_tanks_count']) || $data['fuel_tanks_count'] === null || $data['fuel_tanks_count'] === '') {
             $data['fuel_tanks_count'] = 0;
         }
 
-        // التأكد من وجود قيمة لـ external_fuel_tank
         if (!isset($data['external_fuel_tank']) || $data['external_fuel_tank'] === null || $data['external_fuel_tank'] === '') {
             $data['external_fuel_tank'] = false;
         } else {
             $data['external_fuel_tank'] = (bool) $data['external_fuel_tank'];
         }
 
-        // تحديث المولد
         $generator->update($data);
-
-        // حذف الخزانات القديمة وإعادة إنشائها (soft delete)
         $generator->fuelTanks()->delete();
 
-        // حفظ خزانات الوقود الجديدة
         if (! empty($fuelTanksData)) {
             foreach ($fuelTanksData as $index => $tankData) {
                 FuelTank::create([
@@ -343,15 +340,24 @@ class GeneratorController extends Controller
             }
         }
 
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'تم تحديث بيانات المولد بنجاح.',
+            ]);
+        }
+
         return redirect()->route('admin.generators.index')
             ->with('success', 'تم تحديث بيانات المولد بنجاح.');
     }
 
+    /**
+     * Delete generator record and associated image files from storage.
+     */
     public function destroy(Request $request, Generator $generator): RedirectResponse|JsonResponse
     {
         $this->authorize('delete', $generator);
 
-        // حذف الصور
         if ($generator->engine_data_plate_image) {
             Storage::disk('public')->delete($generator->engine_data_plate_image);
         }

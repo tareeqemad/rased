@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\Response;
 use Illuminate\Database\Eloquent\Builder;
@@ -391,6 +392,60 @@ private function ajaxIndex(Request $request, User $actor): JsonResponse
             'results' => $results,
             'pagination' => ['more' => $p->hasMorePages()],
         ]);
+    }
+
+    /**
+     * الدخول بحساب مستخدم آخر (للسوبر أدمن فقط)
+     */
+    public function impersonate(Request $request, User $user): RedirectResponse
+    {
+        $currentUser = auth()->user();
+
+        // التحقق من أن المستخدم الحالي هو سوبر أدمن
+        if (!$currentUser->isSuperAdmin()) {
+            return redirect()->back()->with('error', 'غير مصرح لك بالدخول بحساب مستخدم آخر.');
+        }
+
+        // منع الدخول بحساب نفسه
+        if ($currentUser->id === $user->id) {
+            return redirect()->back()->with('error', 'لا يمكنك الدخول بحسابك الخاص.');
+        }
+
+        // حفظ معلومات المستخدم الأصلي في Session
+        session()->put('impersonator_id', $currentUser->id);
+        session()->put('impersonator_name', $currentUser->name);
+
+        // تسجيل الدخول بحساب المستخدم المطلوب
+        Auth::login($user);
+
+        return redirect()->route('admin.dashboard')->with('success', "تم الدخول بحساب {$user->name} بنجاح.");
+    }
+
+    /**
+     * الخروج من حساب المستخدم والعودة للحساب الأصلي
+     */
+    public function stopImpersonating(Request $request): RedirectResponse
+    {
+        $impersonatorId = session()->get('impersonator_id');
+
+        if (!$impersonatorId) {
+            return redirect()->route('admin.dashboard')->with('error', 'لا يوجد حساب أصلي للعودة إليه.');
+        }
+
+        $impersonator = User::find($impersonatorId);
+
+        if (!$impersonator) {
+            session()->forget(['impersonator_id', 'impersonator_name']);
+            return redirect()->route('login')->with('error', 'الحساب الأصلي غير موجود.');
+        }
+
+        // حذف معلومات الـ impersonation من Session
+        session()->forget(['impersonator_id', 'impersonator_name']);
+
+        // تسجيل الدخول بالحساب الأصلي
+        Auth::login($impersonator);
+
+        return redirect()->route('admin.users.index')->with('success', 'تم العودة لحسابك الأصلي بنجاح.');
     }
 
     private function jsonOrRedirect(Request $request, bool $ok, string $message)

@@ -159,3 +159,82 @@
     border: 1px solid var(--op-border);
     overflow: hidden;
 }
+
+/* Statistics Cards */
+.operators-page .stat-card{
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: var(--op-subtle);
+    border-radius: 12px;
+    border: 1px solid var(--op-border-2);
+}
+.operators-page .stat-icon{
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.25rem;
+    flex-shrink: 0;
+}
+.operators-page .stat-content{
+    flex: 1;
+}
+.operators-page .stat-label{
+    font-size: .85rem;
+    color: var(--op-muted);
+    margin-bottom: .25rem;
+}
+.operators-page .stat-value{
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--op-text);
+}
+
+/* Info Items */
+.operators-page .info-item{
+    margin-bottom: 1rem;
+}
+.operators-page .info-label{
+    font-size: .85rem;
+    color: var(--op-muted);
+    margin-bottom: .35rem;
+    font-weight: 600;
+}
+.operators-page .info-value{
+    font-size: .95rem;
+    color: var(--op-text);
+    font-weight: 500;
+}
+
+/* Generators List */
+.operators-page .generators-list{
+    display: flex;
+    flex-direction: column;
+    gap: .75rem;
+}
+.operators-page .generator-item{
+    padding: .75rem;
+    background: var(--op-subtle);
+    border-radius: 10px;
+    border: 1px solid var(--op-border-2);
+}
+.operators-page .generator-item:hover{
+    background: #ffffff;
+    border-color: rgba(var(--primary-rgb), .3);
+}
+
+.operators-page .card-body {
+    padding: 1.5rem;
+}
+
+.operators-page hr {
+    border: 0;
+    border-top: 1px solid var(--op-border-2);
+    margin: 1.5rem 0;
+    opacity: 0.5;
+}

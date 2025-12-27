@@ -5,16 +5,18 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreConstantMasterRequest;
 use App\Http\Requests\Admin\UpdateConstantMasterRequest;
+use App\Models\ConstantDetail;
 use App\Models\ConstantMaster;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class ConstantMasterController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Display paginated list of constants with search and status filters.
      */
     public function index(Request $request): View|JsonResponse
     {
@@ -22,7 +24,6 @@ class ConstantMasterController extends Controller
 
         $query = ConstantMaster::withCount('allDetails');
 
-        // البحث
         if ($request->filled('search')) {
             $search = $request->input('search');
             $query->where(function ($q) use ($search) {
@@ -32,16 +33,40 @@ class ConstantMasterController extends Controller
             });
         }
 
+        if ($request->filled('status')) {
+            if ($request->input('status') === 'active') {
+                $query->where('is_active', true);
+            } elseif ($request->input('status') === 'inactive') {
+                $query->where('is_active', false);
+            }
+        }
+
         $constants = $query->orderBy('order')
             ->orderBy('constant_number')
             ->paginate(15);
 
-        // إذا كان الطلب AJAX، إرجاع JSON
-        if ($request->ajax()) {
+        if ($request->ajax() || $request->has('ajax')) {
+            $totalActive = ConstantMaster::where('is_active', true)->count();
+            $totalInactive = ConstantMaster::where('is_active', false)->count();
+            $totalDetails = ConstantMaster::withCount('allDetails')->get()->sum('all_details_count');
+
             return response()->json([
                 'success' => true,
-                'html' => view('admin.constants.partials.table', compact('constants'))->render(),
-                'pagination' => view('admin.constants.partials.pagination', compact('constants'))->render(),
+                'data' => $constants->items(),
+                'meta' => [
+                    'current_page' => $constants->currentPage(),
+                    'last_page' => $constants->lastPage(),
+                    'per_page' => $constants->perPage(),
+                    'total' => $constants->total(),
+                    'from' => $constants->firstItem(),
+                    'to' => $constants->lastItem(),
+                ],
+                'stats' => [
+                    'total' => $constants->total(),
+                    'active' => $totalActive,
+                    'inactive' => $totalInactive,
+                    'details' => $totalDetails,
+                ],
                 'modals' => view('admin.constants.partials.modals', compact('constants'))->render(),
             ]);
         }
@@ -50,34 +75,132 @@ class ConstantMasterController extends Controller
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Show form for creating a new constant master record entry.
      */
     public function create(): View
     {
         $this->authorize('create', ConstantMaster::class);
 
-        return view('admin.constants.create');
+        $existingConstants = ConstantMaster::select('constant_number', 'constant_name', 'order')
+            ->orderBy('order')
+            ->orderBy('constant_number')
+            ->get();
+
+        return view('admin.constants.create', compact('existingConstants'));
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Get constant data by number (API endpoint).
      */
-    public function store(StoreConstantMasterRequest $request): RedirectResponse
+    public function getByNumber(Request $request, int $number): JsonResponse
     {
-        ConstantMaster::create([
-            'constant_number' => $request->validated('constant_number'),
-            'constant_name' => $request->validated('constant_name'),
-            'description' => $request->validated('description'),
-            'is_active' => $request->validated('is_active', true),
-            'order' => $request->validated('order', 0),
-        ]);
+        $this->authorize('viewAny', ConstantMaster::class);
 
-        return redirect()->route('admin.constants.index')
-            ->with('success', 'تم إنشاء الثابت بنجاح.');
+        $constant = ConstantMaster::where('constant_number', $number)
+            ->with('allDetails')
+            ->first();
+
+        if (!$constant) {
+            return response()->json([
+                'success' => false,
+                'message' => 'الثابت غير موجود',
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'constant_number' => $constant->constant_number,
+                'constant_name' => $constant->constant_name,
+                'description' => $constant->description,
+                'is_active' => $constant->is_active,
+                'order' => $constant->order,
+                'details' => $constant->allDetails->map(function ($detail) {
+                    return [
+                        'label' => $detail->label,
+                        'code' => $detail->code,
+                        'value' => $detail->value,
+                        'notes' => $detail->notes,
+                        'is_active' => $detail->is_active,
+                        'order' => $detail->order,
+                    ];
+                }),
+            ],
+        ]);
     }
 
     /**
-     * Display the specified resource.
+     * Store newly created constant master record in database.
+     */
+    public function store(StoreConstantMasterRequest $request): RedirectResponse|JsonResponse
+    {
+        try {
+            DB::beginTransaction();
+
+            $validated = $request->validated();
+            $details = $validated['details'] ?? [];
+
+            // Create the constant master
+            $constantMaster = ConstantMaster::create([
+                'constant_number' => $validated['constant_number'],
+                'constant_name' => $validated['constant_name'],
+                'description' => $validated['description'] ?? null,
+                'is_active' => $validated['is_active'] ?? true,
+                'order' => $validated['order'] ?? 0,
+            ]);
+
+            // Create details if provided
+            if (!empty($details)) {
+                foreach ($details as $detail) {
+                    ConstantDetail::create([
+                        'constant_master_id' => $constantMaster->id,
+                        'label' => $detail['label'],
+                        'code' => $detail['code'] ?? null,
+                        'value' => $detail['value'] ?? null,
+                        'notes' => $detail['notes'] ?? null,
+                        'is_active' => $detail['is_active'] ?? true,
+                        'order' => $detail['order'] ?? 0,
+                    ]);
+                }
+            }
+
+            DB::commit();
+
+            $message = 'تم إنشاء الثابت بنجاح';
+            if (!empty($details)) {
+                $message .= ' مع ' . count($details) . ' تفصيل';
+            }
+            $message .= '.';
+
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => $message,
+                ]);
+            }
+
+            return redirect()->route('admin.constants.index')
+                ->with('success', $message);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            $errorMessage = 'حدث خطأ أثناء حفظ البيانات: ' . $e->getMessage();
+            
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $errorMessage,
+                ], 500);
+            }
+
+            return redirect()->back()
+                ->withInput()
+                ->with('error', $errorMessage);
+        }
+    }
+
+    /**
+     * Display detailed information about the specified constant master record.
      */
     public function show(ConstantMaster $constant): View
     {
@@ -89,7 +212,7 @@ class ConstantMasterController extends Controller
     }
 
     /**
-     * Show the form for editing the specified resource.
+     * Show form for editing the specified constant master record.
      */
     public function edit(ConstantMaster $constant): View
     {
@@ -101,9 +224,9 @@ class ConstantMasterController extends Controller
     }
 
     /**
-     * Update the specified resource in storage.
+     * Update the specified constant master record data in database.
      */
-    public function update(UpdateConstantMasterRequest $request, ConstantMaster $constant): RedirectResponse
+    public function update(UpdateConstantMasterRequest $request, ConstantMaster $constant): RedirectResponse|JsonResponse
     {
         $constant->update([
             'constant_number' => $request->validated('constant_number'),
@@ -113,18 +236,24 @@ class ConstantMasterController extends Controller
             'order' => $request->validated('order', $constant->order),
         ]);
 
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'تم تحديث الثابت بنجاح.',
+            ]);
+        }
+
         return redirect()->route('admin.constants.index')
             ->with('success', 'تم تحديث الثابت بنجاح.');
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Remove constant master record after checking for related details.
      */
     public function destroy(ConstantMaster $constant): RedirectResponse|JsonResponse
     {
         $this->authorize('delete', $constant);
 
-        // التحقق من وجود تفاصيل مرتبطة
         if ($constant->allDetails()->count() > 0) {
             if (request()->ajax()) {
                 return response()->json([

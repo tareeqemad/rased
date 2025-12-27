@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('generator_id')->constrained('generators')->cascadeOnDelete();
             $table->foreignId('operator_id')->constrained('operators')->cascadeOnDelete();
+            $table->unsignedInteger('sequence')->nullable(); // تسلسل السجل لكل مولد
 
             // تاريخ ووقت التشغيل
             $table->date('operation_date');
@@ -40,6 +41,9 @@ return new class extends Migration
 
             $table->timestamps();
             $table->softDeletes();
+            
+            // إضافة index للبحث السريع
+            $table->index(['generator_id', 'sequence']);
         });
     }
 

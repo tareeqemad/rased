@@ -53,6 +53,30 @@
     <!-- Loader -->
 
     <div class="page">
+        <!-- Impersonation Banner -->
+        @if(session('impersonator_id'))
+            <div class="alert alert-warning alert-dismissible fade show mb-0 border-0 rounded-0" role="alert" style="background: linear-gradient(135deg, #fff3cd 0%, #ffe69c 100%); border-bottom: 2px solid #ffc107 !important;">
+                <div class="container-fluid">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center gap-3">
+                            <i class="bi bi-person-check fs-4 text-warning"></i>
+                            <div>
+                                <strong>أنت تدخل بحساب مستخدم آخر</strong>
+                                <div class="small">المستخدم الحالي: <strong>{{ auth()->user()->name }}</strong> | الحساب الأصلي: <strong>{{ session('impersonator_name') }}</strong></div>
+                            </div>
+                        </div>
+                        <form action="{{ route('admin.users.stop-impersonating') }}" method="POST" class="d-inline">
+                            @csrf
+                            <button type="submit" class="btn btn-warning btn-sm">
+                                <i class="bi bi-arrow-left me-1"></i>
+                                العودة للحساب الأصلي
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        @endif
+
         <!-- app-header -->
         @include('admin.partials.header')
         <!-- /app-header -->
@@ -124,6 +148,7 @@
     <!-- Custom JS -->
     <script src="{{ asset('assets/admin/js/custom.js') }}"></script>
     <script src="{{ asset('assets/admin/js/notifications.js') }}"></script>
+    <script src="{{ asset('assets/admin/js/notification-panel.js') }}"></script>
 
     <!-- Flash Messages as Bootstrap Toasts -->
     <script>

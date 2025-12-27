@@ -2,15 +2,19 @@
     const OPLOG = window.OPLOG || {};
     const routes = OPLOG.routes || {};
 
-    const $loadingOverlay = $('#operationLogsLoadingOverlay');
     const $listContainer = $('#operationLogsListContainer');
     const $searchInput = $('#searchInput');
     const $searchBtn = $('#searchBtn');
     const $clearSearchBtn = $('#clearSearchBtn');
     const $countSpan = $('#operationLogsCount');
     const $operatorFilter = $('#operatorFilter');
+    const $generatorFilter = $('#generatorFilter');
     const $dateFromFilter = $('#dateFromFilter');
     const $dateToFilter = $('#dateToFilter');
+    const $groupByGeneratorToggle = $('#groupByGeneratorToggle');
+    
+    // Get the container with loading overlay (the card-body)
+    const $loadingContainer = $listContainer.closest('.data-table-container');
 
     function csrfToken() {
         return $('meta[name="csrf-token"]').attr('content') || $('#csrfToken').val();
@@ -21,7 +25,13 @@
     });
 
     function setLoading(on) {
-        $loadingOverlay.toggle(!!on);
+        if (typeof window.DataTableLoading !== 'undefined') {
+            if (on) {
+                window.DataTableLoading.show($loadingContainer);
+            } else {
+                window.DataTableLoading.hide($loadingContainer);
+            }
+        }
     }
 
     function flash(type, msg) {
@@ -89,27 +99,25 @@
     const runSearch = debounce(function () {
         const term = ($searchInput.val() || '').trim();
         const operatorId = $operatorFilter.length ? $operatorFilter.val() : '';
+        const generatorId = $generatorFilter.length ? $generatorFilter.val() : '';
         const dateFrom = $dateFromFilter.length ? $dateFromFilter.val() : '';
         const dateTo = $dateToFilter.length ? $dateToFilter.val() : '';
+        const groupByGenerator = $groupByGeneratorToggle.length && $groupByGeneratorToggle.is(':checked');
 
         const params = {};
         if (term) params.q = term;
         if (operatorId) params.operator_id = operatorId;
+        if (generatorId) params.generator_id = generatorId;
         if (dateFrom) params.date_from = dateFrom;
         if (dateTo) params.date_to = dateTo;
-
-        // Update URL without reload
-        const url = new URL(routes.search);
-        Object.keys(params).forEach(key => {
-            if (params[key]) {
-                url.searchParams.set(key, params[key]);
-            }
-        });
+        if (groupByGenerator) params.group_by_generator = 1;
 
         loadOperationLogs(params);
     }, 300);
 
     $searchBtn.on('click', runSearch);
+    
+    // Search on Enter key
     $searchInput.on('keypress', function (e) {
         if (e.which === 13) {
             e.preventDefault();
@@ -119,10 +127,15 @@
 
     $clearSearchBtn.on('click', function () {
         $searchInput.val('');
+        if ($operatorFilter.length) $operatorFilter.val('');
+        if ($generatorFilter.length) $generatorFilter.val('');
+        if ($dateFromFilter.length) $dateFromFilter.val('');
+        if ($dateToFilter.length) $dateToFilter.val('');
         $clearSearchBtn.addClass('d-none');
         runSearch();
     });
 
+    // Show/hide clear button when typing (without auto search)
     $searchInput.on('input', function () {
         if ($(this).val().trim()) {
             $clearSearchBtn.removeClass('d-none');
@@ -133,7 +146,21 @@
 
     // Operator filter change
     if ($operatorFilter.length) {
-        $operatorFilter.on('change', runSearch);
+        $operatorFilter.on('change', function() {
+            // If operator changed, reload generators list
+            // For now, just run search
+            runSearch();
+        });
+    }
+
+    // Generator filter change
+    if ($generatorFilter.length) {
+        $generatorFilter.on('change', runSearch);
+    }
+
+    // Group by generator toggle
+    if ($groupByGeneratorToggle.length) {
+        $groupByGeneratorToggle.on('change', runSearch);
     }
 
     // Date filters change
@@ -190,15 +217,16 @@
         const url = $(this).attr('href');
         if (!url) return;
 
-        const urlObj = new URL(url);
+        const urlObj = new URL(url, window.location.origin);
         const params = {};
         urlObj.searchParams.forEach((value, key) => {
-            if (key !== 'page') {
-                params[key] = value;
-            } else {
-                params.page = value;
-            }
+            params[key] = value;
         });
+
+        // Preserve group_by_generator toggle state
+        if ($groupByGeneratorToggle.length && $groupByGeneratorToggle.is(':checked')) {
+            params.group_by_generator = 1;
+        }
 
         loadOperationLogs(params);
 
@@ -211,4 +239,7 @@
     window.OPLOG.loadOperationLogs = loadOperationLogs;
 
 })(jQuery);
+
+
+
 

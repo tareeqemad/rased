@@ -183,18 +183,11 @@
 .operation-logs-page .log-list-body{
     padding: 1.25rem;
     min-height: 300px;
-    position: relative;
 }
 
-.operation-logs-page .log-loading{
-    position: absolute;
-    inset: 0;
-    background: rgba(255,255,255,.95);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 10;
-    border-radius: 14px;
+/* Make log-list position relative for overlay */
+.operation-logs-page .log-list{
+    position: relative;
 }
 
 /* List */
@@ -301,10 +294,59 @@
     opacity: .3;
 }
 
+.operation-logs-page .log-empty-state .btn{
+    height: auto;
+    padding: 0.5rem 1rem;
+    line-height: 1.5;
+}
+
 /* Pagination */
 .operation-logs-page .log-pagination{
     padding-top: 1.5rem;
     border-top: 1px solid var(--log-border-2);
+}
+
+/* Generator Group Styles */
+.operation-logs-page .log-generator-group{
+    margin-bottom: 1.5rem;
+}
+
+.operation-logs-page .log-generator-header{
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border: 1px solid #dee2e6;
+    border-radius: 12px 12px 0 0;
+    padding: 1rem 1.25rem;
+}
+
+.operation-logs-page .log-generator-icon{
+    background: linear-gradient(135deg, var(--primary, #0056b3) 0%, #003d82 100%);
+    box-shadow: 0 2px 8px rgba(0, 86, 179, 0.2);
+}
+
+.operation-logs-page .log-generator-group .log-list{
+    border: 1px solid #dee2e6;
+    border-top: none;
+    border-radius: 0 0 12px 12px;
+    background: #ffffff;
+    padding: 1rem;
+}
+
+.operation-logs-page .log-generator-group .log-row{
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    transition: all 0.2s;
+}
+
+.operation-logs-page .log-generator-group .log-row:hover{
+    background: #f8f9fa;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.operation-logs-page .log-generator-group .log-row:last-child{
+    margin-bottom: 0;
 }
 
 /* Responsive */
@@ -334,4 +376,11 @@
         justify-content: flex-end;
     }
 }
+
+.operation-logs-page .card-body {
+    padding: 1.5rem;
+}
+
+
+
 

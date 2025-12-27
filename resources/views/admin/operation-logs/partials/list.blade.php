@@ -7,7 +7,15 @@
                         <div class="log-row-header">
                             <div class="log-row-title">
                                 <i class="bi bi-journal-text me-2 text-primary"></i>
-                                <span class="fw-bold">سجل تشغيل #{{ $log->id }}</span>
+                                @if($log->sequence)
+                                    <span class="fw-bold">سجل تشغيل #{{ $log->sequence }}</span>
+                                    <span class="badge bg-primary ms-2" title="رقم التسلسل لهذا المولد">
+                                        <i class="bi bi-list-ol me-1"></i>
+                                        تسلسل {{ $log->sequence }}
+                                    </span>
+                                @else
+                                    <span class="fw-bold">سجل تشغيل #{{ $log->id }}</span>
+                                @endif
                                 @if($log->generator)
                                     <span class="badge bg-secondary ms-2">{{ $log->generator->generator_number }}</span>
                                 @endif
@@ -88,17 +96,17 @@
 
                     <div class="log-row-actions">
                         @can('view', $log)
-                            <a href="{{ route('admin.operation-logs.show', $log) }}" class="btn btn-sm btn-outline-info" title="عرض">
+                            <a href="{{ route('admin.operation-logs.show', $log) }}" class="btn btn-xs btn-outline-info" title="عرض">
                                 <i class="bi bi-eye"></i>
                             </a>
                         @endcan
                         @can('update', $log)
-                            <a href="{{ route('admin.operation-logs.edit', $log) }}" class="btn btn-sm btn-outline-primary" title="تعديل">
+                            <a href="{{ route('admin.operation-logs.edit', $log) }}" class="btn btn-xs btn-outline-primary" title="تعديل">
                                 <i class="bi bi-pencil"></i>
                             </a>
                         @endcan
                         @can('delete', $log)
-                            <button type="button" class="btn btn-sm btn-outline-danger log-delete-btn" 
+                            <button type="button" class="btn btn-xs btn-outline-danger log-delete-btn" 
                                     data-operation-log-id="{{ $log->id }}"
                                     data-operation-log-name="سجل #{{ $log->id }}"
                                     title="حذف">
@@ -121,12 +129,9 @@
         <i class="bi bi-inbox fs-1 text-muted d-block mb-3"></i>
         <h5 class="text-muted">لا توجد سجلات تشغيل</h5>
         <p class="text-muted">لم يتم العثور على سجلات تشغيل تطابق البحث</p>
-        @can('create', App\Models\OperationLog::class)
-            <a href="{{ route('admin.operation-logs.create') }}" class="btn btn-primary mt-3">
-                <i class="bi bi-plus-circle me-2"></i>
-                إضافة سجل تشغيل جديد
-            </a>
-        @endcan
     </div>
 @endif
+
+
+
 

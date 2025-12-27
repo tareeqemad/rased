@@ -8,20 +8,23 @@ use App\Http\Requests\Admin\UpdateOperationLogRequest;
 use App\Models\Generator;
 use App\Models\OperationLog;
 use App\Models\Operator;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class OperationLogController extends Controller
 {
-    public function index(Request $request): View
+    /**
+     * Display paginated operation logs with search and filters.
+     */
+    public function index(Request $request): View|JsonResponse
     {
         $this->authorize('viewAny', OperationLog::class);
 
         $user = auth()->user();
         $query = OperationLog::with(['generator', 'operator']);
 
-        // Base query restrictions
         if ($user->isCompanyOwner()) {
             $operator = $user->ownedOperators()->first();
             if ($operator) {
@@ -47,7 +50,6 @@ class OperationLogController extends Controller
             });
         }
 
-        // Operator filter (SuperAdmin only)
         if ($user->isSuperAdmin()) {
             $operatorId = (int) $request->input('operator_id', 0);
             if ($operatorId > 0) {
@@ -55,7 +57,12 @@ class OperationLogController extends Controller
             }
         }
 
-        // Date range filter
+        // Filter by generator
+        $generatorId = (int) $request->input('generator_id', 0);
+        if ($generatorId > 0) {
+            $query->where('generator_id', $generatorId);
+        }
+
         if ($request->filled('date_from')) {
             $query->whereDate('operation_date', '>=', $request->input('date_from'));
         }
@@ -63,11 +70,28 @@ class OperationLogController extends Controller
             $query->whereDate('operation_date', '<=', $request->input('date_to'));
         }
 
-        $operationLogs = $query->latest('operation_date')->latest('start_time')->paginate(15);
+        // Group by generator if requested
+        $groupByGenerator = $request->boolean('group_by_generator', false);
+        $groupedLogs = null;
+        
+        if ($groupByGenerator) {
+            // Paginate first, then group the current page's logs
+            $operationLogs = $query->latest('operation_date')->latest('start_time')->paginate(15);
+            // Group the current page's logs by generator
+            $groupedLogs = $operationLogs->groupBy('generator_id');
+        } else {
+            $operationLogs = $query->latest('operation_date')->latest('start_time')->paginate(15);
+        }
 
-        // AJAX: return JSON with HTML
         if ($request->ajax() || $request->wantsJson()) {
-            $html = view('admin.operation-logs.partials.list', compact('operationLogs'))->render();
+            if ($groupByGenerator && $groupedLogs) {
+                $html = view('admin.operation-logs.partials.grouped-list', [
+                    'groupedLogs' => $groupedLogs,
+                    'operationLogs' => $operationLogs
+                ])->render();
+            } else {
+                $html = view('admin.operation-logs.partials.list', compact('operationLogs'))->render();
+            }
             return response()->json([
                 'success' => true,
                 'html' => $html,
@@ -75,17 +99,47 @@ class OperationLogController extends Controller
             ]);
         }
 
-        // Get operators for filter dropdown (SuperAdmin only)
         $operators = collect();
+        $generators = collect();
+        
         if ($user->isSuperAdmin()) {
             $operators = Operator::select('id', 'name', 'unit_number')
                 ->orderBy('name')
                 ->get();
+            
+            // Get generators based on selected operator or all
+            $selectedOperatorId = (int) $request->input('operator_id', 0);
+            if ($selectedOperatorId > 0) {
+                $generators = Generator::where('operator_id', $selectedOperatorId)
+                    ->select('id', 'name', 'generator_number', 'operator_id')
+                    ->orderBy('generator_number')
+                    ->get();
+            } else {
+                $generators = Generator::select('id', 'name', 'generator_number', 'operator_id')
+                    ->orderBy('generator_number')
+                    ->get();
+            }
+        } elseif ($user->isCompanyOwner()) {
+            $operator = $user->ownedOperators()->first();
+            if ($operator) {
+                $generators = $operator->generators()->select('id', 'name', 'generator_number', 'operator_id')
+                    ->orderBy('generator_number')
+                    ->get();
+            }
+        } elseif ($user->isEmployee() || $user->isTechnician()) {
+            $userOperators = $user->operators;
+            $generators = Generator::whereIn('operator_id', $userOperators->pluck('id'))
+                ->select('id', 'name', 'generator_number', 'operator_id')
+                ->orderBy('generator_number')
+                ->get();
         }
 
-        return view('admin.operation-logs.index', compact('operationLogs', 'operators'));
+        return view('admin.operation-logs.index', compact('operationLogs', 'operators', 'generators', 'groupedLogs'));
     }
 
+    /**
+     * Show form for creating a new operation log entry.
+     */
     public function create(): View
     {
         $this->authorize('create', OperationLog::class);
@@ -111,7 +165,10 @@ class OperationLogController extends Controller
         return view('admin.operation-logs.create', compact('generators', 'operators'));
     }
 
-    public function store(StoreOperationLogRequest $request): RedirectResponse
+    /**
+     * Store a newly created operation log in database.
+     */
+    public function store(StoreOperationLogRequest $request): RedirectResponse|JsonResponse
     {
         $this->authorize('create', OperationLog::class);
 
@@ -125,12 +182,27 @@ class OperationLogController extends Controller
             }
         }
 
+        // حساب التسلسل لكل مولد
+        $lastSequence = OperationLog::where('generator_id', $data['generator_id'])
+            ->max('sequence') ?? 0;
+        $data['sequence'] = $lastSequence + 1;
+
         OperationLog::create($data);
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'تم إنشاء سجل التشغيل بنجاح.',
+            ]);
+        }
 
         return redirect()->route('admin.operation-logs.index')
             ->with('success', 'تم إنشاء سجل التشغيل بنجاح.');
     }
 
+    /**
+     * Display details of the specified operation log record.
+     */
     public function show(OperationLog $operationLog): View
     {
         $this->authorize('view', $operationLog);
@@ -140,6 +212,9 @@ class OperationLogController extends Controller
         return view('admin.operation-logs.show', compact('operationLog'));
     }
 
+    /**
+     * Show form for editing the specified operation log entry.
+     */
     public function edit(OperationLog $operationLog): View
     {
         $this->authorize('update', $operationLog);
@@ -165,7 +240,10 @@ class OperationLogController extends Controller
         return view('admin.operation-logs.edit', compact('operationLog', 'generators', 'operators'));
     }
 
-    public function update(UpdateOperationLogRequest $request, OperationLog $operationLog): RedirectResponse
+    /**
+     * Update the specified operation log record in database.
+     */
+    public function update(UpdateOperationLogRequest $request, OperationLog $operationLog): RedirectResponse|JsonResponse
     {
         $this->authorize('update', $operationLog);
 
@@ -181,11 +259,21 @@ class OperationLogController extends Controller
 
         $operationLog->update($data);
 
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'تم تحديث سجل التشغيل بنجاح.',
+            ]);
+        }
+
         return redirect()->route('admin.operation-logs.index')
             ->with('success', 'تم تحديث سجل التشغيل بنجاح.');
     }
 
-    public function destroy(Request $request, OperationLog $operationLog): RedirectResponse
+    /**
+     * Remove the specified operation log record from database.
+     */
+    public function destroy(Request $request, OperationLog $operationLog): RedirectResponse|JsonResponse
     {
         $this->authorize('delete', $operationLog);
 

@@ -10,12 +10,16 @@
             <div class="header-element">
                 <div class="horizontal-logo">
                     <a href="{{ route('admin.dashboard') }}" class="header-logo">
-                        <img src="{{ asset('assets/admin/images/brand-logos/logo_white.webp') }}" alt="logo" class="desktop-logo">
-                        <img src="{{ asset('assets/admin/images/brand-logos/toggle-logo.png') }}" alt="logo" class="toggle-logo">
-                        <img src="{{ asset('assets/admin/images/brand-logos/logo_dark.webp') }}" alt="logo" class="desktop-dark">
-                        <img src="{{ asset('assets/admin/images/brand-logos/toggle-dark.png') }}" alt="logo" class="toggle-dark">
-                        <img src="{{ asset('assets/admin/images/brand-logos/logo_white.webp') }}" alt="logo" class="desktop-white">
-                        <img src="{{ asset('assets/admin/images/brand-logos/toggle-white.png') }}" alt="logo" class="toggle-white">
+                        @php
+                            $logo = \App\Models\Setting::get('site_logo', 'assets/admin/images/brand-logos/rased_logo.png');
+                            $logoUrl = str_starts_with($logo, 'http') ? $logo : asset($logo);
+                        @endphp
+                        <img src="{{ $logoUrl }}" alt="{{ \App\Models\Setting::get('site_name', 'راصد') }}" class="desktop-logo">
+                        <img src="{{ $logoUrl }}" alt="{{ \App\Models\Setting::get('site_name', 'راصد') }}" class="toggle-logo">
+                        <img src="{{ $logoUrl }}" alt="{{ \App\Models\Setting::get('site_name', 'راصد') }}" class="desktop-dark">
+                        <img src="{{ $logoUrl }}" alt="{{ \App\Models\Setting::get('site_name', 'راصد') }}" class="toggle-dark">
+                        <img src="{{ $logoUrl }}" alt="{{ \App\Models\Setting::get('site_name', 'راصد') }}" class="desktop-white">
+                        <img src="{{ $logoUrl }}" alt="{{ \App\Models\Setting::get('site_name', 'راصد') }}" class="toggle-white">
                     </a>
                 </div>
             </div>

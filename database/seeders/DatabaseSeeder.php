@@ -19,8 +19,7 @@ class DatabaseSeeder extends Seeder
             RoleSeeder::class,
             ConstantSeeder::class,
             UserSeeder::class,
-            OperatorSeeder::class,
-            GeneratorSeeder::class,
+            OperatorsWithDataSeeder::class,
         ]);
     }
 }

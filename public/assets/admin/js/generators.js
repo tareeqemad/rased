@@ -94,22 +94,18 @@
         if (status && status !== 'all') params.status = status;
         if (operatorId) params.operator_id = operatorId;
 
-        // Update URL without reload
-        const url = new URL(routes.search);
-        Object.keys(params).forEach(key => {
-            if (params[key]) {
-                url.searchParams.set(key, params[key]);
-            } else {
-                url.searchParams.delete(key);
-            }
-        });
-        window.history.pushState({}, '', url);
-
         loadGenerators(params);
     }, 350);
 
-    $searchInput.on('input', runSearch);
     $searchBtn.on('click', runSearch);
+    
+    // Search on Enter key
+    $searchInput.on('keypress', function (e) {
+        if (e.which === 13) {
+            e.preventDefault();
+            runSearch();
+        }
+    });
 
     $clearSearchBtn.on('click', function () {
         $searchInput.val('');
@@ -187,16 +183,22 @@
     $(document).on('click', '.pagination a', function (e) {
         e.preventDefault();
         const url = $(this).attr('href');
-        if (url) {
-            setLoading(true);
-            $.get(url)
-                .done(html => {
-                    $listContainer.html(html);
-                    $('html, body').animate({ scrollTop: 0 }, 300);
-                })
-                .fail(() => flash('danger', 'حدث خطأ أثناء التحميل'))
-                .always(() => setLoading(false));
-        }
+        if (!url) return;
+
+        const urlObj = new URL(url);
+        const params = {};
+        urlObj.searchParams.forEach((value, key) => {
+            if (key === 'page') {
+                params.page = value;
+            } else {
+                params[key] = value;
+            }
+        });
+
+        loadGenerators(params);
+
+        // Scroll to top
+        $('html, body').animate({ scrollTop: $listContainer.offset().top - 100 }, 300);
     });
 
 })(jQuery);

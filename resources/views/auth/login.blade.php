@@ -688,14 +688,6 @@
                         تسجيل الدخول
                     </button>
                 </form>
-                <div style="margin-top: 30px; padding-top: 30px; border-top: 1px solid #e2e8f0; text-align: center;">
-                    <a href="{{ route('complaints-suggestions.index') }}" style="display: inline-flex; align-items: center; gap: 8px; color: #1e40af; text-decoration: none; font-weight: 600; font-size: 14px; transition: color 0.3s;">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                        </svg>
-                        المقترحات والشكاوى
-                    </a>
-                </div>
             </div>
         </div>
 

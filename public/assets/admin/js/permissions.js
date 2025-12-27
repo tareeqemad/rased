@@ -558,8 +558,16 @@
             .always(() => setLoading(false));
     }, 350);
 
-    $('#searchInput').on('input', runSearch);
     $('#searchBtn').on('click', runSearch);
+    
+    // Search on Enter key
+    $('#searchInput').on('keypress', function (e) {
+        if (e.which === 13) {
+            e.preventDefault();
+            runSearch();
+        }
+    });
+    
     $('#clearSearchBtn').on('click', function () {
         $('#searchInput').val('');
         runSearch();

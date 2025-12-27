@@ -6,134 +6,139 @@
     $breadcrumbTitle = 'الامتثال والسلامة';
 @endphp
 
-@section('content')
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0 fw-bold">
-                        <i class="bi bi-shield-check me-2"></i>
-                        الامتثال والسلامة
-                    </h5>
-                    @can('create', App\Models\ComplianceSafety::class)
-                        <a href="{{ route('admin.compliance-safeties.create') }}" class="btn btn-sm">
-                            <i class="bi bi-plus-circle me-1"></i>
-                            إضافة سجل جديد
-                        </a>
-                    @endcan
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-hover mb-0">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>#</th>
-                                    <th>اسم المشغل</th>
-                                    <th>حالة شهادة السلامة</th>
-                                    <th>تاريخ آخر زيارة</th>
-                                    <th>الجهة المنفذة</th>
-                                    <th>الإجراءات</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @forelse($complianceSafeties as $compliance)
-                                    <tr>
-                                        <td>{{ $compliance->id }}</td>
-                                        <td>
-                                            @if($compliance->operator)
-                                                <span class="badge bg-info">{{ $compliance->operator->name }}</span>
-                                            @else
-                                                <span class="text-muted">-</span>
-                                            @endif
-                                        </td>
-                                        <td>
-                                            @php
-                                                $statusColors = [
-                                                    'available' => 'success',
-                                                    'expired' => 'warning',
-                                                    'not_available' => 'danger'
-                                                ];
-                                                $statusLabels = [
-                                                    'available' => 'متوفرة',
-                                                    'expired' => 'منتهية',
-                                                    'not_available' => 'غير متوفرة'
-                                                ];
-                                            @endphp
-                                            <span class="badge bg-{{ $statusColors[$compliance->safety_certificate_status] ?? 'secondary' }}">
-                                                {{ $statusLabels[$compliance->safety_certificate_status] ?? $compliance->safety_certificate_status }}
-                                            </span>
-                                        </td>
-                                        <td>
-                                            @if($compliance->last_inspection_date)
-                                                {{ $compliance->last_inspection_date->format('Y-m-d') }}
-                                            @else
-                                                <span class="text-muted">-</span>
-                                            @endif
-                                        </td>
-                                        <td>{{ $compliance->inspection_authority ?? '-' }}</td>
-                                        <td>
-                                            <div class="d-flex gap-2">
-                                                @can('view', $compliance)
-                                                    <a href="{{ route('admin.compliance-safeties.show', $compliance) }}" class="btn btn-sm btn-outline-info">
-                                                        <i class="bi bi-eye"></i>
-                                                    </a>
-                                                @endcan
-                                                @can('update', $compliance)
-                                                    <a href="{{ route('admin.compliance-safeties.edit', $compliance) }}" class="btn btn-sm btn-outline-primary">
-                                                        <i class="bi bi-pencil"></i>
-                                                    </a>
-                                                @endcan
-                                                @can('delete', $compliance)
-                                                    <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ $compliance->id }}">
-                                                        <i class="bi bi-trash"></i>
-                                                    </button>
-                                                @endcan
-                                            </div>
-                                        </td>
-                                    </tr>
+@push('styles')
+    <link rel="stylesheet" href="{{ asset('assets/admin/css/compliance-safeties.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/admin/css/data-table-loading.css') }}">
+@endpush
 
-                                    @can('delete', $compliance)
-                                        <div class="modal fade" id="deleteModal{{ $compliance->id }}" tabindex="-1">
-                                            <div class="modal-dialog">
-                                                <div class="modal-content">
-                                                    <div class="modal-header">
-                                                        <h5 class="modal-title">تأكيد الحذف</h5>
-                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                                    </div>
-                                                    <div class="modal-body">
-                                                        <p>هل أنت متأكد من حذف سجل الامتثال والسلامة #{{ $compliance->id }}؟</p>
-                                                        <p class="text-danger"><small>هذا الإجراء لا يمكن التراجع عنه</small></p>
-                                                    </div>
-                                                    <div class="modal-footer">
-                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
-                                                        <form action="{{ route('admin.compliance-safeties.destroy', $compliance) }}" method="POST" class="d-inline">
-                                                            @csrf
-                                                            @method('DELETE')
-                                                            <button type="submit" class="btn btn-danger">حذف</button>
-                                                        </form>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    @endcan
-                                @empty
-                                    <tr>
-                                        <td colspan="6" class="text-center py-5 text-muted">
-                                            <i class="bi bi-inbox fs-1 d-block mb-2"></i>
-                                            لا توجد سجلات امتثال وسلامة
-                                        </td>
-                                    </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
+@section('content')
+    <div class="compliance-safeties-page">
+        <div class="row g-3">
+            {{-- Main: قائمة الامتثال والسلامة --}}
+            <div class="col-12">
+                <div class="card log-card">
+                    <div class="log-card-header log-toolbar-header">
+                        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+                            <div>
+                                <div class="log-title">
+                                    <i class="bi bi-shield-check me-2"></i>
+                                    الامتثال والسلامة
+                                </div>
+                                <div class="log-subtitle">
+                                    إدارة سجلات الامتثال والسلامة. العدد: <span id="complianceSafetiesCount">{{ isset($groupedLogs) ? $groupedLogs->flatten()->count() : $complianceSafeties->total() }}</span>
+                                </div>
+                            </div>
+
+                            @can('create', App\Models\ComplianceSafety::class)
+                                <a href="{{ route('admin.compliance-safeties.create') }}" class="btn btn-primary">
+                                    <i class="bi bi-plus-circle me-2"></i>
+                                    إضافة سجل جديد
+                                </a>
+                            @endcan
+                        </div>
+
+                        {{-- Row 1: الفلاتر --}}
+                        <div class="row g-3 mb-3">
+                            {{-- البحث --}}
+                            <div class="{{ isset($operators) && $operators->count() > 0 ? 'col-md-3' : 'col-md-4' }}">
+                                <label class="form-label small text-muted">البحث</label>
+                                <div class="log-searchfield">
+                                    <i class="bi bi-search log-search-icon"></i>
+                                    <input
+                                        type="text"
+                                        id="searchInput"
+                                        class="form-control log-search-input"
+                                        placeholder="ابحث عن سجل بالمشغل أو الجهة..."
+                                        value="{{ request('q', '') }}"
+                                    >
+                                </div>
+                            </div>
+
+                            {{-- المشغل --}}
+                            @if(isset($operators) && $operators->count() > 0)
+                                <div class="col-md-3">
+                                    <label class="form-label small text-muted">
+                                        <i class="bi bi-building me-1"></i>
+                                        المشغل
+                                    </label>
+                                    <select id="operatorFilter" class="form-select">
+                                        <option value="">كل المشغلين</option>
+                                        @foreach($operators as $op)
+                                            <option value="{{ $op->id }}" {{ request('operator_id') == $op->id ? 'selected' : '' }}>
+                                                {{ $op->unit_number ? $op->unit_number . ' - ' : '' }}{{ $op->name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            @endif
+
+                            {{-- تاريخ من --}}
+                            <div class="{{ isset($operators) && $operators->count() > 0 ? 'col-md-3' : 'col-md-4' }}">
+                                <label class="form-label small text-muted">من تاريخ</label>
+                                <input type="date" id="dateFromFilter" class="form-control" 
+                                       value="{{ request('date_from', '') }}">
+                            </div>
+
+                            {{-- تاريخ إلى --}}
+                            <div class="{{ isset($operators) && $operators->count() > 0 ? 'col-md-3' : 'col-md-4' }}">
+                                <label class="form-label small text-muted">إلى تاريخ</label>
+                                <input type="date" id="dateToFilter" class="form-control" 
+                                       value="{{ request('date_to', '') }}">
+                            </div>
+                        </div>
+
+                        {{-- Row 2: زر البحث وخيارات العرض --}}
+                        <div class="row mb-3">
+                            <div class="col-12 d-flex gap-2 align-items-center flex-wrap">
+                                <button class="btn btn-primary" type="button" id="searchBtn">
+                                    <i class="bi bi-search me-2"></i>
+                                    بحث
+                                </button>
+                                <button
+                                    class="btn btn-outline-secondary {{ request('q') || request('operator_id') || request('date_from') || request('date_to') ? '' : 'd-none' }}"
+                                    type="button"
+                                    id="clearSearchBtn"
+                                >
+                                    <i class="bi bi-x me-2"></i>
+                                    إلغاء الفلاتر
+                                </button>
+                                <div class="form-check form-switch ms-auto">
+                                    <input class="form-check-input" type="checkbox" id="groupByOperatorToggle" {{ request('group_by_operator') ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="groupByOperatorToggle">
+                                        <i class="bi bi-grid-3x3-gap me-1"></i>
+                                        تجميع حسب المشغل
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card-body log-list-body data-table-container">
+                        <div id="complianceSafetiesListContainer">
+                            @if(request('group_by_operator') && isset($groupedLogs) && $groupedLogs->isNotEmpty())
+                                @include('admin.compliance-safeties.partials.grouped-list', ['groupedLogs' => $groupedLogs, 'complianceSafeties' => $complianceSafeties])
+                            @else
+                                @include('admin.compliance-safeties.partials.list', ['complianceSafeties' => $complianceSafeties])
+                            @endif
+                        </div>
                     </div>
                 </div>
-                @if($complianceSafeties->hasPages())
-                    <div class="card-footer">
-                        {{ $complianceSafeties->links() }}
-                    </div>
-                @endif
             </div>
         </div>
     </div>
 @endsection
+
+@push('scripts')
+    <script src="{{ asset('assets/admin/libs/jquery/jquery.min.js') }}"></script>
+    <script src="{{ asset('assets/admin/js/data-table-loading.js') }}"></script>
+    <script>
+        window.COMPLIANCE_SAFETY = {
+            routes: {
+                index: @json(route('admin.compliance-safeties.index')),
+                search: @json(route('admin.compliance-safeties.index')),
+                delete: @json(route('admin.compliance-safeties.destroy', ['compliance_safety' => '__ID__'])),
+            }
+        };
+    </script>
+    <script src="{{ asset('assets/admin/js/compliance-safeties.js') }}"></script>
+@endpush

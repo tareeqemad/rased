@@ -2,8 +2,14 @@
 
 namespace Database\Seeders;
 
+use App\Governorate;
 use App\Helpers\ConstantsHelper;
+use App\Models\ComplianceSafety;
+use App\Models\FuelEfficiency;
+use App\Models\FuelTank;
 use App\Models\Generator;
+use App\Models\MaintenanceRecord;
+use App\Models\OperationLog;
 use App\Models\Operator;
 use App\Models\User;
 use App\Role;
@@ -18,20 +24,22 @@ class OperatorsWithDataSeeder extends Seeder
      */
     public function run(): void
     {
+        $this->command->info('بدء إنشاء البيانات...');
+
         // المحافظات المتاحة
         $governorates = [
-            ['value' => '10', 'name' => 'غزة', 'cities' => ['غزة', 'الشجاعية', 'الرمال', 'الصبرة']],
-            ['value' => '20', 'name' => 'الوسطى', 'cities' => ['دير البلح', 'المغازي', 'النصيرات', 'البريج']],
-            ['value' => '30', 'name' => 'خانيونس', 'cities' => ['خانيونس', 'عبسان', 'القرارة', 'بني سهيلا']],
-            ['value' => '40', 'name' => 'رفح', 'cities' => ['رفح', 'الشوكة', 'البروك', 'السودانية']],
+            ['value' => 10, 'name' => 'غزة', 'cities' => ['غزة', 'الشجاعية', 'الرمال', 'الصبرة']],
+            ['value' => 20, 'name' => 'الوسطى', 'cities' => ['دير البلح', 'المغازي', 'النصيرات', 'البريج']],
+            ['value' => 30, 'name' => 'خانيونس', 'cities' => ['خانيونس', 'عبسان', 'القرارة', 'بني سهيلا']],
+            ['value' => 40, 'name' => 'رفح', 'cities' => ['رفح', 'الشوكة', 'البروك', 'السودانية']],
         ];
 
-        // إحداثيات تقريبية لكل محافظة (في فلسطين)
+        // إحداثيات تقريبية لكل محافظة
         $governorateCoordinates = [
-            '10' => ['lat' => 31.3547, 'lng' => 34.3088], // غزة
-            '20' => ['lat' => 31.4170, 'lng' => 34.3500], // الوسطى
-            '30' => ['lat' => 31.3436, 'lng' => 34.3061], // خانيونس
-            '40' => ['lat' => 31.2969, 'lng' => 34.2436], // رفح
+            10 => ['lat' => 31.3547, 'lng' => 34.3088], // غزة
+            20 => ['lat' => 31.4170, 'lng' => 34.3500], // الوسطى
+            30 => ['lat' => 31.3436, 'lng' => 34.3061], // خانيونس
+            40 => ['lat' => 31.2969, 'lng' => 34.2436], // رفح
         ];
 
         // أسماء عربية للمشغلين
@@ -56,6 +64,10 @@ class OperatorsWithDataSeeder extends Seeder
             'علي سعيد إبراهيم',
             'سعيد فتحي ناصر',
             'فتحي رامي سالم',
+            'رامي وليد كمال',
+            'وليد يوسف سمير',
+            'يوسف تامر بدر',
+            'تامر زياد عمر',
         ];
 
         // أسماء للمولدات
@@ -67,13 +79,237 @@ class OperatorsWithDataSeeder extends Seeder
             'المولد الإضافي',
         ];
 
+        // أسماء الفنيين
+        $technicianNames = [
+            'فني صيانة 1',
+            'فني صيانة 2',
+            'فني صيانة 3',
+            'فني كهرباء 1',
+            'فني كهرباء 2',
+        ];
+
+        // أنواع الصيانة
+        $maintenanceTypes = [
+            'صيانة دورية',
+            'صيانة وقائية',
+            'صيانة طارئة',
+            'صيانة كبرى',
+            'صيانة عادية',
+        ];
+
+        // جمع جميع المولدات لاستخدامها في السجلات
+        $allGenerators = collect();
+        $allOperators = collect();
+        $mmlukGenerators = collect(); // مولدات مشغل المملوك
+        $mmlukOperator = null; // مشغل المملوك
+
+        // جلب الثوابت (نستخدمها لاحقاً)
+        $statusConstants = ConstantsHelper::getByName('حالة المولد');
+        $engineTypeConstants = ConstantsHelper::getByName('نوع المحرك');
+        $injectionSystemConstants = ConstantsHelper::getByName('نظام الحقن');
+        $measurementIndicatorConstants = ConstantsHelper::getByName('مؤشر القياس');
+        $technicalConditionConstants = ConstantsHelper::getByName('الحالة الفنية');
+        $controlPanelTypeConstants = ConstantsHelper::getByName('نوع لوحة التحكم');
+        $controlPanelStatusConstants = ConstantsHelper::getByName('حالة لوحة التحكم');
+
+        // دالة مساعدة للحصول على قيمة ثابت
+        $getConstantValue = function($collection, $default) {
+            return $collection->isNotEmpty() ? $collection->random()->value : $default;
+        };
+
+        // إنشاء مشغل المملوك أولاً
+        $this->command->info('جاري إنشاء مشغل المملوك...');
+        $mmlukOwner = User::where('username', 'mmluk')->first();
+        
+        if ($mmlukOwner) {
+            // التحقق من عدم وجود المشغل مسبقاً
+            $existingOperator = Operator::where('name', 'مشغل المملوك')->first();
+            if (!$existingOperator) {
+                $mmlukOperator = Operator::create([
+                    'name' => 'مشغل المملوك',
+                    'email' => 'info@mmluk.ps',
+                    'phone' => '0599123456',
+                    'phone_alt' => '0599123457',
+                    'address' => 'غزة - شارع المملوك',
+                    'owner_id' => $mmlukOwner->id,
+                    'unit_number' => 'GAZ-001',
+                    'unit_code' => 'GAZ-001',
+                    'unit_name' => 'وحدة المملوك',
+                    'governorate' => 10, // Gaza
+                    'city' => 'غزة',
+                    'detailed_address' => 'غزة - شارع المملوك - مبنى رقم 5',
+                    'latitude' => 31.3547,
+                    'longitude' => 34.3088,
+                    'total_capacity' => 500,
+                    'generators_count' => 4,
+                    'synchronization_available' => true,
+                    'max_synchronization_capacity' => 400,
+                    'beneficiaries_count' => 150,
+                    'beneficiaries_description' => 'سكان المنطقة والمؤسسات',
+                    'environmental_compliance_status' => 'compliant',
+                    'status' => 'active',
+                    'profile_completed' => true,
+                ]);
+
+                $allOperators->push($mmlukOperator);
+
+                // إنشاء 4 مولدات لمشغل المملوك
+                $mmlukGeneratorsData = [
+                    [
+                        'name' => 'مولد المملوك 1',
+                        'generator_number' => 'GEN-MMLUK-001',
+                        'description' => 'مولد ديزل بقوة 100 كيلو فولت أمبير',
+                        'capacity_kva' => 100,
+                        'power_factor' => 0.8,
+                        'voltage' => 400,
+                        'frequency' => 50,
+                        'engine_type' => $getConstantValue($engineTypeConstants, 'diesel'),
+                        'manufacturing_year' => 2020,
+                        'injection_system' => $getConstantValue($injectionSystemConstants, 'mechanical'),
+                        'fuel_consumption_rate' => 25.5,
+                        'internal_tank_capacity' => 200,
+                        'measurement_indicator' => $getConstantValue($measurementIndicatorConstants, 'mechanical'),
+                        'technical_condition' => $getConstantValue($technicalConditionConstants, 'good'),
+                        'control_panel_available' => true,
+                        'control_panel_type' => $getConstantValue($controlPanelTypeConstants, 'manual'),
+                        'control_panel_status' => $getConstantValue($controlPanelStatusConstants, 'active'),
+                        'operating_hours' => 5000,
+                        'external_fuel_tank' => true,
+                        'fuel_tanks_count' => 2,
+                        'status' => $getConstantValue($statusConstants, 'active'),
+                    ],
+                    [
+                        'name' => 'مولد المملوك 2',
+                        'generator_number' => 'GEN-MMLUK-002',
+                        'description' => 'مولد ديزل بقوة 150 كيلو فولت أمبير',
+                        'capacity_kva' => 150,
+                        'power_factor' => 0.85,
+                        'voltage' => 400,
+                        'frequency' => 50,
+                        'engine_type' => $getConstantValue($engineTypeConstants, 'diesel'),
+                        'manufacturing_year' => 2021,
+                        'injection_system' => $getConstantValue($injectionSystemConstants, 'mechanical'),
+                        'fuel_consumption_rate' => 35.0,
+                        'internal_tank_capacity' => 300,
+                        'measurement_indicator' => $getConstantValue($measurementIndicatorConstants, 'mechanical'),
+                        'technical_condition' => $getConstantValue($technicalConditionConstants, 'good'),
+                        'control_panel_available' => true,
+                        'control_panel_type' => $getConstantValue($controlPanelTypeConstants, 'manual'),
+                        'control_panel_status' => $getConstantValue($controlPanelStatusConstants, 'active'),
+                        'operating_hours' => 3500,
+                        'external_fuel_tank' => true,
+                        'fuel_tanks_count' => 2,
+                        'status' => $getConstantValue($statusConstants, 'active'),
+                    ],
+                    [
+                        'name' => 'مولد المملوك 3',
+                        'generator_number' => 'GEN-MMLUK-003',
+                        'description' => 'مولد ديزل بقوة 200 كيلو فولت أمبير',
+                        'capacity_kva' => 200,
+                        'power_factor' => 0.9,
+                        'voltage' => 400,
+                        'frequency' => 50,
+                        'engine_type' => $getConstantValue($engineTypeConstants, 'diesel'),
+                        'manufacturing_year' => 2019,
+                        'injection_system' => $getConstantValue($injectionSystemConstants, 'mechanical'),
+                        'fuel_consumption_rate' => 45.5,
+                        'internal_tank_capacity' => 400,
+                        'measurement_indicator' => $getConstantValue($measurementIndicatorConstants, 'mechanical'),
+                        'technical_condition' => $getConstantValue($technicalConditionConstants, 'good'),
+                        'control_panel_available' => true,
+                        'control_panel_type' => $getConstantValue($controlPanelTypeConstants, 'manual'),
+                        'control_panel_status' => $getConstantValue($controlPanelStatusConstants, 'active'),
+                        'operating_hours' => 8000,
+                        'external_fuel_tank' => true,
+                        'fuel_tanks_count' => 2,
+                        'status' => $getConstantValue($statusConstants, 'active'),
+                    ],
+                    [
+                        'name' => 'مولد المملوك 4',
+                        'generator_number' => 'GEN-MMLUK-004',
+                        'description' => 'مولد ديزل بقوة 50 كيلو فولت أمبير',
+                        'capacity_kva' => 50,
+                        'power_factor' => 0.75,
+                        'voltage' => 400,
+                        'frequency' => 50,
+                        'engine_type' => $getConstantValue($engineTypeConstants, 'diesel'),
+                        'manufacturing_year' => 2022,
+                        'injection_system' => $getConstantValue($injectionSystemConstants, 'mechanical'),
+                        'fuel_consumption_rate' => 15.0,
+                        'internal_tank_capacity' => 150,
+                        'measurement_indicator' => $getConstantValue($measurementIndicatorConstants, 'mechanical'),
+                        'technical_condition' => $getConstantValue($technicalConditionConstants, 'good'),
+                        'control_panel_available' => true,
+                        'control_panel_type' => $getConstantValue($controlPanelTypeConstants, 'manual'),
+                        'control_panel_status' => $getConstantValue($controlPanelStatusConstants, 'active'),
+                        'operating_hours' => 2000,
+                        'external_fuel_tank' => false,
+                        'fuel_tanks_count' => 0,
+                        'status' => $getConstantValue($statusConstants, 'active'),
+                    ],
+                ];
+
+                foreach ($mmlukGeneratorsData as $genData) {
+                    $generator = Generator::create([
+                        'operator_id' => $mmlukOperator->id,
+                        ...$genData,
+                    ]);
+
+                    $allGenerators->push($generator);
+                    $mmlukGenerators->push($generator); // إضافة لمولدات المملوك
+
+                    // إنشاء خزانات الوقود إذا كان المولد يحتوي على خزانات
+                    if (isset($genData['fuel_tanks_count']) && $genData['fuel_tanks_count'] > 0) {
+                        for ($t = 0; $t < $genData['fuel_tanks_count']; $t++) {
+                            FuelTank::create([
+                                'generator_id' => $generator->id,
+                                'capacity' => rand(100, 500),
+                                'location' => ['داخلي', 'خارجي', 'أرضي', 'علوي'][rand(0, 3)],
+                                'filtration_system_available' => rand(0, 1) === 1,
+                                'condition' => ['جيد', 'ممتاز', 'مقبول'][rand(0, 2)],
+                                'material' => ['حديد', 'بلاستيك', 'فولاذ'][rand(0, 2)],
+                                'usage' => ['رئيسي', 'احتياطي', 'إضافي'][rand(0, 2)],
+                                'measurement_method' => ['ميكانيكي', 'إلكتروني', 'يدوي'][rand(0, 2)],
+                                'order' => $t + 1,
+                            ]);
+                        }
+                    }
+                }
+
+                // ربط الموظفين الخمسة بالمشغل
+                $employees = User::whereIn('username', [
+                    'emp1_mmluk',
+                    'emp2_mmluk',
+                    'emp3_mmluk',
+                    'emp4_mmluk',
+                    'emp5_mmluk',
+                ])->get();
+
+                foreach ($employees as $employee) {
+                    $mmlukOperator->users()->attach($employee->id);
+                }
+
+                $this->command->info('✓ تم إنشاء مشغل المملوك مع 4 مولدات و ' . $employees->count() . ' موظف');
+            } else {
+                $this->command->info('مشغل المملوك موجود بالفعل، سيتم استخدامه');
+                $allOperators->push($existingOperator);
+                $mmlukOperator = $existingOperator; // حفظ للملوك
+                // إضافة مولدات المشغل الموجود
+                $existingGenerators = $existingOperator->generators;
+                $allGenerators = $allGenerators->merge($existingGenerators);
+                $mmlukGenerators = $mmlukGenerators->merge($existingGenerators); // إضافة لمولدات المملوك
+            }
+        } else {
+            $this->command->warn('لم يتم العثور على المستخدم mmluk، سيتم تخطي مشغل المملوك');
+        }
+
         // إنشاء 10 مشغلين
         for ($i = 0; $i < 10; $i++) {
             $governorate = $governorates[$i % count($governorates)];
             $city = $governorate['cities'][array_rand($governorate['cities'])];
             $coords = $governorateCoordinates[$governorate['value']];
             
-            // إضافة تغيير بسيط في الإحداثيات لجعلها مختلفة
+            // إضافة تغيير بسيط في الإحداثيات
             $latitude = $coords['lat'] + (rand(-50, 50) / 1000);
             $longitude = $coords['lng'] + (rand(-50, 50) / 1000);
 
@@ -94,10 +330,10 @@ class OperatorsWithDataSeeder extends Seeder
                 'phone_alt' => '056' . str_pad(rand(1000000, 9999999), 7, '0', STR_PAD_LEFT),
                 'address' => 'شارع ' . ($i + 1) . '، ' . $city,
                 'owner_id' => $owner->id,
-                'unit_number' => 'UNIT-' . str_pad($i + 1, 3, '0', STR_PAD_LEFT),
+                'unit_number' => $governorate['value'] . '-' . str_pad($i + 1, 3, '0', STR_PAD_LEFT),
                 'unit_code' => 'CODE-' . strtoupper(Str::random(4)),
                 'unit_name' => 'وحدة ' . $operatorNames[$i],
-                'governorate' => (int) $governorate['value'],
+                'governorate' => $governorate['value'],
                 'city' => $city,
                 'detailed_address' => 'مبنى رقم ' . ($i + 1) . '، ' . $city . '، ' . $governorate['name'],
                 'latitude' => $latitude,
@@ -117,28 +353,21 @@ class OperatorsWithDataSeeder extends Seeder
                 'profile_completed' => true,
             ]);
 
+            $allOperators->push($operator);
+
             // إنشاء حوالي 5 مولدات لكل مشغل
-            $generatorsCount = rand(4, 6); // بين 4 و 6 مولدات
+            $generatorsCount = rand(4, 6);
             for ($j = 0; $j < $generatorsCount; $j++) {
                 $generatorNumber = 'GEN-' . str_pad($i + 1, 3, '0', STR_PAD_LEFT) . '-' . str_pad($j + 1, 2, '0', STR_PAD_LEFT);
                 
-                // جلب الثوابت
-                $statusConstants = ConstantsHelper::getByName('حالة المولد');
-                $engineTypeConstants = ConstantsHelper::getByName('نوع المحرك');
-                $injectionSystemConstants = ConstantsHelper::getByName('نظام الحقن');
-                $measurementIndicatorConstants = ConstantsHelper::getByName('مؤشر القياس');
-                $technicalConditionConstants = ConstantsHelper::getByName('الحالة الفنية');
-                $controlPanelTypeConstants = ConstantsHelper::getByName('نوع لوحة التحكم');
-                $controlPanelStatusConstants = ConstantsHelper::getByName('حالة لوحة التحكم');
-
                 // اختيار قيم عشوائية من الثوابت
-                $statusValue = $statusConstants->isNotEmpty() ? $statusConstants->shuffle()->first()->value : 'active';
-                $engineTypeValue = $engineTypeConstants->isNotEmpty() ? $engineTypeConstants->shuffle()->first()->value : 'diesel';
-                $injectionSystemValue = $injectionSystemConstants->isNotEmpty() ? $injectionSystemConstants->shuffle()->first()->value : 'mechanical';
-                $measurementIndicatorValue = $measurementIndicatorConstants->isNotEmpty() ? $measurementIndicatorConstants->shuffle()->first()->value : 'mechanical';
-                $technicalConditionValue = $technicalConditionConstants->isNotEmpty() ? $technicalConditionConstants->shuffle()->first()->value : 'good';
-                $controlPanelTypeValue = $controlPanelTypeConstants->isNotEmpty() ? $controlPanelTypeConstants->shuffle()->first()->value : 'manual';
-                $controlPanelStatusValue = $controlPanelStatusConstants->isNotEmpty() ? $controlPanelStatusConstants->shuffle()->first()->value : 'active';
+                $statusValue = $getConstantValue($statusConstants, 'active');
+                $engineTypeValue = $getConstantValue($engineTypeConstants, 'diesel');
+                $injectionSystemValue = $getConstantValue($injectionSystemConstants, 'mechanical');
+                $measurementIndicatorValue = $getConstantValue($measurementIndicatorConstants, 'mechanical');
+                $technicalConditionValue = $getConstantValue($technicalConditionConstants, 'good');
+                $controlPanelTypeValue = $getConstantValue($controlPanelTypeConstants, 'manual');
+                $controlPanelStatusValue = $getConstantValue($controlPanelStatusConstants, 'active');
 
                 $generator = Generator::create([
                     'name' => $generatorNames[$j % count($generatorNames)],
@@ -165,6 +394,25 @@ class OperatorsWithDataSeeder extends Seeder
                     'external_fuel_tank' => rand(0, 1) === 1,
                     'fuel_tanks_count' => rand(0, 3),
                 ]);
+
+                $allGenerators->push($generator);
+
+                // إنشاء خزانات وقود للمولد (إذا كان لديه خزانات)
+                if ($generator->fuel_tanks_count > 0) {
+                    for ($t = 0; $t < $generator->fuel_tanks_count; $t++) {
+                        FuelTank::create([
+                            'generator_id' => $generator->id,
+                            'capacity' => rand(100, 500),
+                            'location' => ['داخلي', 'خارجي', 'أرضي', 'علوي'][rand(0, 3)],
+                            'filtration_system_available' => rand(0, 1) === 1,
+                            'condition' => ['جيد', 'ممتاز', 'مقبول'][rand(0, 2)],
+                            'material' => ['حديد', 'بلاستيك', 'فولاذ'][rand(0, 2)],
+                            'usage' => ['رئيسي', 'احتياطي', 'إضافي'][rand(0, 2)],
+                            'measurement_method' => ['ميكانيكي', 'إلكتروني', 'يدوي'][rand(0, 2)],
+                            'order' => $t + 1,
+                        ]);
+                    }
+                }
             }
 
             // تحديث عدد المولدات في Operator
@@ -194,11 +442,279 @@ class OperatorsWithDataSeeder extends Seeder
             }
         }
 
-        $this->command->info('تم إنشاء 10 مشغلين مع بياناتهم بنجاح!');
-        $this->command->info('- كل مشغل لديه صاحب شركة (CompanyOwner)');
-        $this->command->info('- كل مشغل لديه حوالي 5 مولدات');
-        $this->command->info('- كل مشغل لديه 6 موظفين (3 موظفين + 3 فنيين)');
-        $this->command->info('- كل مشغل في محافظة مختلفة بإحداثيات مختلفة');
+        $this->command->info('تم إنشاء 10 مشغلين إضافيين مع مولداتهم وموظفيهم');
+
+        // دالة مساعدة لإنشاء سجل تشغيل مع sequence
+        $createOperationLog = function($generator, $operationDate, $startTime, $endTime, $loadPercentage, $fuelMeterStart, $fuelMeterEnd, $fuelConsumed, $energyMeterStart, $energyMeterEnd, $energyProduced, $operationalNotes, $malfunctions) {
+            // حساب التسلسل لكل مولد
+            $lastSequence = OperationLog::where('generator_id', $generator->id)->max('sequence') ?? 0;
+            $sequence = $lastSequence + 1;
+
+            return OperationLog::create([
+                'generator_id' => $generator->id,
+                'operator_id' => $generator->operator_id,
+                'sequence' => $sequence,
+                'operation_date' => $operationDate,
+                'start_time' => $startTime,
+                'end_time' => $endTime,
+                'load_percentage' => $loadPercentage,
+                'fuel_meter_start' => $fuelMeterStart,
+                'fuel_meter_end' => $fuelMeterEnd,
+                'fuel_consumed' => $fuelConsumed,
+                'energy_meter_start' => $energyMeterStart,
+                'energy_meter_end' => $energyMeterEnd,
+                'energy_produced' => $energyProduced,
+                'operational_notes' => $operationalNotes,
+                'malfunctions' => $malfunctions,
+            ]);
+        };
+
+        // إنشاء أكثر من 100 سجل تشغيل لمشغل المملوك
+        if ($mmlukOperator && $mmlukGenerators->isNotEmpty()) {
+            $this->command->info('جاري إنشاء سجلات تشغيل لمشغل المملوك...');
+            $mmlukOperationLogsCount = 110; // أكثر من 100
+            
+            // تجميع السجلات لكل مولد حسب التاريخ لضمان التسلسل الصحيح
+            $mmlukLogsData = [];
+            $logsPerGenerator = (int) ceil($mmlukOperationLogsCount / $mmlukGenerators->count());
+            foreach ($mmlukGenerators as $mmlukGenerator) {
+                for ($i = 0; $i < $logsPerGenerator; $i++) {
+                    $operationDate = now()->subDays(rand(0, 365));
+                    $startTime = $operationDate->copy()->setTime(rand(6, 10), rand(0, 59));
+                    $endTime = $startTime->copy()->addHours(rand(2, 12))->addMinutes(rand(0, 59));
+                    
+                    $loadPercentage = round(rand(30, 100) + (rand(0, 99) / 100), 2);
+                    $fuelMeterStart = round(rand(0, 1000) + (rand(0, 99) / 100), 2);
+                    $fuelMeterEnd = $fuelMeterStart + round(rand(10, 200) + (rand(0, 99) / 100), 2);
+                    $fuelConsumed = $fuelMeterEnd - $fuelMeterStart;
+                    
+                    $energyMeterStart = round(rand(0, 10000) + (rand(0, 99) / 100), 2);
+                    $energyMeterEnd = $energyMeterStart + round(rand(50, 500) + (rand(0, 99) / 100), 2);
+                    $energyProduced = $energyMeterEnd - $energyMeterStart;
+                    
+                    $mmlukLogsData[] = [
+                        'generator' => $mmlukGenerator,
+                        'operation_date' => $operationDate,
+                        'start_time' => $startTime,
+                        'end_time' => $endTime,
+                        'load_percentage' => $loadPercentage,
+                        'fuel_meter_start' => $fuelMeterStart,
+                        'fuel_meter_end' => $fuelMeterEnd,
+                        'fuel_consumed' => $fuelConsumed,
+                        'energy_meter_start' => $energyMeterStart,
+                        'energy_meter_end' => $energyMeterEnd,
+                        'energy_produced' => $energyProduced,
+                        'operational_notes' => rand(0, 1) === 1 ? 'تشغيل عادي بدون مشاكل' : 'تم التشغيل بنجاح',
+                        'malfunctions' => rand(0, 1) === 1 ? null : 'لا توجد أعطال',
+                    ];
+                }
+            }
+            
+            // ترتيب حسب المولد ثم التاريخ
+            usort($mmlukLogsData, function($a, $b) {
+                if ($a['generator']->id != $b['generator']->id) {
+                    return $a['generator']->id <=> $b['generator']->id;
+                }
+                return $a['operation_date'] <=> $b['operation_date'];
+            });
+            
+            // إنشاء السجلات بالترتيب الصحيح
+            foreach ($mmlukLogsData as $logData) {
+                $createOperationLog(
+                    $logData['generator'],
+                    $logData['operation_date'],
+                    $logData['start_time'],
+                    $logData['end_time'],
+                    $logData['load_percentage'],
+                    $logData['fuel_meter_start'],
+                    $logData['fuel_meter_end'],
+                    $logData['fuel_consumed'],
+                    $logData['energy_meter_start'],
+                    $logData['energy_meter_end'],
+                    $logData['energy_produced'],
+                    $logData['operational_notes'],
+                    $logData['malfunctions']
+                );
+            }
+            
+            $this->command->info('✓ تم إنشاء ' . count($mmlukLogsData) . ' سجل تشغيل لمشغل المملوك');
+        }
+
+        // إنشاء 100 سجل تشغيل لباقي المشغلين
+        $this->command->info('جاري إنشاء 100 سجل تشغيل للمشغلين الآخرين...');
+        $mmlukGeneratorIds = $mmlukGenerators->pluck('id')->toArray();
+        $otherGenerators = $allGenerators->filter(function($gen) use ($mmlukGeneratorIds) {
+            return !in_array($gen->id, $mmlukGeneratorIds);
+        });
+        for ($i = 0; $i < 100; $i++) {
+            $generator = $otherGenerators->random();
+            $operator = $generator->operator;
+
+            $operationDate = now()->subDays(rand(0, 365));
+            $startTime = $operationDate->copy()->setTime(rand(6, 10), rand(0, 59));
+            $endTime = $startTime->copy()->addHours(rand(2, 12))->addMinutes(rand(0, 59));
+
+            $loadPercentage = round(rand(30, 100) + (rand(0, 99) / 100), 2);
+            $fuelMeterStart = round(rand(0, 1000) + (rand(0, 99) / 100), 2);
+            $fuelMeterEnd = $fuelMeterStart + round(rand(10, 200) + (rand(0, 99) / 100), 2);
+            $fuelConsumed = $fuelMeterEnd - $fuelMeterStart;
+
+            $energyMeterStart = round(rand(0, 10000) + (rand(0, 99) / 100), 2);
+            $energyMeterEnd = $energyMeterStart + round(rand(50, 500) + (rand(0, 99) / 100), 2);
+            $energyProduced = $energyMeterEnd - $energyMeterStart;
+
+            $createOperationLog(
+                $generator,
+                $operationDate,
+                $startTime,
+                $endTime,
+                $loadPercentage,
+                $fuelMeterStart,
+                $fuelMeterEnd,
+                $fuelConsumed,
+                $energyMeterStart,
+                $energyMeterEnd,
+                $energyProduced,
+                rand(0, 1) === 1 ? 'تشغيل عادي بدون مشاكل' : 'تم التشغيل بنجاح',
+                rand(0, 1) === 1 ? null : 'لا توجد أعطال'
+            );
+        }
+        $this->command->info('✓ تم إنشاء 100 سجل تشغيل للمشغلين الآخرين');
+
+        // إنشاء أكثر من 100 سجل صيانة لمشغل المملوك
+        if ($mmlukOperator && $mmlukGenerators->isNotEmpty()) {
+            $this->command->info('جاري إنشاء سجلات صيانة لمشغل المملوك...');
+            $mmlukMaintenanceCount = 110;
+            
+            for ($i = 0; $i < $mmlukMaintenanceCount; $i++) {
+                $generator = $mmlukGenerators->random();
+                $maintenanceDate = now()->subDays(rand(0, 365));
+
+                MaintenanceRecord::create([
+                    'generator_id' => $generator->id,
+                    'maintenance_type' => $maintenanceTypes[rand(0, count($maintenanceTypes) - 1)],
+                    'maintenance_date' => $maintenanceDate,
+                    'technician_name' => $technicianNames[rand(0, count($technicianNames) - 1)],
+                    'work_performed' => 'تم إجراء ' . $maintenanceTypes[rand(0, count($maintenanceTypes) - 1)] . ' على المولد',
+                    'downtime_hours' => round(rand(1, 24) + (rand(0, 99) / 100), 2),
+                    'maintenance_cost' => round(rand(100, 5000) + (rand(0, 99) / 100), 2),
+                ]);
+            }
+            $this->command->info('✓ تم إنشاء ' . $mmlukMaintenanceCount . ' سجل صيانة لمشغل المملوك');
+        }
+
+        // إنشاء 100 سجل صيانة لباقي المشغلين
+        $this->command->info('جاري إنشاء 100 سجل صيانة للمشغلين الآخرين...');
+        $mmlukGeneratorIds = $mmlukGenerators->pluck('id')->toArray();
+        $otherGenerators = $allGenerators->filter(function($gen) use ($mmlukGeneratorIds) {
+            return !in_array($gen->id, $mmlukGeneratorIds);
+        });
+        for ($i = 0; $i < 100; $i++) {
+            $generator = $otherGenerators->random();
+            $maintenanceDate = now()->subDays(rand(0, 365));
+
+            MaintenanceRecord::create([
+                'generator_id' => $generator->id,
+                'maintenance_type' => $maintenanceTypes[rand(0, count($maintenanceTypes) - 1)],
+                'maintenance_date' => $maintenanceDate,
+                'technician_name' => $technicianNames[rand(0, count($technicianNames) - 1)],
+                'work_performed' => 'تم إجراء ' . $maintenanceTypes[rand(0, count($maintenanceTypes) - 1)] . ' على المولد',
+                'downtime_hours' => round(rand(1, 24) + (rand(0, 99) / 100), 2),
+                'maintenance_cost' => round(rand(100, 5000) + (rand(0, 99) / 100), 2),
+            ]);
+        }
+        $this->command->info('✓ تم إنشاء 100 سجل صيانة للمشغلين الآخرين');
+
+        // إنشاء 100 سجل كفاءة وقود
+        $this->command->info('جاري إنشاء 100 سجل كفاءة وقود...');
+        for ($i = 0; $i < 100; $i++) {
+            $generator = $allGenerators->random();
+            $consumptionDate = now()->subDays(rand(0, 365));
+
+            $operatingHours = round(rand(1, 24) + (rand(0, 99) / 100), 2);
+            $fuelPricePerLiter = round(rand(5, 10) + (rand(0, 99) / 100), 2);
+            $fuelEfficiencyPercentage = round(rand(70, 95) + (rand(0, 99) / 100), 2);
+            $energyDistributionEfficiency = round(rand(75, 98) + (rand(0, 99) / 100), 2);
+            $totalOperatingCost = round(rand(500, 5000) + (rand(0, 99) / 100), 2);
+
+            FuelEfficiency::create([
+                'generator_id' => $generator->id,
+                'consumption_date' => $consumptionDate,
+                'operating_hours' => $operatingHours,
+                'fuel_price_per_liter' => $fuelPricePerLiter,
+                'fuel_efficiency_percentage' => $fuelEfficiencyPercentage,
+                'fuel_efficiency_comparison' => round($fuelEfficiencyPercentage + rand(-5, 5) + (rand(0, 99) / 100), 2),
+                'energy_distribution_efficiency' => $energyDistributionEfficiency,
+                'energy_efficiency_comparison' => round($energyDistributionEfficiency + rand(-3, 3) + (rand(0, 99) / 100), 2),
+                'total_operating_cost' => $totalOperatingCost,
+            ]);
+        }
+        $this->command->info('✓ تم إنشاء 100 سجل كفاءة وقود');
+
+        // إنشاء أكثر من 100 سجل امتثال وسلامة لمشغل المملوك
+        if ($mmlukOperator) {
+            $this->command->info('جاري إنشاء سجلات امتثال وسلامة لمشغل المملوك...');
+            $mmlukComplianceCount = 110;
+            
+            $safetyStatuses = ['compliant', 'non_compliant', 'pending'];
+            $inspectionAuthorities = ['وزارة البيئة', 'البلدية', 'الدفاع المدني', 'جهة مختصة'];
+            $inspectionResults = ['ممتاز', 'جيد', 'مقبول', 'يحتاج تحسين'];
+            
+            for ($i = 0; $i < $mmlukComplianceCount; $i++) {
+                $inspectionDate = now()->subDays(rand(0, 365));
+
+                ComplianceSafety::create([
+                    'operator_id' => $mmlukOperator->id,
+                    'safety_certificate_status' => $safetyStatuses[rand(0, count($safetyStatuses) - 1)],
+                    'last_inspection_date' => $inspectionDate,
+                    'inspection_authority' => $inspectionAuthorities[rand(0, count($inspectionAuthorities) - 1)],
+                    'inspection_result' => $inspectionResults[rand(0, count($inspectionResults) - 1)],
+                    'violations' => rand(0, 1) === 1 ? 'لا توجد مخالفات' : null,
+                ]);
+            }
+            $this->command->info('✓ تم إنشاء ' . $mmlukComplianceCount . ' سجل امتثال وسلامة لمشغل المملوك');
+        }
+
+        // إنشاء 100 سجل امتثال وسلامة لباقي المشغلين
+        $this->command->info('جاري إنشاء 100 سجل امتثال وسلامة للمشغلين الآخرين...');
+        $otherOperators = $allOperators->filter(function($op) use ($mmlukOperator) {
+            return $mmlukOperator && $op->id != $mmlukOperator->id;
+        });
+        $safetyStatuses = ['compliant', 'non_compliant', 'pending'];
+        $inspectionAuthorities = ['وزارة البيئة', 'البلدية', 'الدفاع المدني', 'جهة مختصة'];
+        $inspectionResults = ['ممتاز', 'جيد', 'مقبول', 'يحتاج تحسين'];
+        
+        for ($i = 0; $i < 100; $i++) {
+            $operator = $otherOperators->random();
+            $inspectionDate = now()->subDays(rand(0, 365));
+
+            ComplianceSafety::create([
+                'operator_id' => $operator->id,
+                'safety_certificate_status' => $safetyStatuses[rand(0, count($safetyStatuses) - 1)],
+                'last_inspection_date' => $inspectionDate,
+                'inspection_authority' => $inspectionAuthorities[rand(0, count($inspectionAuthorities) - 1)],
+                'inspection_result' => $inspectionResults[rand(0, count($inspectionResults) - 1)],
+                'violations' => rand(0, 1) === 1 ? 'لا توجد مخالفات' : null,
+            ]);
+        }
+        $this->command->info('✓ تم إنشاء 100 سجل امتثال وسلامة للمشغلين الآخرين');
+
+        $this->command->info('');
+        $this->command->info('═══════════════════════════════════════');
+        $this->command->info('تم إنشاء جميع البيانات بنجاح!');
+        $this->command->info('═══════════════════════════════════════');
+        $this->command->info('الملخص:');
+        $this->command->info('- ' . $allOperators->count() . ' مشغل (بما في ذلك مشغل المملوك)');
+        $this->command->info('- ' . $allGenerators->count() . ' مولد');
+        
+        $totalOperationLogs = \App\Models\OperationLog::count();
+        $totalMaintenanceRecords = \App\Models\MaintenanceRecord::count();
+        $totalComplianceSafeties = \App\Models\ComplianceSafety::count();
+        
+        $this->command->info('- ' . $totalOperationLogs . ' سجل تشغيل');
+        $this->command->info('- ' . $totalMaintenanceRecords . ' سجل صيانة');
+        $this->command->info('- 100 سجل كفاءة وقود');
+        $this->command->info('- ' . $totalComplianceSafeties . ' سجل امتثال وسلامة');
+        $this->command->info('═══════════════════════════════════════');
     }
 }
-

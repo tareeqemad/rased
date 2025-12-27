@@ -6,132 +6,154 @@
     $breadcrumbTitle = 'سجلات الصيانة';
 @endphp
 
-@section('content')
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0 fw-bold">
-                        <i class="bi bi-tools me-2"></i>
-                        سجلات الصيانة
-                    </h5>
-                    @can('create', App\Models\MaintenanceRecord::class)
-                        <a href="{{ route('admin.maintenance-records.create') }}" class="btn btn-sm">
-                            <i class="bi bi-plus-circle me-1"></i>
-                            إضافة سجل جديد
-                        </a>
-                    @endcan
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-hover mb-0">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>#</th>
-                                    <th>رقم المولد</th>
-                                    <th>نوع الصيانة</th>
-                                    <th>تاريخ الصيانة</th>
-                                    <th>اسم الفني</th>
-                                    <th>زمن التوقف</th>
-                                    <th>تكلفة الصيانة</th>
-                                    <th>الإجراءات</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @forelse($maintenanceRecords as $record)
-                                    <tr>
-                                        <td>{{ $record->id }}</td>
-                                        <td>
-                                            @if($record->generator)
-                                                <span class="badge bg-secondary">{{ $record->generator->generator_number }}</span>
-                                            @else
-                                                <span class="text-muted">-</span>
-                                            @endif
-                                        </td>
-                                        <td>
-                                            <span class="badge bg-{{ $record->maintenance_type === 'periodic' ? 'info' : 'warning' }}">
-                                                {{ $record->maintenance_type === 'periodic' ? 'دورية' : 'طارئة' }}
-                                            </span>
-                                        </td>
-                                        <td>{{ $record->maintenance_date->format('Y-m-d') }}</td>
-                                        <td>{{ $record->technician_name ?? '-' }}</td>
-                                        <td>
-                                            @if($record->downtime_hours)
-                                                {{ number_format($record->downtime_hours, 2) }} ساعة
-                                            @else
-                                                <span class="text-muted">-</span>
-                                            @endif
-                                        </td>
-                                        <td>
-                                            @if($record->maintenance_cost)
-                                                {{ number_format($record->maintenance_cost, 2) }} ₪
-                                            @else
-                                                <span class="text-muted">-</span>
-                                            @endif
-                                        </td>
-                                        <td>
-                                            <div class="d-flex gap-2">
-                                                @can('view', $record)
-                                                    <a href="{{ route('admin.maintenance-records.show', $record) }}" class="btn btn-sm btn-outline-info">
-                                                        <i class="bi bi-eye"></i>
-                                                    </a>
-                                                @endcan
-                                                @can('update', $record)
-                                                    <a href="{{ route('admin.maintenance-records.edit', $record) }}" class="btn btn-sm btn-outline-primary">
-                                                        <i class="bi bi-pencil"></i>
-                                                    </a>
-                                                @endcan
-                                                @can('delete', $record)
-                                                    <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ $record->id }}">
-                                                        <i class="bi bi-trash"></i>
-                                                    </button>
-                                                @endcan
-                                            </div>
-                                        </td>
-                                    </tr>
+@push('styles')
+    <link rel="stylesheet" href="{{ asset('assets/admin/css/maintenance-records.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/admin/css/data-table-loading.css') }}">
+@endpush
 
-                                    @can('delete', $record)
-                                        <div class="modal fade" id="deleteModal{{ $record->id }}" tabindex="-1">
-                                            <div class="modal-dialog">
-                                                <div class="modal-content">
-                                                    <div class="modal-header">
-                                                        <h5 class="modal-title">تأكيد الحذف</h5>
-                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                                    </div>
-                                                    <div class="modal-body">
-                                                        <p>هل أنت متأكد من حذف سجل الصيانة #{{ $record->id }}؟</p>
-                                                        <p class="text-danger"><small>هذا الإجراء لا يمكن التراجع عنه</small></p>
-                                                    </div>
-                                                    <div class="modal-footer">
-                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
-                                                        <form action="{{ route('admin.maintenance-records.destroy', $record) }}" method="POST" class="d-inline">
-                                                            @csrf
-                                                            @method('DELETE')
-                                                            <button type="submit" class="btn btn-danger">حذف</button>
-                                                        </form>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    @endcan
-                                @empty
-                                    <tr>
-                                        <td colspan="8" class="text-center py-5 text-muted">
-                                            <i class="bi bi-inbox fs-1 d-block mb-2"></i>
-                                            لا توجد سجلات صيانة
-                                        </td>
-                                    </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
+@section('content')
+    <div class="maintenance-records-page">
+        <div class="row g-3">
+            {{-- Main: قائمة سجلات الصيانة --}}
+            <div class="col-12">
+                <div class="card log-card">
+                    <div class="log-card-header log-toolbar-header">
+                        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+                            <div>
+                                <div class="log-title">
+                                    <i class="bi bi-tools me-2"></i>
+                                    سجلات الصيانة
+                                </div>
+                                <div class="log-subtitle">
+                                    إدارة سجلات الصيانة. العدد: <span id="maintenanceRecordsCount">{{ isset($groupedLogs) ? $groupedLogs->flatten()->count() : $maintenanceRecords->total() }}</span>
+                                </div>
+                            </div>
+
+                            @can('create', App\Models\MaintenanceRecord::class)
+                                <a href="{{ route('admin.maintenance-records.create') }}" class="btn btn-primary">
+                                    <i class="bi bi-plus-circle me-2"></i>
+                                    إضافة سجل جديد
+                                </a>
+                            @endcan
+                        </div>
+
+                        {{-- Row 1: الفلاتر --}}
+                        <div class="row g-3 mb-3">
+                            {{-- البحث --}}
+                            <div class="{{ (auth()->user()->isSuperAdmin() && isset($operators) && $operators->count() > 0) || (isset($generators) && $generators->count() > 0) ? 'col-md-3' : 'col-md-4' }}">
+                                <label class="form-label small text-muted">البحث</label>
+                                <div class="log-searchfield">
+                                    <i class="bi bi-search log-search-icon"></i>
+                                    <input
+                                        type="text"
+                                        id="searchInput"
+                                        class="form-control log-search-input"
+                                        placeholder="ابحث عن سجل بالمولد أو الفني..."
+                                        value="{{ request('q', '') }}"
+                                    >
+                                </div>
+                            </div>
+
+                            {{-- المشغل (SuperAdmin فقط) --}}
+                            @if(auth()->user()->isSuperAdmin() && isset($operators) && $operators->count() > 0)
+                                <div class="col-md-3">
+                                    <label class="form-label small text-muted">المشغل</label>
+                                    <select id="operatorFilter" class="form-select">
+                                        <option value="">كل المشغلين</option>
+                                        @foreach($operators as $op)
+                                            <option value="{{ $op->id }}" {{ request('operator_id') == $op->id ? 'selected' : '' }}>
+                                                {{ $op->unit_number ? $op->unit_number . ' - ' : '' }}{{ $op->name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            @endif
+
+                            {{-- المولد --}}
+                            @if(isset($generators) && $generators->count() > 0)
+                                <div class="col-md-3">
+                                    <label class="form-label small text-muted">
+                                        <i class="bi bi-lightning-charge me-1"></i>
+                                        المولد
+                                    </label>
+                                    <select id="generatorFilter" class="form-select">
+                                        <option value="">كل المولدات</option>
+                                        @foreach($generators as $gen)
+                                            <option value="{{ $gen->id }}" {{ request('generator_id') == $gen->id ? 'selected' : '' }}>
+                                                {{ $gen->generator_number }} - {{ $gen->name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            @endif
+
+                            {{-- تاريخ من --}}
+                            <div class="{{ ((auth()->user()->isSuperAdmin() && isset($operators) && $operators->count() > 0) || (isset($generators) && $generators->count() > 0)) ? 'col-md-3' : 'col-md-4' }}">
+                                <label class="form-label small text-muted">من تاريخ</label>
+                                <input type="date" id="dateFromFilter" class="form-control" 
+                                       value="{{ request('date_from', '') }}">
+                            </div>
+
+                            {{-- تاريخ إلى --}}
+                            <div class="{{ ((auth()->user()->isSuperAdmin() && isset($operators) && $operators->count() > 0) || (isset($generators) && $generators->count() > 0)) ? 'col-md-3' : 'col-md-4' }}">
+                                <label class="form-label small text-muted">إلى تاريخ</label>
+                                <input type="date" id="dateToFilter" class="form-control" 
+                                       value="{{ request('date_to', '') }}">
+                            </div>
+                        </div>
+
+                        {{-- Row 2: زر البحث وخيارات العرض --}}
+                        <div class="row mb-3">
+                            <div class="col-12 d-flex gap-2 align-items-center flex-wrap">
+                                <button class="btn btn-primary" type="button" id="searchBtn">
+                                    <i class="bi bi-search me-2"></i>
+                                    بحث
+                                </button>
+                                <button
+                                    class="btn btn-outline-secondary {{ request('q') || request('operator_id') || request('generator_id') || request('date_from') || request('date_to') ? '' : 'd-none' }}"
+                                    type="button"
+                                    id="clearSearchBtn"
+                                >
+                                    <i class="bi bi-x me-2"></i>
+                                    إلغاء الفلاتر
+                                </button>
+                                <div class="form-check form-switch ms-auto">
+                                    <input class="form-check-input" type="checkbox" id="groupByGeneratorToggle" {{ request('group_by_generator') ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="groupByGeneratorToggle">
+                                        <i class="bi bi-grid-3x3-gap me-1"></i>
+                                        تجميع حسب المولد
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card-body log-list-body data-table-container">
+                        <div id="maintenanceRecordsListContainer">
+                            @if(request('group_by_generator') && isset($groupedLogs) && $groupedLogs->isNotEmpty())
+                                @include('admin.maintenance-records.partials.grouped-list', ['groupedLogs' => $groupedLogs, 'maintenanceRecords' => $maintenanceRecords])
+                            @else
+                                @include('admin.maintenance-records.partials.list', ['maintenanceRecords' => $maintenanceRecords])
+                            @endif
+                        </div>
                     </div>
                 </div>
-                @if($maintenanceRecords->hasPages())
-                    <div class="card-footer">
-                        {{ $maintenanceRecords->links() }}
-                    </div>
-                @endif
             </div>
         </div>
     </div>
 @endsection
+
+@push('scripts')
+    <script src="{{ asset('assets/admin/libs/jquery/jquery.min.js') }}"></script>
+    <script src="{{ asset('assets/admin/js/data-table-loading.js') }}"></script>
+    <script>
+        window.MAINT_REC = {
+            routes: {
+                index: @json(route('admin.maintenance-records.index')),
+                search: @json(route('admin.maintenance-records.index')),
+                delete: @json(route('admin.maintenance-records.destroy', ['maintenance_record' => '__ID__'])),
+            }
+        };
+    </script>
+    <script src="{{ asset('assets/admin/js/maintenance-records.js') }}"></script>
+@endpush

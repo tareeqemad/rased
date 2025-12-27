@@ -27,6 +27,13 @@ class StoreConstantMasterRequest extends FormRequest
             'description' => ['nullable', 'string'],
             'is_active' => ['nullable', 'boolean'],
             'order' => ['nullable', 'integer', 'min:0'],
+            'details' => ['nullable', 'array'],
+            'details.*.label' => ['required_with:details', 'string', 'max:255'],
+            'details.*.code' => ['nullable', 'string', 'max:255'],
+            'details.*.value' => ['nullable', 'string', 'max:255'],
+            'details.*.notes' => ['nullable', 'string'],
+            'details.*.is_active' => ['nullable', 'boolean'],
+            'details.*.order' => ['nullable', 'integer', 'min:0'],
         ];
     }
 
@@ -41,6 +48,9 @@ class StoreConstantMasterRequest extends FormRequest
             'constant_number.required' => 'رقم الثابت مطلوب.',
             'constant_number.unique' => 'رقم الثابت مستخدم بالفعل.',
             'constant_name.required' => 'اسم الثابت مطلوب.',
+            'details.array' => 'يجب أن تكون التفاصيل مصفوفة.',
+            'details.*.label.required_with' => 'البيان مطلوب لكل تفصيل.',
+            'details.*.label.max' => 'البيان يجب ألا يتجاوز 255 حرفاً.',
         ];
     }
 }

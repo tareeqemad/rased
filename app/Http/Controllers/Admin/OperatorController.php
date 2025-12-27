@@ -182,13 +182,28 @@ class OperatorController extends Controller
     }
 
     /**
-     * Display the specified resource.
+     * Display detailed information about the specified operator.
      */
     public function show(Operator $operator): View
     {
         $this->authorize('view', $operator);
 
-        $operator->load(['owner', 'generators', 'users']);
+        $operator->load([
+            'owner',
+            'generators' => function ($q) {
+                $q->latest()->take(10);
+            },
+            'users',
+            'operationLogs' => function ($q) {
+                $q->latest()->take(5);
+            },
+        ]);
+
+        $operator->loadCount([
+            'generators',
+            'users',
+            'operationLogs',
+        ]);
 
         return view('admin.operators.show', compact('operator'));
     }
