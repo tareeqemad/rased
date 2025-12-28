@@ -3,7 +3,7 @@
 @section('title', 'المقترحات والشكاوى - راصد')
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('assets/public/css/complaints.css') }}">
+<link rel="stylesheet" href="{{ asset('assets/front/css/complaints.css') }}">
 @endpush
 
 @section('content')
