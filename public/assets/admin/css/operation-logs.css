@@ -35,30 +35,53 @@
     color: var(--log-text) !important;
     border-bottom: 1px solid var(--log-border-2) !important;
 }
-.operation-logs-page .card-header *{
-    color: var(--log-text) !important;
-}
 
-/* Header */
 .operation-logs-page .log-card-header{
-    background: var(--log-surface) !important;
-    color: var(--log-text) !important;
+    background: var(--log-surface);
     border-bottom: 1px solid var(--log-border-2);
     padding: 1rem 1.25rem;
 }
-.operation-logs-page .log-card-header *{
-    color: inherit;
+
+.operation-logs-page .log-card-header:not(.log-toolbar-header) {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
 }
 
 .operation-logs-page .log-title{
     font-weight: 800;
     font-size: 1rem;
     color: var(--log-text);
+    margin-bottom: 0;
 }
+
 .operation-logs-page .log-subtitle{
     font-size: .85rem;
     color: var(--log-muted);
     margin-top: .25rem;
+}
+
+.operation-logs-page .card-body {
+    padding: 1.5rem;
+}
+
+.operation-logs-page hr {
+    border-top: 1px solid rgba(0,0,0,.1);
+    margin: 1.5rem 0;
+}
+
+.operation-logs-page .calculated-field {
+    background-color: #f8f9fa !important;
+    border-color: #0d6efd !important;
+    color: #0d6efd !important;
+    font-weight: 600;
+    cursor: not-allowed;
+}
+
+.operation-logs-page .calculated-field:focus {
+    background-color: #f8f9fa !important;
+    border-color: #0d6efd !important;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15) !important;
 }
 
 /* Toolbar */

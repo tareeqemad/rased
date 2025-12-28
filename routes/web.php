@@ -3,13 +3,16 @@
 use App\Http\Controllers\Auth\LoginController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', [\App\Http\Controllers\PublicHomeController::class, 'index'])->name('public.home');
-Route::get('/api/operators/map', [\App\Http\Controllers\PublicHomeController::class, 'getOperatorsForMap'])->name('public.operators.map');
-
+// Front Routes
+Route::get('/', [\App\Http\Controllers\PublicHomeController::class, 'index'])->name('front.home');
+Route::get('/map', [\App\Http\Controllers\PublicHomeController::class, 'map'])->name('front.map');
+Route::get('/stats', [\App\Http\Controllers\PublicHomeController::class, 'stats'])->name('front.stats');
+Route::get('/about', [\App\Http\Controllers\PublicHomeController::class, 'about'])->name('front.about');
+Route::get('/api/operators/map', [\App\Http\Controllers\PublicHomeController::class, 'getOperatorsForMap'])->name('front.operators.map');
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
-    Route::post('/login', [LoginController::class, 'login']);
+    Route::post('/login', [LoginController::class, 'login'])->middleware('throttle:5,1');
 });
 
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout')->middleware('auth');

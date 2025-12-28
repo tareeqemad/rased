@@ -10,8 +10,7 @@ use Illuminate\Http\Request;
 class NotificationController extends Controller
 {
     /**
-     * جلب الإشعارات للمستخدم الحالي
-     * النظام يقرأ الإشعارات الخاصة بالمستخدم فقط (آمن)
+     * Get all notifications for the authenticated user
      */
     public function index(Request $request): JsonResponse
     {
@@ -21,7 +20,6 @@ class NotificationController extends Controller
             return response()->json(['error' => 'غير مصرح'], 401);
         }
         
-        // جلب الإشعارات الخاصة بالمستخدم الحالي فقط (آمن - لا يحتاج فحص صلاحيات إضافي)
         $notifications = Notification::where('user_id', $user->id)
             ->orderBy('created_at', 'desc')
             ->limit(20)
@@ -51,7 +49,7 @@ class NotificationController extends Controller
     }
 
     /**
-     * تعليم إشعار كمقروء
+     * Mark a single notification as read by authenticated user
      */
     public function markAsRead(Request $request, Notification $notification): JsonResponse
     {
@@ -65,7 +63,7 @@ class NotificationController extends Controller
     }
 
     /**
-     * تعليم جميع الإشعارات كمقروء
+     * Mark all unread notifications as read for authenticated user
      */
     public function markAllAsRead(Request $request): JsonResponse
     {
@@ -82,7 +80,7 @@ class NotificationController extends Controller
     }
 
     /**
-     * حذف إشعار
+     * Delete notification if it belongs to authenticated user
      */
     public function destroy(Notification $notification): JsonResponse
     {

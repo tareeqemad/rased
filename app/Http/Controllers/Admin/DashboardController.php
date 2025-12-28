@@ -38,6 +38,8 @@ class DashboardController extends Controller
         // إحصائيات عامة
         if ($user->isSuperAdmin()) {
             $stats = $this->getSuperAdminStats();
+        } elseif ($user->isAdmin()) {
+            $stats = $this->getAdminStats();
         } elseif ($user->isCompanyOwner()) {
             $stats = $this->getCompanyOwnerStats($user, $operatorIds, $generatorIds);
         } elseif ($user->isEmployee() || $user->isTechnician()) {
@@ -70,8 +72,8 @@ class DashboardController extends Controller
             ->limit(5)
             ->get();
 
-        // آخر المشغلين المضافة (Super Admin فقط)
-        $recentOperators = $user->isSuperAdmin()
+        // آخر المشغلين المضافة (Super Admin والأدمن)
+        $recentOperators = ($user->isSuperAdmin() || $user->isAdmin())
             ? Operator::with('owner')->latest()->limit(5)->get()
             : collect();
 
@@ -103,7 +105,6 @@ class DashboardController extends Controller
         // الشهادات المنتهية أو قريبة من الانتهاء
         $expiringCompliance = $this->getExpiringCompliance($operatorIds);
 
-        // إنشاء الإشعارات تلقائياً
         $this->createNotifications($user, $operatorIds, $generatorIds, $generatorsNeedingMaintenance, $unansweredComplaints, $expiringCompliance);
 
         return view('admin.dashboard', compact(
@@ -124,7 +125,7 @@ class DashboardController extends Controller
 
     private function getOperatorIds($user): ?array
     {
-        if ($user->isSuperAdmin()) {
+        if ($user->isSuperAdmin() || $user->isAdmin()) {
             return null; // جميع المشغلين
         } elseif ($user->isCompanyOwner()) {
             return $user->ownedOperators->pluck('id')->toArray();
@@ -136,7 +137,7 @@ class DashboardController extends Controller
 
     private function getGeneratorIds($user, ?array $operatorIds): ?array
     {
-        if ($user->isSuperAdmin()) {
+        if ($user->isSuperAdmin() || $user->isAdmin()) {
             return null; // جميع المولدات
         }
 
@@ -163,6 +164,23 @@ class DashboardController extends Controller
             'generators' => [
                 'total' => Generator::count(),
                 'active' => Generator::where('status', 'active')->count(),
+            ],
+        ];
+    }
+
+    private function getAdminStats(): array
+    {
+        return [
+            'operators' => [
+                'total' => Operator::count(),
+                'active' => Operator::where('status', 'active')->count(),
+            ],
+            'generators' => [
+                'total' => Generator::count(),
+                'active' => Generator::where('status', 'active')->count(),
+            ],
+            'company_owners' => [
+                'total' => User::where('role', Role::CompanyOwner)->count(),
             ],
         ];
     }
@@ -383,23 +401,22 @@ class DashboardController extends Controller
     }
 
     /**
-     * إنشاء الإشعارات تلقائياً بناءً على البيانات
+     * Create notifications based on dashboard data and user role
      */
     private function createNotifications($user, ?array $operatorIds, ?array $generatorIds, $generatorsNeedingMaintenance, $unansweredComplaints, $expiringCompliance): void
     {
-        // مولدات تحتاج صيانة
         if ($generatorsNeedingMaintenance->count() > 0) {
             $count = $generatorsNeedingMaintenance->count();
+            $firstGeneratorId = $generatorsNeedingMaintenance->first()->id;
             $this->createOrUpdateNotification(
                 $user->id,
                 'maintenance_needed',
                 'مولدات تحتاج صيانة',
                 "يوجد {$count} مولد يحتاج إلى صيانة فورية",
-                route('admin.maintenance-records.index')
+                route('admin.maintenance-records.create', ['generator_id' => $firstGeneratorId])
             );
         }
 
-        // شكاوى غير م responded عليها
         if ($unansweredComplaints->count() > 0) {
             $count = $unansweredComplaints->count();
             $this->createOrUpdateNotification(
@@ -411,7 +428,6 @@ class DashboardController extends Controller
             );
         }
 
-        // شهادات منتهية
         if ($expiringCompliance->count() > 0) {
             $count = $expiringCompliance->count();
             $this->createOrUpdateNotification(
@@ -425,26 +441,23 @@ class DashboardController extends Controller
     }
 
     /**
-     * إنشاء أو تحديث إشعار (لتجنب التكرار)
+     * Create or update notification to avoid duplicates of same type
      */
     private function createOrUpdateNotification(int $userId, string $type, string $title, string $message, ?string $link = null): void
     {
-        // البحث عن إشعار غير مقروء من نفس النوع
         $existing = Notification::where('user_id', $userId)
             ->where('type', $type)
             ->where('read', false)
             ->first();
 
         if ($existing) {
-            // تحديث الإشعار الموجود
             $existing->update([
                 'title' => $title,
                 'message' => $message,
                 'link' => $link,
-                'created_at' => now(), // تحديث الوقت
+                'created_at' => now(),
             ]);
         } else {
-            // إنشاء إشعار جديد
             Notification::createNotification($userId, $type, $title, $message, $link);
         }
     }

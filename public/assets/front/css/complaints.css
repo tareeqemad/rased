@@ -1,0 +1,115 @@
+/* Complaints Public Page Styles */
+.complaints-public-page {
+    padding: 4rem 0;
+}
+
+.complaints-header {
+    text-align: center;
+    margin-bottom: 4rem;
+    padding: 3rem 0;
+    background: var(--primary-color);
+    color: white;
+    border-radius: 20px;
+}
+
+.complaints-header h1 {
+    font-size: 3rem;
+    font-weight: 900;
+    margin-bottom: 1rem;
+}
+
+.complaints-header p {
+    font-size: 1.5rem;
+    opacity: 0.95;
+}
+
+.options-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+}
+
+.option-card {
+    background: white;
+    border: 2px solid var(--border-color);
+    border-radius: 20px;
+    padding: 3rem 2rem;
+    text-align: center;
+    transition: all 0.3s;
+    cursor: pointer;
+    text-decoration: none;
+    color: inherit;
+    display: block;
+    box-shadow: var(--shadow-md);
+}
+
+.option-card:hover {
+    border-color: var(--primary-color);
+    transform: translateY(-10px);
+    box-shadow: var(--shadow-xl);
+}
+
+.option-icon {
+    width: 90px;
+    height: 90px;
+    margin: 0 auto 2rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+}
+
+.option-icon svg {
+    width: 48px;
+    height: 48px;
+    color: white;
+}
+
+.complaint-icon {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+}
+
+.suggestion-icon {
+    background: var(--primary-color);
+}
+
+.track-icon {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+.option-card:hover .option-icon {
+    transform: scale(1.1) rotate(5deg);
+}
+
+.option-title {
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: var(--text-dark);
+    margin-bottom: 1rem;
+}
+
+.option-description {
+    font-size: 1.05rem;
+    color: var(--text-gray);
+    line-height: 1.8;
+}
+
+@media (max-width: 768px) {
+    .complaints-header h1 {
+        font-size: 2rem;
+    }
+
+    .complaints-header p {
+        font-size: 1.2rem;
+    }
+
+    .options-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .option-card {
+        padding: 2rem 1.5rem;
+    }
+}
+

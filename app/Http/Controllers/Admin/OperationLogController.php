@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreOperationLogRequest;
 use App\Http\Requests\Admin\UpdateOperationLogRequest;
 use App\Models\Generator;
+use App\Models\Notification;
 use App\Models\OperationLog;
 use App\Models\Operator;
 use Illuminate\Http\JsonResponse;
@@ -174,7 +175,6 @@ class OperationLogController extends Controller
 
         $data = $request->validated();
 
-        // إذا كان المستخدم CompanyOwner، استخدم مشغله تلقائياً
         if (auth()->user()->isCompanyOwner()) {
             $operator = auth()->user()->ownedOperators()->first();
             if ($operator) {
@@ -182,12 +182,40 @@ class OperationLogController extends Controller
             }
         }
 
-        // حساب التسلسل لكل مولد
         $lastSequence = OperationLog::where('generator_id', $data['generator_id'])
             ->max('sequence') ?? 0;
         $data['sequence'] = $lastSequence + 1;
 
-        OperationLog::create($data);
+        // Always calculate fuel consumed from start and end (ignore user input for security)
+        if (isset($data['fuel_meter_start']) && isset($data['fuel_meter_end']) 
+            && $data['fuel_meter_start'] > 0 && $data['fuel_meter_end'] > 0 
+            && $data['fuel_meter_end'] >= $data['fuel_meter_start']) {
+            $data['fuel_consumed'] = round($data['fuel_meter_end'] - $data['fuel_meter_start'], 2);
+        } else {
+            $data['fuel_consumed'] = null;
+        }
+
+        // Always calculate energy produced from start and end (ignore user input for security)
+        if (isset($data['energy_meter_start']) && isset($data['energy_meter_end']) 
+            && $data['energy_meter_start'] > 0 && $data['energy_meter_end'] > 0 
+            && $data['energy_meter_end'] >= $data['energy_meter_start']) {
+            $data['energy_produced'] = round($data['energy_meter_end'] - $data['energy_meter_start'], 2);
+        } else {
+            $data['energy_produced'] = null;
+        }
+
+        $operationLog = OperationLog::create($data);
+
+        $generator = Generator::with('operator')->find($data['generator_id']);
+        if ($generator && $generator->operator) {
+            Notification::notifyOperatorUsers(
+                $generator->operator,
+                'operation_log_added',
+                'تم إضافة سجل تشغيل',
+                "تم إضافة سجل تشغيل جديد للمولد: {$generator->name}",
+                route('admin.operation-logs.show', $operationLog)
+            );
+        }
 
         if ($request->ajax() || $request->wantsJson()) {
             return response()->json([
@@ -249,12 +277,29 @@ class OperationLogController extends Controller
 
         $data = $request->validated();
 
-        // إذا كان المستخدم CompanyOwner، استخدم مشغله تلقائياً
         if (auth()->user()->isCompanyOwner()) {
             $operator = auth()->user()->ownedOperators()->first();
             if ($operator) {
                 $data['operator_id'] = $operator->id;
             }
+        }
+
+        // Always calculate fuel consumed from start and end (ignore user input for security)
+        if (isset($data['fuel_meter_start']) && isset($data['fuel_meter_end']) 
+            && $data['fuel_meter_start'] > 0 && $data['fuel_meter_end'] > 0 
+            && $data['fuel_meter_end'] >= $data['fuel_meter_start']) {
+            $data['fuel_consumed'] = round($data['fuel_meter_end'] - $data['fuel_meter_start'], 2);
+        } else {
+            $data['fuel_consumed'] = null;
+        }
+
+        // Always calculate energy produced from start and end (ignore user input for security)
+        if (isset($data['energy_meter_start']) && isset($data['energy_meter_end']) 
+            && $data['energy_meter_start'] > 0 && $data['energy_meter_end'] > 0 
+            && $data['energy_meter_end'] >= $data['energy_meter_start']) {
+            $data['energy_produced'] = round($data['energy_meter_end'] - $data['energy_meter_start'], 2);
+        } else {
+            $data['energy_produced'] = null;
         }
 
         $operationLog->update($data);

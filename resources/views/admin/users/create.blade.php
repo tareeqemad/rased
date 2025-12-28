@@ -18,52 +18,53 @@
 
 @section('content')
     <div class="users-page">
-
-        <div class="users-page-header">
-            <div>
-                <h1 class="users-title">{{ $breadcrumbTitle }}</h1>
-                <div class="users-subtitle">
-                    @if($authUser->isCompanyOwner())
-                        سيتم ربط المستخدم تلقائيًا بالمشغل الخاص بك.
-                    @else
-                        أنشئ مستخدمًا جديدًا وحدّد الدور وربطه بالمشغل عند الحاجة.
-                    @endif
-                </div>
-            </div>
-            <a href="{{ route('admin.users.index') }}" class="btn btn-light-subtle">
-                <i class="bi bi-arrow-right me-1"></i> رجوع
-            </a>
-        </div>
-
-        <div class="card ui-card">
-            <div class="card-header">
-                <div class="d-flex align-items-center gap-2">
-                    <i class="bi bi-person-plus text-primary"></i>
-                    <div class="fw-bold">{{ $breadcrumbTitle }}</div>
-                </div>
-            </div>
-
-            <div class="card-body">
-                <form action="{{ route('admin.users.store') }}" method="POST">
-                    @csrf
-
-                    @include('admin.users.partials.form', [
-                        'mode' => $mode,
-                        'user' => null,
-                        'defaultRole' => $defaultRole ?? '',
-                        'operatorFieldName' => 'operator_id',
-                    ])
-
-                    <div class="mt-4 d-flex justify-content-end gap-2">
-                        <a href="{{ route('admin.users.index') }}" class="btn btn-light-subtle">إلغاء</a>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-check-lg me-1"></i> حفظ
-                        </button>
+        <div class="row g-3">
+            <div class="col-12">
+                <div class="users-card">
+                    <div class="users-card-header">
+                        <div>
+                            <h5 class="users-title">
+                                <i class="bi bi-person-plus me-2"></i>
+                                {{ $breadcrumbTitle }}
+                            </h5>
+                            <div class="users-subtitle">
+                                @if($authUser->isCompanyOwner())
+                                    سيتم ربط المستخدم تلقائيًا بالمشغل الخاص بك.
+                                @else
+                                    أنشئ مستخدمًا جديدًا وحدّد الدور وربطه بالمشغل عند الحاجة.
+                                @endif
+                            </div>
+                        </div>
+                        <a href="{{ route('admin.users.index') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-right me-2"></i>
+                            رجوع
+                        </a>
                     </div>
-                </form>
+
+                    <form action="{{ route('admin.users.store') }}" method="POST">
+                        @csrf
+
+                        <div class="card-body">
+                            @include('admin.users.partials.form', [
+                                'mode' => $mode,
+                                'user' => null,
+                                'defaultRole' => $defaultRole ?? '',
+                                'operatorFieldName' => 'operator_id',
+                            ])
+
+                            <hr class="my-4">
+
+                            <div class="d-flex justify-content-end gap-2">
+                                <a href="{{ route('admin.users.index') }}" class="btn btn-outline-secondary">إلغاء</a>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-check-lg me-1"></i> حفظ
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
-
     </div>
 @endsection
 

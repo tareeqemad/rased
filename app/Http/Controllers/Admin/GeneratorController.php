@@ -7,6 +7,7 @@ use App\Http\Requests\Admin\StoreGeneratorRequest;
 use App\Http\Requests\Admin\UpdateGeneratorRequest;
 use App\Models\FuelTank;
 use App\Models\Generator;
+use App\Models\Notification;
 use App\Models\Operator;
 use App\Helpers\ConstantsHelper;
 use Illuminate\Http\JsonResponse;
@@ -220,6 +221,17 @@ class GeneratorController extends Controller
             }
         }
 
+        $generator->load('operator');
+        if ($generator->operator) {
+            Notification::notifyOperatorUsers(
+                $generator->operator,
+                'generator_added',
+                'تم إضافة مولد جديد',
+                "تم إضافة المولد: {$generator->name}",
+                route('admin.generators.show', $generator)
+            );
+        }
+
         if ($request->ajax() || $request->wantsJson()) {
             return response()->json([
                 'success' => true,
@@ -338,6 +350,17 @@ class GeneratorController extends Controller
                     'order' => $index + 1,
                 ]);
             }
+        }
+
+        $generator->load('operator');
+        if ($generator->operator) {
+            Notification::notifyOperatorUsers(
+                $generator->operator,
+                'generator_updated',
+                'تم تحديث مولد',
+                "تم تحديث بيانات المولد: {$generator->name}",
+                route('admin.generators.show', $generator)
+            );
         }
 
         if ($request->ajax() || $request->wantsJson()) {

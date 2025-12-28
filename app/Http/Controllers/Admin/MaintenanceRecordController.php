@@ -7,6 +7,7 @@ use App\Http\Requests\Admin\StoreMaintenanceRecordRequest;
 use App\Http\Requests\Admin\UpdateMaintenanceRecordRequest;
 use App\Models\Generator;
 use App\Models\MaintenanceRecord;
+use App\Models\Notification;
 use App\Models\Operator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -143,7 +144,7 @@ class MaintenanceRecordController extends Controller
     /**
      * Show form for creating a new maintenance record entry.
      */
-    public function create(): View
+    public function create(Request $request): View
     {
         $this->authorize('create', MaintenanceRecord::class);
 
@@ -157,12 +158,14 @@ class MaintenanceRecordController extends Controller
             if ($operator) {
                 $generators = $operator->generators;
             }
-        } elseif ($user->isEmployee()) {
+        } elseif ($user->isEmployee() || $user->isTechnician()) {
             $operators = $user->operators;
             $generators = Generator::whereIn('operator_id', $operators->pluck('id'))->get();
         }
 
-        return view('admin.maintenance-records.create', compact('generators'));
+        $selectedGeneratorId = $request->input('generator_id');
+
+        return view('admin.maintenance-records.create', compact('generators', 'selectedGeneratorId'));
     }
 
     /**
@@ -172,7 +175,58 @@ class MaintenanceRecordController extends Controller
     {
         $this->authorize('create', MaintenanceRecord::class);
 
-        MaintenanceRecord::create($request->validated());
+        $data = $request->validated();
+        
+        // Always calculate downtime hours from start and end time (ignore user input for security)
+        if (isset($data['start_time']) && isset($data['end_time']) && !empty($data['start_time']) && !empty($data['end_time'])) {
+            try {
+                $startTime = \Carbon\Carbon::createFromFormat('H:i', $data['start_time']);
+                $endTime = \Carbon\Carbon::createFromFormat('H:i', $data['end_time']);
+                
+                if ($endTime < $startTime) {
+                    $endTime->addDay();
+                }
+                
+                $diffInMinutes = $startTime->diffInMinutes($endTime);
+                $diffInHours = $diffInMinutes / 60;
+                $data['downtime_hours'] = round($diffInHours, 2);
+            } catch (\Exception $e) {
+                $data['downtime_hours'] = null;
+            }
+        } else {
+            $data['downtime_hours'] = null;
+        }
+        
+        // Always calculate maintenance cost from parts cost, labor hours and rate (ignore user input for security)
+        if (isset($data['parts_cost']) && isset($data['labor_hours']) && isset($data['labor_rate_per_hour'])) {
+            $partsCost = $data['parts_cost'] ?? 0;
+            $laborHours = $data['labor_hours'] ?? 0;
+            $laborRate = $data['labor_rate_per_hour'] ?? 0;
+            $data['maintenance_cost'] = round($partsCost + ($laborHours * $laborRate), 2);
+        } else {
+            $data['maintenance_cost'] = null;
+        }
+
+        $maintenanceRecord = MaintenanceRecord::create($data);
+
+        // Update generator's last maintenance date if it's a periodic or major maintenance
+        $generator = Generator::find($maintenanceRecord->generator_id);
+        if ($generator && in_array($maintenanceRecord->maintenance_type, ['periodic', 'major'])) {
+            $generator->update([
+                'last_major_maintenance_date' => $maintenanceRecord->maintenance_date
+            ]);
+        }
+
+        $generator->load('operator');
+        if ($generator && $generator->operator) {
+            Notification::notifyOperatorUsers(
+                $generator->operator,
+                'maintenance_added',
+                'تم إضافة سجل صيانة',
+                "تم إضافة سجل صيانة للمولد: {$generator->name}",
+                route('admin.maintenance-records.show', $maintenanceRecord)
+            );
+        }
 
         if ($request->ajax() || $request->wantsJson()) {
             return response()->json([
@@ -229,7 +283,59 @@ class MaintenanceRecordController extends Controller
     {
         $this->authorize('update', $maintenanceRecord);
 
-        $maintenanceRecord->update($request->validated());
+        $data = $request->validated();
+        
+        // Always calculate downtime hours from start and end time (ignore user input for security)
+        if (isset($data['start_time']) && isset($data['end_time']) && !empty($data['start_time']) && !empty($data['end_time'])) {
+            try {
+                $startTime = \Carbon\Carbon::createFromFormat('H:i', $data['start_time']);
+                $endTime = \Carbon\Carbon::createFromFormat('H:i', $data['end_time']);
+                
+                if ($endTime < $startTime) {
+                    $endTime->addDay();
+                }
+                
+                $diffInMinutes = $startTime->diffInMinutes($endTime);
+                $diffInHours = $diffInMinutes / 60;
+                $data['downtime_hours'] = round($diffInHours, 2);
+            } catch (\Exception $e) {
+                $data['downtime_hours'] = null;
+            }
+        } else {
+            $data['downtime_hours'] = null;
+        }
+        
+        // Always calculate maintenance cost from parts cost, labor hours and rate (ignore user input for security)
+        $partsCost = isset($data['parts_cost']) && $data['parts_cost'] !== null ? (float)$data['parts_cost'] : 0;
+        $laborHours = isset($data['labor_hours']) && $data['labor_hours'] !== null ? (float)$data['labor_hours'] : 0;
+        $laborRate = isset($data['labor_rate_per_hour']) && $data['labor_rate_per_hour'] !== null ? (float)$data['labor_rate_per_hour'] : 0;
+        
+        if ($partsCost > 0 || $laborHours > 0) {
+            $data['maintenance_cost'] = round($partsCost + ($laborHours * $laborRate), 2);
+        } else {
+            $data['maintenance_cost'] = null;
+        }
+
+        $maintenanceRecord->update($data);
+
+        // Update generator's last maintenance date if it's a periodic or major maintenance
+        $maintenanceRecord->load('generator');
+        if ($maintenanceRecord->generator && in_array($maintenanceRecord->maintenance_type, ['periodic', 'major'])) {
+            $maintenanceRecord->generator->update([
+                'last_major_maintenance_date' => $maintenanceRecord->maintenance_date
+            ]);
+        }
+
+        $maintenanceRecord->load('generator.operator');
+        if ($maintenanceRecord->generator && $maintenanceRecord->generator->operator) {
+            Notification::notifyOperatorUsers(
+                $maintenanceRecord->generator->operator,
+                'maintenance_updated',
+                'تم تحديث سجل صيانة',
+                "تم تحديث سجل الصيانة للمولد: {$maintenanceRecord->generator->name}",
+                route('admin.maintenance-records.show', $maintenanceRecord)
+            );
+        }
 
         if ($request->ajax() || $request->wantsJson()) {
             return response()->json([

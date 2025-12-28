@@ -18,7 +18,7 @@
         <div class="row g-3">
             {{-- Main: قائمة سجلات التشغيل --}}
             <div class="col-12">
-                <div class="card log-card">
+                <div class="log-card">
                     <div class="log-card-header log-toolbar-header">
                         <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
                             <div>

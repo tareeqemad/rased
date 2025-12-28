@@ -326,6 +326,17 @@
             transform: translateY(0);
         }
 
+        .login-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
         .error-message {
             background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
             color: #991b1b;
@@ -634,8 +645,11 @@
                     </div>
                 @endif
 
-                <form method="POST" action="{{ route('login') }}">
+                <form method="POST" action="{{ route('login') }}" id="loginForm">
                     @csrf
+
+                    {{-- Honeypot field to prevent bots --}}
+                    <input type="text" name="website" style="display:none;" tabindex="-1" autocomplete="off">
 
                     <div class="form-group">
                         <label for="username" class="form-label">اسم المستخدم</label>
@@ -649,6 +663,8 @@
                                 placeholder="أدخل اسم المستخدم"
                                 required
                                 autofocus
+                                autocomplete="username"
+                                maxlength="255"
                             >
                         </div>
                     </div>
@@ -663,6 +679,8 @@
                                 class="form-input password-input"
                                 placeholder="أدخل كلمة المرور"
                                 required
+                                autocomplete="current-password"
+                                maxlength="255"
                             >
                             <button type="button" class="password-toggle" id="passwordToggle" aria-label="إظهار كلمة المرور">
                                 <svg id="eyeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -684,8 +702,14 @@
                         </div>
                     </div>
 
-                    <button type="submit" class="login-button">
-                        تسجيل الدخول
+                    <button type="submit" class="login-button" id="loginButton">
+                        <span id="loginButtonText">تسجيل الدخول</span>
+                        <span id="loginButtonSpinner" style="display: none;">
+                            <svg style="width: 20px; height: 20px; animation: spin 1s linear infinite;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10" stroke-opacity="0.25"></circle>
+                                <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" stroke-opacity="0.75"></path>
+                            </svg>
+                        </span>
                     </button>
                 </form>
             </div>
@@ -790,6 +814,45 @@
                     passwordToggle.setAttribute('aria-label', 'إظهار كلمة المرور');
                 }
             });
+        }
+
+        // Disable button and show spinner on form submit
+        const loginForm = document.getElementById('loginForm');
+        const loginButton = document.getElementById('loginButton');
+        const loginButtonText = document.getElementById('loginButtonText');
+        const loginButtonSpinner = document.getElementById('loginButtonSpinner');
+
+        if (loginForm && loginButton) {
+            loginForm.addEventListener('submit', function(e) {
+                // Check honeypot field (if filled, it's a bot)
+                const honeypot = loginForm.querySelector('input[name="website"]');
+                if (honeypot && honeypot.value !== '') {
+                    e.preventDefault();
+                    return false;
+                }
+
+                // Disable button and show spinner
+                loginButton.disabled = true;
+                loginButtonText.style.display = 'none';
+                loginButtonSpinner.style.display = 'inline-block';
+                
+                // Prevent double submission
+                loginForm.submitDisabled = true;
+            });
+
+            // Re-enable button if form validation fails (after page reload with errors)
+            window.addEventListener('load', function() {
+                if (loginForm.querySelector('.error-message')) {
+                    loginButton.disabled = false;
+                    loginButtonText.style.display = 'inline';
+                    loginButtonSpinner.style.display = 'none';
+                }
+            });
+        }
+
+        // Prevent form resubmission on page refresh
+        if (window.history.replaceState) {
+            window.history.replaceState(null, null, window.location.href);
         }
     </script>
 </body>

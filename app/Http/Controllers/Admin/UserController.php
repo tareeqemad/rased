@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreUserRequest;
 use App\Http\Requests\Admin\UpdateUserRequest;
+use App\Models\Notification;
 use App\Models\Operator;
 use App\Models\User;
 use App\Role;
@@ -302,6 +303,15 @@ private function ajaxIndex(Request $request, User $actor): JsonResponse
                 }
                 $user->operators()->sync([$operatorId]);
             }
+        }
+
+        if (!auth()->user()->isSuperAdmin()) {
+            Notification::notifySuperAdmins(
+                'user_added',
+                'تم إضافة مستخدم جديد',
+                "تم إضافة المستخدم: {$user->name} ({$user->role_name})",
+                route('admin.users.show', $user)
+            );
         }
 
         return $this->jsonOrRedirect($request, true, 'تم إنشاء المستخدم بنجاح.');

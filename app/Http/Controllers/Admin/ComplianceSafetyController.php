@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreComplianceSafetyRequest;
 use App\Http\Requests\Admin\UpdateComplianceSafetyRequest;
 use App\Models\ComplianceSafety;
+use App\Models\Notification;
 use App\Models\Operator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -139,7 +140,6 @@ class ComplianceSafetyController extends Controller
 
         $data = $request->validated();
 
-        // إذا كان المستخدم CompanyOwner، استخدم مشغله تلقائياً
         if (auth()->user()->isCompanyOwner()) {
             $operator = auth()->user()->ownedOperators()->first();
             if ($operator) {
@@ -147,7 +147,18 @@ class ComplianceSafetyController extends Controller
             }
         }
 
-        ComplianceSafety::create($data);
+        $complianceSafety = ComplianceSafety::create($data);
+
+        $operator = Operator::find($complianceSafety->operator_id);
+        if ($operator) {
+            Notification::notifyOperatorUsers(
+                $operator,
+                'compliance_added',
+                'تم إضافة سجل امتثال وسلامة',
+                "تم إضافة سجل امتثال وسلامة للمشغل: {$operator->name}",
+                route('admin.compliance-safeties.show', $complianceSafety)
+            );
+        }
 
         if ($request->ajax() || $request->wantsJson()) {
             return response()->json([
@@ -205,7 +216,6 @@ class ComplianceSafetyController extends Controller
 
         $data = $request->validated();
 
-        // إذا كان المستخدم CompanyOwner، استخدم مشغله تلقائياً
         if (auth()->user()->isCompanyOwner()) {
             $operator = auth()->user()->ownedOperators()->first();
             if ($operator) {
@@ -214,6 +224,17 @@ class ComplianceSafetyController extends Controller
         }
 
         $complianceSafety->update($data);
+
+        $complianceSafety->load('operator');
+        if ($complianceSafety->operator) {
+            Notification::notifyOperatorUsers(
+                $complianceSafety->operator,
+                'compliance_updated',
+                'تم تحديث سجل امتثال وسلامة',
+                "تم تحديث سجل امتثال وسلامة للمشغل: {$complianceSafety->operator->name}",
+                route('admin.compliance-safeties.show', $complianceSafety)
+            );
+        }
 
         if ($request->ajax() || $request->wantsJson()) {
             return response()->json([

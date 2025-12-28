@@ -51,6 +51,11 @@
     font-size: .85rem;
 }
 
+.users-page hr {
+    border-top: 1px solid rgba(0,0,0,.1);
+    margin: 1.5rem 0;
+}
+
 .users-page .users-note {
     background: var(--u-subtle);
     border: 1px dashed var(--u-border);

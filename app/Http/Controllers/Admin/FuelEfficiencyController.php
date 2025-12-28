@@ -7,6 +7,7 @@ use App\Http\Requests\Admin\StoreFuelEfficiencyRequest;
 use App\Http\Requests\Admin\UpdateFuelEfficiencyRequest;
 use App\Models\FuelEfficiency;
 use App\Models\Generator;
+use App\Models\Notification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -169,7 +170,46 @@ class FuelEfficiencyController extends Controller
     {
         $this->authorize('create', FuelEfficiency::class);
 
-        FuelEfficiency::create($request->validated());
+        $data = $request->validated();
+        
+        // Always calculate total operating cost from fuel consumed and price (ignore user input for security)
+        if (isset($data['fuel_consumed']) && isset($data['fuel_price_per_liter']) 
+            && $data['fuel_consumed'] > 0 && $data['fuel_price_per_liter'] > 0) {
+            $data['total_operating_cost'] = round($data['fuel_consumed'] * $data['fuel_price_per_liter'], 2);
+        } else {
+            $data['total_operating_cost'] = null;
+        }
+        
+        // Always calculate energy efficiency comparison from energy distribution efficiency (ignore user input for security)
+        if (isset($data['energy_distribution_efficiency']) && $data['energy_distribution_efficiency'] > 0) {
+            $standardValue = 80; // Standard efficiency value (80%)
+            $efficiency = $data['energy_distribution_efficiency'];
+            $diff = $efficiency - $standardValue;
+            $percentDiff = ($diff / $standardValue) * 100;
+            
+            if (abs($percentDiff) <= 5) {
+                $data['energy_efficiency_comparison'] = 'within_standard';
+            } elseif ($efficiency > $standardValue) {
+                $data['energy_efficiency_comparison'] = 'above';
+            } else {
+                $data['energy_efficiency_comparison'] = 'below';
+            }
+        } else {
+            $data['energy_efficiency_comparison'] = null;
+        }
+
+        $fuelEfficiency = FuelEfficiency::create($data);
+
+        $generator = Generator::with('operator')->find($fuelEfficiency->generator_id);
+        if ($generator && $generator->operator) {
+            Notification::notifyOperatorUsers(
+                $generator->operator,
+                'fuel_efficiency_added',
+                'تم إضافة سجل كفاءة وقود',
+                "تم إضافة سجل كفاءة وقود للمولد: {$generator->name}",
+                route('admin.fuel-efficiencies.show', $fuelEfficiency)
+            );
+        }
 
         if ($request->ajax() || $request->wantsJson()) {
             return response()->json([
@@ -226,7 +266,46 @@ class FuelEfficiencyController extends Controller
     {
         $this->authorize('update', $fuelEfficiency);
 
-        $fuelEfficiency->update($request->validated());
+        $data = $request->validated();
+        
+        // Always calculate total operating cost from fuel consumed and price (ignore user input for security)
+        if (isset($data['fuel_consumed']) && isset($data['fuel_price_per_liter']) 
+            && $data['fuel_consumed'] > 0 && $data['fuel_price_per_liter'] > 0) {
+            $data['total_operating_cost'] = round($data['fuel_consumed'] * $data['fuel_price_per_liter'], 2);
+        } else {
+            $data['total_operating_cost'] = null;
+        }
+        
+        // Always calculate energy efficiency comparison from energy distribution efficiency (ignore user input for security)
+        if (isset($data['energy_distribution_efficiency']) && $data['energy_distribution_efficiency'] > 0) {
+            $standardValue = 80; // Standard efficiency value (80%)
+            $efficiency = $data['energy_distribution_efficiency'];
+            $diff = $efficiency - $standardValue;
+            $percentDiff = ($diff / $standardValue) * 100;
+            
+            if (abs($percentDiff) <= 5) {
+                $data['energy_efficiency_comparison'] = 'within_standard';
+            } elseif ($efficiency > $standardValue) {
+                $data['energy_efficiency_comparison'] = 'above';
+            } else {
+                $data['energy_efficiency_comparison'] = 'below';
+            }
+        } else {
+            $data['energy_efficiency_comparison'] = null;
+        }
+
+        $fuelEfficiency->update($data);
+
+        $fuelEfficiency->load('generator.operator');
+        if ($fuelEfficiency->generator && $fuelEfficiency->generator->operator) {
+            Notification::notifyOperatorUsers(
+                $fuelEfficiency->generator->operator,
+                'fuel_efficiency_updated',
+                'تم تحديث سجل كفاءة وقود',
+                "تم تحديث سجل كفاءة وقود للمولد: {$fuelEfficiency->generator->name}",
+                route('admin.fuel-efficiencies.show', $fuelEfficiency)
+            );
+        }
 
         if ($request->ajax() || $request->wantsJson()) {
             return response()->json([

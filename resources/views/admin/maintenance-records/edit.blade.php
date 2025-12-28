@@ -106,6 +106,32 @@
                                             <div class="invalid-feedback d-block">{{ $message }}</div>
                                         @enderror
                                     </div>
+
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">
+                                            <i class="bi bi-clock text-info me-1"></i>
+                                            وقت البدء
+                                        </label>
+                                        <input type="time" name="start_time" id="start_time"
+                                               class="form-control @error('start_time') is-invalid @enderror" 
+                                               value="{{ old('start_time', $maintenanceRecord->start_time ? \Carbon\Carbon::parse($maintenanceRecord->start_time)->format('H:i') : '') }}">
+                                        @error('start_time')
+                                            <div class="invalid-feedback d-block">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">
+                                            <i class="bi bi-clock-history text-warning me-1"></i>
+                                            وقت الانتهاء
+                                        </label>
+                                        <input type="time" name="end_time" id="end_time"
+                                               class="form-control @error('end_time') is-invalid @enderror" 
+                                               value="{{ old('end_time', $maintenanceRecord->end_time ? \Carbon\Carbon::parse($maintenanceRecord->end_time)->format('H:i') : '') }}">
+                                        @error('end_time')
+                                            <div class="invalid-feedback d-block">{{ $message }}</div>
+                                        @enderror
+                                    </div>
                                 </div>
                             </div>
 
@@ -148,28 +174,91 @@
                                             <i class="bi bi-hourglass-split text-primary me-1"></i>
                                             زمن التوقف (ساعات)
                                         </label>
-                                        <input type="number" step="0.01" name="downtime_hours" 
-                                               class="form-control @error('downtime_hours') is-invalid @enderror" 
+                                        <input type="number" step="0.01" name="downtime_hours" id="downtime_hours"
+                                               class="form-control calculated-field @error('downtime_hours') is-invalid @enderror" 
                                                value="{{ old('downtime_hours', $maintenanceRecord->downtime_hours) }}" 
                                                min="0" 
-                                               placeholder="0.00">
-                                        <small class="text-muted">عدد ساعات التوقف بسبب الصيانة</small>
+                                               placeholder="0.00"
+                                               readonly
+                                               tabindex="-1">
+                                        <small class="text-muted">يتم الحساب تلقائياً من وقت البدء والانتهاء</small>
                                         @error('downtime_hours')
                                             <div class="invalid-feedback d-block">{{ $message }}</div>
                                         @enderror
                                     </div>
+                                </div>
+                            </div>
 
-                                    <div class="col-md-6">
+                            <hr class="my-4">
+
+                            <!-- Cost Details Section -->
+                            <div class="mb-4">
+                                <h6 class="fw-bold mb-3 text-muted">
+                                    <i class="bi bi-cash-stack text-success me-2"></i>
+                                    تفاصيل التكلفة
+                                </h6>
+                                <div class="row g-3">
+                                    <div class="col-md-4">
                                         <label class="form-label fw-semibold">
-                                            <i class="bi bi-cash-stack text-success me-1"></i>
-                                            تكلفة الصيانة
+                                            <i class="bi bi-box-seam text-info me-1"></i>
+                                            تكلفة القطع (₪)
                                         </label>
-                                        <input type="number" step="0.01" name="maintenance_cost" 
-                                               class="form-control @error('maintenance_cost') is-invalid @enderror" 
-                                               value="{{ old('maintenance_cost', $maintenanceRecord->maintenance_cost) }}" 
+                                        <input type="number" step="0.01" name="parts_cost" id="parts_cost"
+                                               class="form-control @error('parts_cost') is-invalid @enderror" 
+                                               value="{{ old('parts_cost', $maintenanceRecord->parts_cost) }}" 
                                                min="0" 
                                                placeholder="0.00">
-                                        <small class="text-muted">التكلفة الإجمالية بالشيكل</small>
+                                        <small class="text-muted">تكلفة القطع المستخدمة</small>
+                                        @error('parts_cost')
+                                            <div class="invalid-feedback d-block">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-semibold">
+                                            <i class="bi bi-clock text-warning me-1"></i>
+                                            ساعات العمل
+                                        </label>
+                                        <input type="number" step="0.01" name="labor_hours" id="labor_hours"
+                                               class="form-control @error('labor_hours') is-invalid @enderror" 
+                                               value="{{ old('labor_hours', $maintenanceRecord->labor_hours) }}" 
+                                               min="0" 
+                                               placeholder="0.00">
+                                        <small class="text-muted">عدد ساعات العمل</small>
+                                        @error('labor_hours')
+                                            <div class="invalid-feedback d-block">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-semibold">
+                                            <i class="bi bi-currency-exchange text-primary me-1"></i>
+                                            أجر الساعة (₪)
+                                        </label>
+                                        <input type="number" step="0.01" name="labor_rate_per_hour" id="labor_rate_per_hour"
+                                               class="form-control @error('labor_rate_per_hour') is-invalid @enderror" 
+                                               value="{{ old('labor_rate_per_hour', $maintenanceRecord->labor_rate_per_hour ?? 100) }}" 
+                                               min="0" 
+                                               placeholder="100.00">
+                                        <small class="text-muted">أجر الفني لكل ساعة</small>
+                                        @error('labor_rate_per_hour')
+                                            <div class="invalid-feedback d-block">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+
+                                    <div class="col-md-12">
+                                        <label class="form-label fw-semibold">
+                                            <i class="bi bi-calculator text-success me-1"></i>
+                                            التكلفة الإجمالية (₪)
+                                        </label>
+                                        <input type="number" step="0.01" name="maintenance_cost" id="maintenance_cost"
+                                               class="form-control calculated-field @error('maintenance_cost') is-invalid @enderror" 
+                                               value="{{ old('maintenance_cost', $maintenanceRecord->maintenance_cost) }}" 
+                                               min="0" 
+                                               placeholder="0.00"
+                                               readonly
+                                               tabindex="-1">
+                                        <small class="text-muted">يتم الحساب تلقائياً: تكلفة القطع + (ساعات العمل × أجر الساعة)</small>
                                         @error('maintenance_cost')
                                             <div class="invalid-feedback d-block">{{ $message }}</div>
                                         @enderror
@@ -205,6 +294,49 @@
         $(document).ready(function() {
             const $form = $('#maintenanceRecordForm');
             const $submitBtn = $form.find('button[type="submit"]');
+            
+            // Calculate downtime hours from start and end time
+            function calculateDowntimeHours() {
+                const startTime = $('#start_time').val();
+                const endTime = $('#end_time').val();
+                
+                if (startTime && endTime) {
+                    const start = new Date('2000-01-01T' + startTime + ':00');
+                    const end = new Date('2000-01-01T' + endTime + ':00');
+                    
+                    if (end < start) {
+                        // If end time is before start time, assume it's the next day
+                        end.setDate(end.getDate() + 1);
+                    }
+                    
+                    const diffMs = end - start;
+                    const diffHours = diffMs / (1000 * 60 * 60);
+                    
+                    if (diffHours >= 0) {
+                        $('#downtime_hours').val(diffHours.toFixed(2));
+                    } else {
+                        $('#downtime_hours').val('');
+                    }
+                } else {
+                    $('#downtime_hours').val('');
+                }
+            }
+            
+            // Calculate maintenance cost
+            function calculateMaintenanceCost() {
+                const partsCost = parseFloat($('#parts_cost').val()) || 0;
+                const laborHours = parseFloat($('#labor_hours').val()) || 0;
+                const laborRate = parseFloat($('#labor_rate_per_hour').val()) || 0;
+                const totalCost = partsCost + (laborHours * laborRate);
+                $('#maintenance_cost').val(totalCost.toFixed(2));
+            }
+            
+            $('#start_time, #end_time').on('change', calculateDowntimeHours);
+            $('#parts_cost, #labor_hours, #labor_rate_per_hour').on('input', calculateMaintenanceCost);
+            
+            // Calculate initial values on page load
+            calculateDowntimeHours();
+            calculateMaintenanceCost();
 
             $form.on('submit', function(e) {
                 e.preventDefault();
@@ -219,6 +351,10 @@
                 $submitBtn.html('<span class="spinner-border spinner-border-sm me-2"></span>جاري الحفظ...');
 
                 const formData = new FormData(this);
+                
+                // Remove calculated fields from form data (server will calculate them)
+                formData.delete('downtime_hours');
+                formData.delete('maintenance_cost');
 
                 $.ajax({
                     url: $form.attr('action'),

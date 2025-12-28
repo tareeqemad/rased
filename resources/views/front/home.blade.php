@@ -4,13 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>راصد - خريطة المشغلين</title>
+    <meta name="description" content="خريطة تفاعلية لعرض جميع المشغلين في محافظات غزة. ابحث عن المشغلين في محافظتك واحصل على معلومات الاتصال الكاملة.">
+    <meta name="keywords" content="راصد, خريطة المشغلين, مولدات كهرباء, غزة, محافظات غزة, مشغلين">
+    <meta name="author" content="راصد">
+    <meta property="og:title" content="راصد - خريطة المشغلين">
+    <meta property="og:description" content="خريطة تفاعلية لعرض جميع المشغلين في محافظات غزة">
+    <meta property="og:type" content="website">
+    <link rel="canonical" href="{{ url('/map') }}">
     
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
+    <!-- Tajawal Font from Admin Panel -->
+    <link rel="stylesheet" href="{{ asset('assets/admin/css/tajawal-font.css') }}" />
+    
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap');
-        
         * {
             margin: 0;
             padding: 0;
@@ -23,15 +31,92 @@
             min-height: 100vh;
         }
         
-        .header {
-            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        /* Focus styles for accessibility */
+        button:focus,
+        select:focus,
+        input:focus {
+            outline: 3px solid rgba(25, 34, 143, 0.5);
+            outline-offset: 2px;
+        }
+        
+        /* Skip to content link for screen readers */
+        .skip-link {
+            position: absolute;
+            top: -40px;
+            right: 0;
+            background: #19228f;
             color: white;
-            padding: 18px 20px;
+            padding: 8px 16px;
+            text-decoration: none;
+            z-index: 100;
+            border-radius: 0 0 4px 4px;
+        }
+        
+        .skip-link:focus {
+            top: 0;
+        }
+        
+        .header {
+            background: #19228f;
+            color: white;
+            padding: 40px 20px;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
             position: sticky;
             top: 0;
             z-index: 1000;
             backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
+            min-height: 120px;
+        }
+        
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('{{ asset("assets/front/images/generator-pattern.svg") }}');
+            background-size: 200px 200px;
+            background-repeat: repeat;
+            opacity: 0.1;
+            z-index: 0;
+        }
+        
+        .header-map-background {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100%;
+            height: 100%;
+            opacity: 0.35;
+            z-index: 0;
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        
+        .header-map-background svg {
+            width: 100%;
+            height: auto;
+            max-width: 900px;
+            max-height: 550px;
+            min-width: 500px;
+        }
+        
+        @media (max-width: 768px) {
+            .header-map-background svg {
+                max-width: 600px;
+                min-width: 300px;
+            }
         }
         
         .header-content {
@@ -41,11 +126,36 @@
             justify-content: space-between;
             align-items: center;
             gap: 20px;
+            position: relative;
+            z-index: 1;
         }
         
         .header-title-section {
             flex: 1;
             min-width: 0;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .header-map-icon {
+            flex-shrink: 0;
+            width: 60px;
+            height: 60px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .header-map-icon svg {
+            width: 36px;
+            height: 36px;
+            color: white;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
         }
         
         .header h1 {
@@ -67,7 +177,7 @@
         
         .complaints-btn {
             background: rgba(255, 255, 255, 0.95);
-            color: #1e40af;
+            color: #19228f;
             padding: 10px 20px;
             border-radius: 8px;
             text-decoration: none;
@@ -158,13 +268,13 @@
         
         .operators-list li:hover {
             background: #f1f5f9;
-            border-color: #3b82f6;
+            border-color: #19228f;
             transform: translateX(-3px);
         }
         
         .operators-list li.active {
             background: #eff6ff;
-            border-color: #3b82f6;
+            border-color: #19228f;
         }
         
         .governorate-section {
@@ -172,7 +282,7 @@
         }
         
         .governorate-header {
-            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            background: #19228f;
             color: white;
             padding: 12px 16px;
             border-radius: 8px;
@@ -214,23 +324,44 @@
             min-width: 0;
         }
         
-        .controls {
+        .row {
+            display: flex;
+            flex-wrap: wrap;
+            margin: 0 -10px;
+        }
+        
+        .row > * {
+            padding: 0 10px;
+        }
+        
+        .card {
             background: white;
-            padding: 25px;
             border-radius: 12px;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
             margin-bottom: 20px;
+            overflow: hidden;
         }
         
-        .controls h2 {
+        .card-header {
+            background: #19228f;
+            color: white;
+            padding: 20px 25px;
+            border-bottom: none;
+        }
+        
+        .card-title {
             font-size: 20px;
             font-weight: 700;
-            margin-bottom: 15px;
-            color: #1e293b;
+            margin: 0;
+            color: white;
+        }
+        
+        .card-body {
+            padding: 25px;
         }
         
         .form-group {
-            margin-bottom: 15px;
+            margin-bottom: 0;
         }
         
         .form-group label {
@@ -242,7 +373,7 @@
         }
         
         .form-group select {
-            width: 100%;
+            flex: 1;
             padding: 12px 16px;
             border: 2px solid #e2e8f0;
             border-radius: 8px;
@@ -256,8 +387,88 @@
         
         .form-group select:focus {
             outline: none;
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            border-color: #19228f;
+            box-shadow: 0 0 0 3px rgba(25, 34, 143, 0.1);
+        }
+        
+        .search-form {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+        }
+        
+        .search-btn {
+            padding: 12px 24px;
+            background: #19228f;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+        
+        .search-btn:hover {
+            background: #141a6b;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(25, 34, 143, 0.3);
+        }
+        
+        .search-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .welcome-message {
+            margin-bottom: 25px;
+            padding: 20px;
+            background: #f8fafc;
+            border-radius: 12px;
+            border: 2px dashed #e2e8f0;
+        }
+        
+        .welcome-message.hidden {
+            display: none;
+        }
+        
+        .sidebar-search {
+            margin-bottom: 15px;
+        }
+        
+        .sidebar-search input {
+            width: 100%;
+            padding: 10px 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: 'Tajawal', sans-serif;
+            transition: all 0.3s;
+        }
+        
+        .sidebar-search input:focus {
+            outline: none;
+            border-color: #19228f;
+            box-shadow: 0 0 0 3px rgba(25, 34, 143, 0.1);
+        }
+        
+        .no-results {
+            text-align: center;
+            padding: 30px 20px;
+            color: #64748b;
+            font-size: 14px;
+        }
+        
+        .map-row {
+            display: none !important;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .map-row.show {
+            display: flex !important;
         }
         
         .map-container {
@@ -283,24 +494,34 @@
             transform: translate(-50%, -50%);
             z-index: 1000;
             background: white;
-            padding: 20px 30px;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            padding: 30px 40px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
             display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            min-width: 200px;
         }
         
         .loading.active {
-            display: block;
+            display: flex;
         }
         
         .loading-spinner {
-            border: 3px solid #f3f4f6;
-            border-top: 3px solid #3b82f6;
+            border: 4px solid #f3f4f6;
+            border-top: 4px solid #19228f;
             border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 10px;
+            width: 40px;
+            height: 40px;
+            animation: spin 0.8s linear infinite;
+        }
+        
+        .loading p {
+            margin: 0;
+            color: #64748b;
+            font-weight: 600;
+            font-size: 14px;
         }
         
         @keyframes spin {
@@ -386,7 +607,7 @@
         .stat-card-count {
             font-size: 24px;
             font-weight: 700;
-            color: #3b82f6;
+            color: #19228f;
         }
         
         .stat-item {
@@ -403,7 +624,7 @@
         
         .stat-value {
             font-weight: 700;
-            color: #3b82f6;
+            color: #19228f;
             font-size: 18px;
         }
         
@@ -413,7 +634,7 @@
         }
         
         .info-window h3 {
-            background: #2563eb;
+            background: #19228f;
             color: white;
             padding: 12px 15px;
             margin: -10px -10px 12px -10px;
@@ -448,13 +669,13 @@
         }
         
         .info-window .info-value a {
-            color: #2563eb;
+            color: #19228f;
             text-decoration: underline;
             font-weight: 500;
         }
         
         .info-window .info-value a:hover {
-            color: #1d4ed8;
+            color: #141a6b;
         }
         
         .info-window .badge {
@@ -473,7 +694,7 @@
         
         .badge-info {
             background: #dbeafe;
-            color: #1e40af;
+            color: #19228f;
         }
         
         .map-container {
@@ -534,37 +755,42 @@
         
         .map-controls button:hover {
             background: #f8fafc;
-            border-color: #3b82f6;
-            color: #3b82f6;
+            border-color: #19228f;
+            color: #19228f;
             transform: translateX(-2px);
         }
         
         .map-controls button.active {
-            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-            border-color: #3b82f6;
+            background: #19228f;
+            border-color: #19228f;
             color: white;
-            box-shadow: 0 2px 6px rgba(59, 130, 246, 0.3);
+            box-shadow: 0 2px 6px rgba(25, 34, 143, 0.3);
         }
         
         .map-controls button.active:hover {
-            background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+            background: #19228f;
             transform: translateX(-2px);
         }
         
         @media (max-width: 1024px) {
-            .main-content {
+            .map-row {
                 flex-direction: column;
             }
             
             .sidebar {
-                width: 100%;
+                width: 100% !important;
                 max-height: 300px;
+            }
+            
+            .map-wrapper {
+                width: 100%;
             }
         }
         
         @media (max-width: 768px) {
             .header {
-                padding: 14px 15px;
+                padding: 30px 15px;
+                min-height: 100px;
             }
             
             .header-content {
@@ -575,6 +801,17 @@
             .header-title-section {
                 width: 100%;
                 order: 1;
+                gap: 12px;
+            }
+            
+            .header-map-icon {
+                width: 45px;
+                height: 45px;
+            }
+            
+            .header-map-icon svg {
+                width: 24px;
+                height: 24px;
             }
             
             .header h1 {
@@ -595,6 +832,40 @@
             .complaints-btn svg {
                 width: 16px;
                 height: 16px;
+            }
+            
+            .container {
+                padding: 0 15px;
+            }
+            
+            .card-body {
+                padding: 20px !important;
+            }
+            
+            .search-form {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .search-btn {
+                width: 100%;
+            }
+            
+            .welcome-message {
+                padding: 15px;
+            }
+            
+            .welcome-message svg {
+                width: 48px !important;
+                height: 48px !important;
+            }
+            
+            .welcome-message h3 {
+                font-size: 16px !important;
+            }
+            
+            .welcome-message p {
+                font-size: 13px !important;
             }
             
             .map-container {
@@ -640,11 +911,75 @@
     </style>
 </head>
 <body>
+    <a href="#main-content" class="skip-link">انتقل إلى المحتوى الرئيسي</a>
     <div class="header">
+        <div class="header-map-background">
+            <svg viewBox="0 0 800 500" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <!-- Gaza Strip Map Outline -->
+                <path d="M 100 200 Q 150 150 200 180 T 300 200 T 400 220 T 500 210 T 600 230 T 700 250 L 720 300 L 700 350 L 600 340 L 500 330 L 400 320 L 300 310 L 200 300 L 100 280 Z" 
+                      fill="rgba(255,255,255,0.15)" 
+                      stroke="rgba(255,255,255,0.5)" 
+                      stroke-width="4" 
+                      stroke-linejoin="round"/>
+                
+                <!-- Governorate boundaries -->
+                <path d="M 200 200 L 200 300" stroke="rgba(255,255,255,0.4)" stroke-width="3" stroke-dasharray="6,4"/>
+                <path d="M 350 210 L 350 320" stroke="rgba(255,255,255,0.4)" stroke-width="3" stroke-dasharray="6,4"/>
+                <path d="M 500 220 L 500 330" stroke="rgba(255,255,255,0.4)" stroke-width="3" stroke-dasharray="6,4"/>
+                
+                <!-- Location markers (cities/governorates) -->
+                <circle cx="150" cy="240" r="10" fill="rgba(255,255,255,0.6)" stroke="rgba(255,255,255,0.9)" stroke-width="2.5"/>
+                <circle cx="275" cy="250" r="10" fill="rgba(255,255,255,0.6)" stroke="rgba(255,255,255,0.9)" stroke-width="2.5"/>
+                <circle cx="425" cy="260" r="10" fill="rgba(255,255,255,0.6)" stroke="rgba(255,255,255,0.9)" stroke-width="2.5"/>
+                <circle cx="575" cy="280" r="10" fill="rgba(255,255,255,0.6)" stroke="rgba(255,255,255,0.9)" stroke-width="2.5"/>
+                <circle cx="650" cy="290" r="10" fill="rgba(255,255,255,0.6)" stroke="rgba(255,255,255,0.9)" stroke-width="2.5"/>
+                
+                <!-- Connection lines between locations -->
+                <path d="M 150 240 L 275 250 L 425 260 L 575 280 L 650 290" 
+                      stroke="rgba(255,255,255,0.35)" 
+                      stroke-width="3" 
+                      fill="none" 
+                      stroke-dasharray="10,5"/>
+                
+                <!-- Grid pattern for map detail -->
+                <defs>
+                    <pattern id="mapGrid" x="0" y="0" width="50" height="50" patternUnits="userSpaceOnUse">
+                        <path d="M 50 0 L 0 0 0 50" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+                    </pattern>
+                </defs>
+                <rect x="100" y="200" width="620" height="150" fill="url(#mapGrid)" opacity="0.3"/>
+                
+                <!-- Compass rose -->
+                <g transform="translate(680, 120)">
+                    <circle r="25" fill="rgba(255,255,255,0.15)" stroke="rgba(255,255,255,0.3)" stroke-width="2"/>
+                    <line x1="0" y1="-20" x2="0" y2="20" stroke="rgba(255,255,255,0.4)" stroke-width="2"/>
+                    <line x1="-20" y1="0" x2="20" y2="0" stroke="rgba(255,255,255,0.4)" stroke-width="2"/>
+                    <polygon points="0,-25 5,-15 -5,-15" fill="rgba(255,255,255,0.5)"/>
+                </g>
+            </svg>
+        </div>
         <div class="header-content">
             <div class="header-title-section">
-                <h1>راصد - خريطة المشغلين</h1>
-                <p>ابحث عن المشغلين في محافظتك</p>
+                <div class="header-map-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <!-- Map outline -->
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" stroke="currentColor" fill="none"/>
+                        <!-- Location pin -->
+                        <circle cx="12" cy="10" r="3" stroke="currentColor" fill="rgba(255,255,255,0.3)"/>
+                        <!-- Grid lines for map detail -->
+                        <line x1="8" y1="6" x2="8" y2="14" stroke="currentColor" stroke-width="1" opacity="0.5"/>
+                        <line x1="16" y1="6" x2="16" y2="14" stroke="currentColor" stroke-width="1" opacity="0.5"/>
+                        <line x1="6" y1="8" x2="18" y2="8" stroke="currentColor" stroke-width="1" opacity="0.5"/>
+                        <line x1="6" y1="12" x2="18" y2="12" stroke="currentColor" stroke-width="1" opacity="0.5"/>
+                        <!-- Small location markers -->
+                        <circle cx="8" cy="8" r="1.5" fill="currentColor" opacity="0.6"/>
+                        <circle cx="16" cy="12" r="1.5" fill="currentColor" opacity="0.6"/>
+                    </svg>
+                </div>
+                <div>
+                    <h1>راصد - خريطة المشغلين</h1>
+                    <p>استكشف مواقع المشغلين على الخريطة</p>
+                </div>
             </div>
             <a href="{{ route('complaints-suggestions.index') }}" class="complaints-btn">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -657,41 +992,68 @@
         </div>
     </div>
     
-    <div class="container">
-        <div class="controls">
-            <h2>اختر المحافظة</h2>
-            <div class="form-group">
-                <label for="governorate">المحافظة</label>
-                <select id="governorate" name="governorate">
-                    <option value="">-- اختر المحافظة --</option>
-                    @foreach($governorates as $governorate)
-                        <option value="{{ $governorate->value }}">{{ $governorate->label }}</option>
-                    @endforeach
-                    <option value="all">جميع المحافظات</option>
-                </select>
-            </div>
-            
-            <div class="stats" id="stats" style="display: none;">
-                <!-- سيتم ملؤها ديناميكياً -->
+    <div class="container" id="main-content">
+        <div class="row">
+            <div class="card" style="width: 100%;">
+                <div class="card-header">
+                    <h2 class="card-title">اختر المحافظة</h2>
+                </div>
+                <div class="card-body">
+                    <div class="welcome-message" id="welcomeMessage">
+                        <div style="text-align: center; padding: 20px; color: #64748b;">
+                            <svg style="width: 64px; height: 64px; margin: 0 auto 15px; display: block; color: #19228f; opacity: 0.6;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                <circle cx="12" cy="10" r="3"></circle>
+                            </svg>
+                            <h3 style="color: #1e293b; margin-bottom: 10px; font-size: 18px;">مرحباً بك في خريطة المشغلين</h3>
+                            <p style="font-size: 14px; line-height: 1.6;">اختر المحافظة من القائمة أدناه ثم اضغط على زر البحث للعثور على المشغلين في محافظتك</p>
+                        </div>
+                    </div>
+                    
+                    <div class="search-form">
+                        <div class="form-group" style="flex: 1;">
+                            <label for="governorate">المحافظة</label>
+                            <select id="governorate" name="governorate">
+                                <option value="">-- اختر المحافظة --</option>
+                                @foreach($governorates as $governorate)
+                                    <option value="{{ $governorate->value }}">{{ $governorate->label }}</option>
+                                @endforeach
+                                <option value="all">جميع المحافظات</option>
+                            </select>
+                        </div>
+                        <button type="button" class="search-btn" id="searchBtn" aria-label="بحث عن المشغلين">بحث</button>
+                        <button type="button" class="search-btn" id="clearBtn" style="display: none; background: #64748b;" aria-label="مسح البحث">مسح</button>
+                    </div>
+                    
+                    <div class="stats" id="stats" style="display: none; margin-top: 20px;">
+                        <!-- سيتم ملؤها ديناميكياً -->
+                    </div>
+                </div>
             </div>
         </div>
         
-        <div class="main-content">
-            <div class="sidebar" id="sidebar" style="display: none;">
+        <div class="row map-row" id="mapRow">
+            <div class="sidebar" id="sidebar" style="display: none; width: 350px; flex-shrink: 0;">
                 <div class="sidebar-header">
                     <h3>قائمة المشغلين</h3>
                     <div class="count">عدد المشغلين: <span id="sidebarCount">0</span></div>
+                </div>
+                <div class="sidebar-search">
+                    <input type="text" id="operatorSearch" placeholder="🔍 ابحث عن مشغل..." aria-label="بحث في قائمة المشغلين">
+                </div>
+                <div class="no-results" id="noResults" style="display: none;">
+                    لا توجد نتائج للبحث
                 </div>
                 <ul class="operators-list" id="operatorsList">
                     <!-- سيتم ملؤها ديناميكياً -->
                 </ul>
             </div>
             
-            <div class="map-wrapper">
+            <div class="map-wrapper" style="flex: 1; min-width: 0;">
                 <div class="map-container">
-                    <div class="map-controls">
-                        <button id="mapTypeStreet" class="active">خريطة تفصيلية</button>
-                        <button id="mapTypeSatellite">قمر صناعي</button>
+                    <div class="map-controls" role="group" aria-label="نوع الخريطة">
+                        <button id="mapTypeStreet" class="active" aria-label="خريطة تفصيلية">خريطة تفصيلية</button>
+                        <button id="mapTypeSatellite" aria-label="قمر صناعي">قمر صناعي</button>
                     </div>
                     
                     <div class="loading" id="loading">
@@ -704,7 +1066,7 @@
                         <p>لا توجد مشغلين في المحافظة المختارة</p>
                     </div>
                     
-                    <div id="map"></div>
+                    <div id="map" style="width: 100%; height: 100%;"></div>
                 </div>
             </div>
         </div>
@@ -719,8 +1081,8 @@
         const defaultLng = 34.3088;
         const defaultZoom = 10.5;
         
-        // تهيئة الخريطة
-        let map = L.map('map').setView([defaultLat, defaultLng], defaultZoom);
+        // تهيئة الخريطة (لن يتم تهيئتها إلا بعد الاستعلام)
+        let map = null;
         
         // طبقات الخريطة مع معالم أكثر
         const streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -740,12 +1102,39 @@
         });
         
         
-        // إضافة الطبقة الافتراضية (مع معالم محسّنة)
-        let currentLayer = detailedStreetLayer;
-        currentLayer.addTo(map);
+        // متغيرات الخريطة
+        let currentLayer = null;
+        let markersGroup = null;
         
-        // مجموعة العلامات
-        let markersGroup = L.layerGroup().addTo(map);
+        // دالة لتهيئة الخريطة
+        function initMap() {
+            if (map) {
+                // إذا كانت الخريطة مهيأة بالفعل، فقط أظهرها
+                document.getElementById('mapRow').classList.add('show');
+                return;
+            }
+            
+            // إظهار صف الخريطة أولاً
+            const mapRow = document.getElementById('mapRow');
+            mapRow.classList.add('show');
+            
+            // انتظر قليلاً لضمان أن العنصر ظاهر قبل تهيئة الخريطة
+            setTimeout(() => {
+                map = L.map('map').setView([defaultLat, defaultLng], defaultZoom);
+                currentLayer = detailedStreetLayer;
+                currentLayer.addTo(map);
+                markersGroup = L.layerGroup().addTo(map);
+                
+                // إعادة حساب حجم الخريطة بعد إظهارها
+                setTimeout(() => {
+                    map.invalidateSize();
+                }, 100);
+                
+                // إظهار أزرار التحكم
+                mapTypeStreet.addEventListener('click', () => changeMapType('street'));
+                mapTypeSatellite.addEventListener('click', () => changeMapType('satellite'));
+            }, 50);
+        }
         
         // تخزين المشغلين الحاليين
         let currentOperators = [];
@@ -759,6 +1148,17 @@
         const operatorsList = document.getElementById('operatorsList');
         const sidebarCount = document.getElementById('sidebarCount');
         const statsDiv = document.getElementById('stats');
+        const searchBtn = document.getElementById('searchBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const welcomeMessage = document.getElementById('welcomeMessage');
+        const operatorSearch = document.getElementById('operatorSearch');
+        const noResults = document.getElementById('noResults');
+        
+        // حفظ آخر محافظة في localStorage
+        const lastGovernorate = localStorage.getItem('lastGovernorate');
+        if (lastGovernorate) {
+            governorateSelect.value = lastGovernorate;
+        }
         
         // أزرار تغيير نوع الخريطة
         const mapTypeStreet = document.getElementById('mapTypeStreet');
@@ -766,6 +1166,8 @@
         
         // معالجة تغيير نوع الخريطة
         function changeMapType(type) {
+            if (!map) return;
+            
             map.removeLayer(currentLayer);
             
             // إزالة active من جميع الأزرار
@@ -786,16 +1188,17 @@
             currentLayer.addTo(map);
         }
         
-        mapTypeStreet.addEventListener('click', () => changeMapType('street'));
-        mapTypeSatellite.addEventListener('click', () => changeMapType('satellite'));
-        
         // دالة لإظهار/إخفاء التحميل
         function showLoading(show) {
             if (show) {
                 loadingDiv.classList.add('active');
                 noOperatorsDiv.classList.remove('active');
+                searchBtn.disabled = true;
+                searchBtn.textContent = 'جاري البحث...';
             } else {
                 loadingDiv.classList.remove('active');
+                searchBtn.disabled = false;
+                searchBtn.textContent = 'بحث';
             }
         }
         
@@ -811,26 +1214,51 @@
         // دالة لتحميل المشغلين وعرضهم على الخريطة
         async function loadOperators(governorate) {
             if (!governorate || governorate === '') {
-                markersGroup.clearLayers();
+                // إخفاء الخريطة
+                const mapRow = document.getElementById('mapRow');
+                mapRow.classList.remove('show');
+                mapRow.style.display = 'none';
+                if (markersGroup) {
+                    markersGroup.clearLayers();
+                }
+                if (map) {
+                    map.remove();
+                    map = null;
+                    currentLayer = null;
+                    markersGroup = null;
+                }
                 showNoOperators(false);
                 statsDiv.style.display = 'none';
                 sidebar.style.display = 'none';
+                clearBtn.style.display = 'none';
+                welcomeMessage.classList.remove('hidden');
                 currentOperators = [];
                 currentMarkers = {};
-                // إعادة الخريطة للإحداثيات الافتراضية
-                map.setView([defaultLat, defaultLng], defaultZoom);
+                localStorage.removeItem('lastGovernorate');
                 return;
             }
             
+            // حفظ المحافظة في localStorage
+            localStorage.setItem('lastGovernorate', governorate);
+            
+            // إخفاء رسالة الترحيب
+            welcomeMessage.classList.add('hidden');
+            clearBtn.style.display = 'inline-block';
+            
+            // تهيئة الخريطة إذا لم تكن مهيأة
+            initMap();
+            
             showLoading(true);
-            markersGroup.clearLayers();
+            if (markersGroup) {
+                markersGroup.clearLayers();
+            }
             statsDiv.style.display = 'none';
             sidebar.style.display = 'none';
             currentOperators = [];
             currentMarkers = {};
             
             try {
-                const response = await fetch(`{{ route('public.operators.map') }}?governorate=${governorate}`);
+                const response = await fetch(`{{ route('front.operators.map') }}?governorate=${governorate}`);
                 const data = await response.json();
                 
                 showLoading(false);
@@ -878,7 +1306,11 @@
                         
                         const marker = L.marker([operator.latitude, operator.longitude], {
                             icon: icon
-                        }).addTo(markersGroup);
+                        });
+                        
+                        if (markersGroup) {
+                            marker.addTo(markersGroup);
+                        }
                         
                         // حفظ المرجع
                         currentMarkers[operator.id] = marker;
@@ -922,7 +1354,7 @@
                     });
                     
                     // تكبير الخريطة لتشمل جميع العلامات
-                    if (bounds.length > 0) {
+                    if (map && bounds.length > 0) {
                         if (bounds.length === 1) {
                             map.setView(bounds[0], 15);
                         } else {
@@ -938,7 +1370,16 @@
                 console.error('Error loading operators:', error);
                 showLoading(false);
                 showNoOperators(true);
-                alert('حدث خطأ أثناء تحميل البيانات. يرجى المحاولة مرة أخرى.');
+                
+                // إظهار رسالة خطأ أفضل
+                const errorMsg = document.createElement('div');
+                errorMsg.style.cssText = 'position: absolute; top: 20px; right: 20px; background: #fee2e2; color: #991b1b; padding: 15px 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 2000; max-width: 300px;';
+                errorMsg.innerHTML = '<strong>⚠️ خطأ!</strong><br>حدث خطأ أثناء تحميل البيانات. يرجى المحاولة مرة أخرى.';
+                document.body.appendChild(errorMsg);
+                
+                setTimeout(() => {
+                    errorMsg.remove();
+                }, 5000);
             }
         }
         
@@ -969,6 +1410,9 @@
         function updateSidebar(operators) {
             sidebarCount.textContent = operators.length;
             operatorsList.innerHTML = '';
+            allOperators = operators; // حفظ جميع المشغلين للبحث
+            operatorSearch.value = ''; // مسح البحث
+            noResults.style.display = 'none';
             
             // التحقق إذا كان هناك أكثر من محافظة (جميع المحافظات)
             const uniqueGovernorates = [...new Set(operators.map(op => op.governorate).filter(Boolean))];
@@ -1084,10 +1528,58 @@
             });
         }
         
-        // الاستماع لتغيير المحافظة
-        governorateSelect.addEventListener('change', function() {
-            const governorate = this.value;
+        // زر البحث
+        searchBtn.addEventListener('click', function() {
+            const governorate = governorateSelect.value;
+            if (!governorate) {
+                alert('يرجى اختيار محافظة أولاً');
+                return;
+            }
             loadOperators(governorate);
+        });
+        
+        // زر مسح البحث
+        clearBtn.addEventListener('click', function() {
+            governorateSelect.value = '';
+            loadOperators('');
+        });
+        
+        // البحث في قائمة المشغلين
+        let allOperators = [];
+        operatorSearch.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase().trim();
+            const listItems = operatorsList.querySelectorAll('li');
+            let visibleCount = 0;
+            
+            if (searchTerm === '') {
+                listItems.forEach(item => {
+                    item.style.display = '';
+                    visibleCount++;
+                });
+                noResults.style.display = 'none';
+            } else {
+                listItems.forEach(item => {
+                    const operatorName = item.querySelector('.operator-item-name')?.textContent.toLowerCase() || '';
+                    const operatorDetails = item.querySelector('.operator-item-details')?.textContent.toLowerCase() || '';
+                    const matches = operatorName.includes(searchTerm) || operatorDetails.includes(searchTerm);
+                    
+                    if (matches) {
+                        item.style.display = '';
+                        visibleCount++;
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+                
+                noResults.style.display = visibleCount === 0 ? 'block' : 'none';
+            }
+        });
+        
+        // Enter key للبحث
+        governorateSelect.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchBtn.click();
+            }
         });
     </script>
 </body>

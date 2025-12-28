@@ -109,13 +109,40 @@
                                             <i class="bi bi-currency-exchange text-success me-1"></i>
                                             سعر الوقود للتر
                                         </label>
-                                        <input type="number" step="0.01" name="fuel_price_per_liter" 
+                                        <input type="number" step="0.01" name="fuel_price_per_liter" id="fuel_price_per_liter"
                                                class="form-control @error('fuel_price_per_liter') is-invalid @enderror" 
                                                value="{{ old('fuel_price_per_liter', $fuelEfficiency->fuel_price_per_liter) }}" 
                                                min="0" 
                                                placeholder="0.00">
                                         <small class="text-muted">السعر لكل لتر من الوقود</small>
                                         @error('fuel_price_per_liter')
+                                            <div class="invalid-feedback d-block">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                </div>
+                            </div>
+
+                            <hr class="my-4">
+
+                            <!-- Fuel Consumption Section -->
+                            <div class="mb-4">
+                                <h6 class="fw-bold mb-3 text-muted">
+                                    <i class="bi bi-fuel-pump text-danger me-2"></i>
+                                    استهلاك الوقود
+                                </h6>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">
+                                            <i class="bi bi-droplet text-primary me-1"></i>
+                                            كمية الوقود المستهلكة (لتر)
+                                        </label>
+                                        <input type="number" step="0.01" name="fuel_consumed" id="fuel_consumed"
+                                               class="form-control @error('fuel_consumed') is-invalid @enderror" 
+                                               value="{{ old('fuel_consumed', $fuelEfficiency->fuel_consumed) }}" 
+                                               min="0" 
+                                               placeholder="0.00">
+                                        <small class="text-muted">كمية الوقود المستهلكة باللتر</small>
+                                        @error('fuel_consumed')
                                             <div class="invalid-feedback d-block">{{ $message }}</div>
                                         @enderror
                                     </div>
@@ -180,7 +207,7 @@
                                             <i class="bi bi-percent text-primary me-1"></i>
                                             كفاءة توزيع الطاقة (%)
                                         </label>
-                                        <input type="number" step="0.01" name="energy_distribution_efficiency" 
+                                        <input type="number" step="0.01" name="energy_distribution_efficiency" id="energy_distribution_efficiency"
                                                class="form-control @error('energy_distribution_efficiency') is-invalid @enderror" 
                                                value="{{ old('energy_distribution_efficiency', $fuelEfficiency->energy_distribution_efficiency) }}" 
                                                min="0" max="100" 
@@ -196,13 +223,12 @@
                                             <i class="bi bi-bar-chart text-info me-1"></i>
                                             مقارنة كفاءة الطاقة مع المعيار
                                         </label>
-                                        <select name="energy_efficiency_comparison" 
-                                                class="form-select @error('energy_efficiency_comparison') is-invalid @enderror">
-                                            <option value="">اختر المقارنة</option>
-                                            <option value="within_standard" {{ old('energy_efficiency_comparison', $fuelEfficiency->energy_efficiency_comparison) === 'within_standard' ? 'selected' : '' }}>ضمن المعدل</option>
-                                            <option value="above" {{ old('energy_efficiency_comparison', $fuelEfficiency->energy_efficiency_comparison) === 'above' ? 'selected' : '' }}>أعلى من المعدل</option>
-                                            <option value="below" {{ old('energy_efficiency_comparison', $fuelEfficiency->energy_efficiency_comparison) === 'below' ? 'selected' : '' }}>أقل من المعدل</option>
-                                        </select>
+                                        <input type="text" name="energy_efficiency_comparison" id="energy_efficiency_comparison"
+                                               class="form-control calculated-field @error('energy_efficiency_comparison') is-invalid @enderror" 
+                                               value="{{ old('energy_efficiency_comparison') }}" 
+                                               readonly
+                                               tabindex="-1">
+                                        <small class="text-muted">يتم الحساب تلقائياً بناءً على كفاءة توزيع الطاقة</small>
                                         @error('energy_efficiency_comparison')
                                             <div class="invalid-feedback d-block">{{ $message }}</div>
                                         @enderror
@@ -224,12 +250,14 @@
                                             <i class="bi bi-calculator text-info me-1"></i>
                                             التكلفة الإجمالية للتشغيل
                                         </label>
-                                        <input type="number" step="0.01" name="total_operating_cost" 
-                                               class="form-control @error('total_operating_cost') is-invalid @enderror" 
+                                        <input type="number" step="0.01" name="total_operating_cost" id="total_operating_cost"
+                                               class="form-control calculated-field @error('total_operating_cost') is-invalid @enderror" 
                                                value="{{ old('total_operating_cost', $fuelEfficiency->total_operating_cost) }}" 
                                                min="0" 
-                                               placeholder="0.00">
-                                        <small class="text-muted">التكلفة الإجمالية بالشيكل</small>
+                                               placeholder="0.00"
+                                               readonly
+                                               tabindex="-1">
+                                        <small class="text-muted">يتم الحساب تلقائياً: كمية الوقود × سعر اللتر</small>
                                         @error('total_operating_cost')
                                             <div class="invalid-feedback d-block">{{ $message }}</div>
                                         @enderror
@@ -265,6 +293,60 @@
         $(document).ready(function() {
             const $form = $('#fuelEfficiencyForm');
             const $submitBtn = $form.find('button[type="submit"]');
+            
+            // Calculate total operating cost
+            function calculateTotalCost() {
+                const fuelConsumed = parseFloat($('#fuel_consumed').val()) || 0;
+                const fuelPrice = parseFloat($('#fuel_price_per_liter').val()) || 0;
+                const totalCost = fuelConsumed * fuelPrice;
+                $('#total_operating_cost').val(totalCost.toFixed(2));
+            }
+            
+            // Calculate energy efficiency comparison
+            function calculateEnergyEfficiencyComparison() {
+                const efficiency = parseFloat($('#energy_distribution_efficiency').val()) || 0;
+                const standardValue = 80; // Standard efficiency value (80%)
+                let comparison = '';
+                let comparisonText = '';
+                
+                if (efficiency > 0) {
+                    const diff = efficiency - standardValue;
+                    const percentDiff = (diff / standardValue) * 100;
+                    
+                    if (Math.abs(percentDiff) <= 5) {
+                        // Within 5% of standard = within standard
+                        comparison = 'within_standard';
+                        comparisonText = 'ضمن المعدل';
+                    } else if (efficiency > standardValue) {
+                        // Above standard
+                        comparison = 'above';
+                        comparisonText = 'أعلى من المعدل';
+                    } else {
+                        // Below standard
+                        comparison = 'below';
+                        comparisonText = 'أقل من المعدل';
+                    }
+                }
+                
+                $('#energy_efficiency_comparison').val(comparisonText);
+                // Store the actual value in a hidden field for form submission
+                if ($('#energy_efficiency_comparison_value').length === 0) {
+                    $('<input>').attr({
+                        type: 'hidden',
+                        id: 'energy_efficiency_comparison_value',
+                        name: 'energy_efficiency_comparison'
+                    }).val(comparison).appendTo($form);
+                } else {
+                    $('#energy_efficiency_comparison_value').val(comparison);
+                }
+            }
+            
+            $('#fuel_consumed, #fuel_price_per_liter').on('input', calculateTotalCost);
+            $('#energy_distribution_efficiency').on('input', calculateEnergyEfficiencyComparison);
+            
+            // Calculate initial values on page load
+            calculateTotalCost();
+            calculateEnergyEfficiencyComparison();
 
             $form.on('submit', function(e) {
                 e.preventDefault();
@@ -279,6 +361,15 @@
                 $submitBtn.html('<span class="spinner-border spinner-border-sm me-2"></span>جاري الحفظ...');
 
                 const formData = new FormData(this);
+                
+                // Remove calculated fields from form data (server will calculate them)
+                formData.delete('total_operating_cost');
+                formData.delete('energy_efficiency_comparison');
+                // Add the calculated value
+                const comparisonValue = $('#energy_efficiency_comparison_value').val();
+                if (comparisonValue) {
+                    formData.append('energy_efficiency_comparison', comparisonValue);
+                }
 
                 $.ajax({
                     url: $form.attr('action'),

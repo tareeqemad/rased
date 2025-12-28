@@ -18,6 +18,7 @@ use App\Policies\OperatorPolicy;
 use App\Policies\UserPolicy;
 use Carbon\Carbon;
 use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -56,5 +57,18 @@ class AppServiceProvider extends ServiceProvider
 
         // استخدام Bootstrap pagination
         Paginator::useBootstrap();
+
+        // Share settings to front layout
+        View::composer('layouts.front', function ($view) {
+            try {
+                $logoPath = \App\Models\Setting::get('site_logo');
+                $logoUrl = $logoPath ? asset($logoPath) : null;
+                $siteName = \App\Models\Setting::get('site_name', 'راصد');
+            } catch (\Exception $e) {
+                $logoUrl = null;
+                $siteName = 'راصد';
+            }
+            $view->with(['logoUrl' => $logoUrl, 'siteName' => $siteName]);
+        });
     }
 }

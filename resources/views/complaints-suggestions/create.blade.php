@@ -31,7 +31,7 @@
         }
 
         .header {
-            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            background: #19228f;
             color: white;
             padding: 30px;
             text-align: center;
@@ -56,7 +56,7 @@
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            color: #3b82f6;
+            color: #19228f;
             text-decoration: none;
             font-weight: 600;
             margin-bottom: 30px;
@@ -64,7 +64,7 @@
         }
 
         .back-link:hover {
-            color: #2563eb;
+            color: #141a6b;
         }
 
         .form-group {
@@ -111,9 +111,9 @@
         }
 
         .type-option input[type="radio"]:checked + label {
-            border-color: #3b82f6;
+            border-color: #19228f;
             background: #eff6ff;
-            color: #3b82f6;
+            color: #19228f;
             font-weight: 700;
         }
 
@@ -126,7 +126,7 @@
             border-radius: 10px;
             font-size: 14px;
             transition: all 0.3s;
-            font-family: 'Cairo', sans-serif;
+            font-family: 'Tajawal', sans-serif;
             background: white;
         }
 
@@ -143,8 +143,8 @@
         .form-textarea:focus,
         .form-select:focus {
             outline: none;
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+            border-color: #19228f;
+            box-shadow: 0 0 0 4px rgba(25, 34, 143, 0.1);
         }
 
         .form-input[type="file"] {
@@ -153,7 +153,7 @@
 
         .form-input[type="file"]::-webkit-file-upload-button {
             padding: 8px 16px;
-            background: #3b82f6;
+            background: #19228f;
             color: white;
             border: none;
             border-radius: 6px;
@@ -163,13 +163,13 @@
         }
 
         .form-input[type="file"]::-webkit-file-upload-button:hover {
-            background: #2563eb;
+            background: #141a6b;
         }
 
         .submit-btn {
             width: 100%;
             padding: 14px;
-            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            background: #19228f;
             color: white;
             border: none;
             border-radius: 10px;
@@ -182,7 +182,7 @@
 
         .submit-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4);
+            box-shadow: 0 8px 20px rgba(25, 34, 143, 0.4);
         }
 
         .alert {
@@ -229,7 +229,7 @@
         </div>
 
         <div class="form-container">
-            <a href="{{ route('public.home') }}" class="back-link">
+            <a href="{{ route('front.home') }}" class="back-link">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M19 12H5M12 19l-7-7 7-7"/>
                 </svg>

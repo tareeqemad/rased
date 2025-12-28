@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\ConstantsHelper;
-use App\Helpers\GeneralHelper;
+use App\Models\Generator;
 use App\Models\Operator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -12,14 +12,19 @@ use Illuminate\View\View;
 class PublicHomeController extends Controller
 {
     /**
-     * عرض الصفحة الرئيسية للمستخدمين الخارجيين
+     * Display main homepage for public visitors with statistics
      */
     public function index(): View
     {
-        // جلب المحافظات من الثوابت
-        $governorates = ConstantsHelper::getByName('المحافظة');
+        // Get statistics for homepage
+        $stats = [
+            'total_operators' => Operator::where('status', 'active')->count(),
+            'total_generators' => \App\Models\Generator::count(),
+            'total_capacity' => Operator::where('status', 'active')->sum('total_capacity') ?? 0,
+            'governorates' => ConstantsHelper::getByName('المحافظة'),
+        ];
 
-        return view('public.home', compact('governorates'));
+        return view('front.index', compact('stats'));
     }
 
     /**
@@ -97,7 +102,54 @@ class PublicHomeController extends Controller
         return response()->json([
             'success' => true,
             'data' => $operators,
-        ])->header('Cache-Control', 'public, max-age=300'); // Cache لمدة 5 دقائق
+        ])->header('Cache-Control', 'public, max-age=300');
+    }
+
+    /**
+     * Display operators map page
+     */
+    public function map(): View
+    {
+        $governorates = ConstantsHelper::getByName('المحافظة');
+        return view('front.map', compact('governorates'));
+    }
+
+    /**
+     * Display statistics page
+     */
+    public function stats(): View
+    {
+        $stats = [
+            'total_operators' => Operator::where('status', 'active')->count(),
+            'total_generators' => Generator::count(),
+            'active_generators' => Generator::where('status', 'active')->count(),
+            'total_capacity' => Operator::where('status', 'active')->sum('total_capacity') ?? 0,
+            'operators_by_governorate' => Operator::where('status', 'active')
+                ->selectRaw('governorate, COUNT(*) as count')
+                ->groupBy('governorate')
+                ->get()
+                ->mapWithKeys(function ($item) {
+                    // الحصول على القيمة الرقمية من enum إذا كان enum object
+                    $governorateValue = $item->governorate instanceof \App\Governorate 
+                        ? $item->governorate->value 
+                        : (int) $item->governorate;
+                    
+                    $governorate = \App\Governorate::tryFrom($governorateValue);
+                    $govLabel = $governorate?->label() ?? 'غير محدد';
+                    
+                    return [$govLabel => $item->count];
+                }),
+        ];
+
+        return view('front.stats', compact('stats'));
+    }
+
+    /**
+     * Display about page
+     */
+    public function about(): View
+    {
+        return view('front.about');
     }
 }
 

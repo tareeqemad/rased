@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreOperatorRequest;
 use App\Http\Requests\Admin\UpdateOperatorRequest;
 use App\Mail\OperatorCredentialsMail;
+use App\Models\Notification;
 use App\Models\Operator;
 use App\Models\Role as RoleModel;
 use App\Models\User;
@@ -166,6 +167,13 @@ class OperatorController extends Controller
         }
 
         $message = 'تم إنشاء المشغل بنجاح. اسم المستخدم: ' . $user->username;
+
+        Notification::notifySuperAdmins(
+            'operator_added',
+            'تم إضافة مشغل جديد',
+            "تم إضافة المشغل: {$operator->name}",
+            route('admin.operators.show', $operator)
+        );
 
         if ($request->ajax() || $request->wantsJson()) {
             return response()->json([

@@ -296,3 +296,4 @@ document.addEventListener('DOMContentLoaded', function() {
     window.notificationPanel = new NotificationPanel();
 });
 
+

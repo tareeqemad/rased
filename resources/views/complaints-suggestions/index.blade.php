@@ -29,7 +29,7 @@
         }
 
         .header {
-            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            background: #19228f;
             color: white;
             padding: 40px;
             text-align: center;
@@ -59,7 +59,7 @@
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            color: #3b82f6;
+            color: #19228f;
             text-decoration: none;
             font-weight: 600;
             margin-bottom: 40px;
@@ -67,7 +67,7 @@
         }
 
         .back-link:hover {
-            color: #2563eb;
+            color: #141a6b;
         }
 
         .options-grid {
@@ -91,16 +91,16 @@
         }
 
         .option-card:hover {
-            border-color: #3b82f6;
+            border-color: #19228f;
             transform: translateY(-5px);
-            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.2);
+            box-shadow: 0 8px 25px rgba(25, 34, 143, 0.2);
         }
 
         .option-icon {
             width: 80px;
             height: 80px;
             margin: 0 auto 20px;
-            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            background: #19228f;
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -154,7 +154,7 @@
         </div>
 
         <div class="content">
-            <a href="{{ route('public.home') }}" class="back-link">
+            <a href="{{ route('front.home') }}" class="back-link">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M19 12H5M12 19l-7-7 7-7"/>
                 </svg>

@@ -19,6 +19,7 @@ class StoreFuelEfficiencyRequest extends FormRequest
             'consumption_date' => ['required', 'date'],
             'operating_hours' => ['nullable', 'numeric', 'min:0'],
             'fuel_price_per_liter' => ['nullable', 'numeric', 'min:0'],
+            'fuel_consumed' => ['nullable', 'numeric', 'min:0'],
             'fuel_efficiency_percentage' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'fuel_efficiency_comparison' => ['nullable', 'string', Rule::in(['within_standard', 'above', 'below'])],
             'energy_distribution_efficiency' => ['nullable', 'numeric', 'min:0', 'max:100'],

@@ -104,3 +104,4 @@ function loadData() {
 - الـ z-index للـ overlay هو 100
 - التأثيرات والحركات تتم بشكل سلس باستخدام jQuery animate
 
+

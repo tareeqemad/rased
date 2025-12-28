@@ -153,35 +153,106 @@
 
                         <hr class="my-4">
 
-                        <!-- Time & Cost Section -->
+                        <!-- Time Section -->
                         <div class="mb-4">
                             <h6 class="fw-bold mb-3 text-muted">
                                 <i class="bi bi-clock-history text-danger me-2"></i>
-                                الوقت والتكلفة
+                                معلومات الوقت
                             </h6>
                             <div class="row g-3">
-                                <div class="col-md-6">
+                                @if($maintenanceRecord->start_time)
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">
+                                        <i class="bi bi-clock text-info me-1"></i>
+                                        وقت البدء
+                                    </label>
+                                    <div class="form-control-plaintext">
+                                        {{ \Carbon\Carbon::parse($maintenanceRecord->start_time)->format('H:i') }}
+                                    </div>
+                                </div>
+                                @endif
+
+                                @if($maintenanceRecord->end_time)
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">
+                                        <i class="bi bi-clock-history text-warning me-1"></i>
+                                        وقت الانتهاء
+                                    </label>
+                                    <div class="form-control-plaintext">
+                                        {{ \Carbon\Carbon::parse($maintenanceRecord->end_time)->format('H:i') }}
+                                    </div>
+                                </div>
+                                @endif
+
+                                <div class="col-md-4">
                                     <label class="form-label fw-semibold">
                                         <i class="bi bi-hourglass-split text-primary me-1"></i>
                                         زمن التوقف (ساعات)
                                     </label>
                                     <div class="form-control-plaintext">
                                         @if($maintenanceRecord->downtime_hours)
-                                            {{ number_format($maintenanceRecord->downtime_hours, 2) }} ساعة
+                                            <strong class="text-primary">{{ number_format($maintenanceRecord->downtime_hours, 2) }} ساعة</strong>
                                         @else
                                             <span class="text-muted">-</span>
                                         @endif
                                     </div>
                                 </div>
+                            </div>
+                        </div>
 
-                                <div class="col-md-6">
+                        <hr class="my-4">
+
+                        <!-- Cost Details Section -->
+                        <div class="mb-4">
+                            <h6 class="fw-bold mb-3 text-muted">
+                                <i class="bi bi-cash-stack text-success me-2"></i>
+                                تفاصيل التكلفة
+                            </h6>
+                            <div class="row g-3">
+                                @if($maintenanceRecord->parts_cost)
+                                <div class="col-md-4">
                                     <label class="form-label fw-semibold">
-                                        <i class="bi bi-cash-stack text-success me-1"></i>
-                                        تكلفة الصيانة
+                                        <i class="bi bi-box-seam text-info me-1"></i>
+                                        تكلفة القطع (₪)
+                                    </label>
+                                    <div class="form-control-plaintext">
+                                        {{ number_format($maintenanceRecord->parts_cost, 2) }} ₪
+                                    </div>
+                                </div>
+                                @endif
+
+                                @if($maintenanceRecord->labor_hours)
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">
+                                        <i class="bi bi-clock text-warning me-1"></i>
+                                        ساعات العمل
+                                    </label>
+                                    <div class="form-control-plaintext">
+                                        {{ number_format($maintenanceRecord->labor_hours, 2) }} ساعة
+                                    </div>
+                                </div>
+                                @endif
+
+                                @if($maintenanceRecord->labor_rate_per_hour)
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">
+                                        <i class="bi bi-currency-exchange text-primary me-1"></i>
+                                        أجر الساعة (₪)
+                                    </label>
+                                    <div class="form-control-plaintext">
+                                        {{ number_format($maintenanceRecord->labor_rate_per_hour, 2) }} ₪
+                                    </div>
+                                </div>
+                                @endif
+
+                                <div class="col-md-12">
+                                    <label class="form-label fw-semibold">
+                                        <i class="bi bi-calculator text-success me-1"></i>
+                                        التكلفة الإجمالية (₪)
                                     </label>
                                     <div class="form-control-plaintext">
                                         @if($maintenanceRecord->maintenance_cost)
-                                            <strong class="text-success">{{ number_format($maintenanceRecord->maintenance_cost, 2) }} ₪</strong>
+                                            <strong class="text-success fs-5">{{ number_format($maintenanceRecord->maintenance_cost, 2) }} ₪</strong>
                                         @else
                                             <span class="text-muted">-</span>
                                         @endif

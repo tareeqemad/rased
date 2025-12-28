@@ -16,47 +16,48 @@
 
 @section('content')
     <div class="users-page">
+        <div class="row g-3">
+            <div class="col-12">
+                <div class="users-card">
+                    <div class="users-card-header">
+                        <div>
+                            <h5 class="users-title">
+                                <i class="bi bi-person-gear me-2"></i>
+                                تعديل المستخدم
+                            </h5>
+                            <div class="users-subtitle">تعديل بيانات: <span class="fw-bold">{{ $user->name }}</span></div>
+                        </div>
+                        <a href="{{ route('admin.users.index') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-right me-2"></i>
+                            رجوع
+                        </a>
+                    </div>
 
-        <div class="users-page-header">
-            <div>
-                <h1 class="users-title">تعديل المستخدم</h1>
-                <div class="users-subtitle">تعديل بيانات: <span class="fw-bold">{{ $user->name }}</span></div>
-            </div>
-            <a href="{{ route('admin.users.index') }}" class="btn btn-light-subtle">
-                <i class="bi bi-arrow-right me-1"></i> رجوع
-            </a>
-        </div>
+                    <form action="{{ route('admin.users.update', $user) }}" method="POST">
+                        @csrf
+                        @method('PUT')
 
-        <div class="card ui-card">
-            <div class="card-header">
-                <div class="d-flex align-items-center gap-2">
-                    <i class="bi bi-person-gear text-primary"></i>
-                    <div class="fw-bold">تعديل المستخدم</div>
+                        <div class="card-body">
+                            @include('admin.users.partials.form', [
+                                'mode' => $mode,
+                                'user' => $user,
+                                'defaultRole' => '',
+                                'operatorFieldName' => 'operator_id[]',
+                            ])
+
+                            <hr class="my-4">
+
+                            <div class="d-flex justify-content-end gap-2">
+                                <a href="{{ route('admin.users.index') }}" class="btn btn-outline-secondary">إلغاء</a>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-check-lg me-1"></i> حفظ التغييرات
+                                </button>
+                            </div>
+                        </div>
+                    </form>
                 </div>
             </div>
-
-            <div class="card-body">
-                <form action="{{ route('admin.users.update', $user) }}" method="POST">
-                    @csrf
-                    @method('PUT')
-
-                    @include('admin.users.partials.form', [
-                        'mode' => $mode,
-                        'user' => $user,
-                        'defaultRole' => '',
-                        'operatorFieldName' => 'operator_id[]',  {{-- نخليها Array للـ UpdateRequest إذا كان بتحقق على array --}}
-                    ])
-
-                    <div class="mt-4 d-flex justify-content-end gap-2">
-                        <a href="{{ route('admin.users.index') }}" class="btn btn-light-subtle">إلغاء</a>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-check-lg me-1"></i> حفظ التغييرات
-                        </button>
-                    </div>
-                </form>
-            </div>
         </div>
-
     </div>
 @endsection
 

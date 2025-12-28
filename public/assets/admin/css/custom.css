@@ -36,3 +36,41 @@
 .notification-item .btn-link:hover {
     opacity: 0.8;
 }
+
+/* Input Focus Border Color - Blue */
+input:focus:not(:disabled):not([readonly]),
+textarea:focus:not(:disabled):not([readonly]),
+select:focus:not(:disabled):not([readonly]),
+.form-control:focus:not(:disabled):not([readonly]),
+.form-select:focus:not(:disabled):not([readonly]) {
+    border-color: #0d6efd !important;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15) !important;
+}
+
+/* Input Autofocus - Blue Border */
+input[autofocus]:focus,
+textarea[autofocus]:focus,
+select[autofocus]:focus,
+.form-control[autofocus]:focus,
+.form-select[autofocus]:focus {
+    border-color: #0d6efd !important;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15) !important;
+}
+
+/* Disabled Input - Not Allowed Cursor */
+input:disabled,
+textarea:disabled,
+select:disabled,
+.form-control:disabled,
+.form-select:disabled {
+    cursor: not-allowed !important;
+}
+
+/* Readonly Input - Default Cursor */
+input[readonly],
+textarea[readonly],
+select[readonly],
+.form-control[readonly],
+.form-select[readonly] {
+    cursor: default !important;
+}

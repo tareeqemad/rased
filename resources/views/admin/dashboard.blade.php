@@ -22,7 +22,7 @@
                         <p class="dashboard-welcome-subtitle">
                             {{ now('Asia/Gaza')->locale('ar')->translatedFormat('l، d F Y') }}
                         </p>
-                    </div>
+                        </div>
                     <div class="dashboard-welcome-time">
                         <div class="dashboard-time-value">{{ now('Asia/Gaza')->format('H:i') }}</div>
                         <div class="dashboard-time-label">{{ now('Asia/Gaza')->locale('ar')->translatedFormat('A') }}</div>
@@ -58,7 +58,7 @@
                             <a href="{{ route('admin.maintenance-records.index') }}" class="dashboard-alert-action">
                                 عرض <i class="bi bi-arrow-left ms-1"></i>
                             </a>
-                        </div>
+                                </div>
                     @endif
 
                     @if(isset($unansweredComplaints) && $unansweredComplaints->count() > 0)
@@ -91,27 +91,214 @@
                         </div>
                     @endif
                 </div>
-            </div>
-        </div>
-    </div>
-    @endif
-
-    <!-- Quick Actions -->
-    <div class="row g-3 mb-4">
-        <div class="col-12">
-            <div class="dashboard-card">
-                <div class="dashboard-card-header">
-                    <div>
-                        <h5 class="dashboard-card-title">
-                            <i class="bi bi-lightning-charge me-2"></i>
-                            إجراءات سريعة
-                        </h5>
-                        <p class="dashboard-card-subtitle">وصول سريع للصفحات المهمة</p>
                     </div>
                 </div>
-                <div class="dashboard-card-body">
-                    <div class="dashboard-quick-actions">
-                        @if(auth()->user()->isSuperAdmin())
+            </div>
+        @endif
+
+    @if(auth()->user()->isEmployee() || auth()->user()->isTechnician())
+        <!-- Quick Actions - للموظف والفني -->
+        <div class="row g-3 mb-4">
+            <div class="col-12">
+                <div class="dashboard-card">
+                    <div class="dashboard-card-header">
+                        <div>
+                            <h5 class="dashboard-card-title">
+                                <i class="bi bi-lightning-charge me-2"></i>
+                                إجراءات سريعة
+                            </h5>
+                            <p class="dashboard-card-subtitle">وصول سريع للصفحات المهمة</p>
+                        </div>
+                    </div>
+                    <div class="dashboard-card-body">
+                        <div class="dashboard-quick-actions">
+                            <a href="{{ route('admin.operation-logs.create') }}" class="dashboard-quick-action">
+                                <div class="dashboard-quick-action-icon bg-warning">
+                                    <i class="bi bi-journal-plus"></i>
+                                </div>
+                                <div class="dashboard-quick-action-text">
+                                    <div class="dashboard-quick-action-title">سجل تشغيل</div>
+                                    <div class="dashboard-quick-action-desc">إضافة سجل تشغيل جديد</div>
+                                </div>
+                            </a>
+                            @if(auth()->user()->isTechnician())
+                                <a href="{{ route('admin.maintenance-records.create') }}" class="dashboard-quick-action">
+                                    <div class="dashboard-quick-action-icon bg-danger">
+                                        <i class="bi bi-tools"></i>
+                                    </div>
+                                    <div class="dashboard-quick-action-text">
+                                        <div class="dashboard-quick-action-title">سجل صيانة</div>
+                                        <div class="dashboard-quick-action-desc">تسجيل عملية صيانة</div>
+                                    </div>
+                                </a>
+                            @endif
+                            <a href="{{ route('admin.generators.index') }}" class="dashboard-quick-action">
+                                <div class="dashboard-quick-action-icon bg-success">
+                                    <i class="bi bi-lightning-charge-fill"></i>
+                                </div>
+                                <div class="dashboard-quick-action-text">
+                                    <div class="dashboard-quick-action-title">المولدات</div>
+                                    <div class="dashboard-quick-action-desc">عرض المولدات المرتبطة</div>
+                                </div>
+                            </a>
+                            <a href="{{ route('admin.operation-logs.index') }}" class="dashboard-quick-action">
+                                <div class="dashboard-quick-action-icon bg-info">
+                                    <i class="bi bi-journal-text"></i>
+                                </div>
+                                <div class="dashboard-quick-action-text">
+                                    <div class="dashboard-quick-action-title">سجلات التشغيل</div>
+                                    <div class="dashboard-quick-action-desc">عرض جميع السجلات</div>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @elseif(auth()->user()->isCompanyOwner())
+        <!-- Quick Actions - للمشغل -->
+        <div class="row g-3 mb-4">
+            <div class="col-12">
+                <div class="dashboard-card">
+                    <div class="dashboard-card-header">
+                        <div>
+                            <h5 class="dashboard-card-title">
+                                <i class="bi bi-lightning-charge me-2"></i>
+                                إجراءات سريعة
+                            </h5>
+                            <p class="dashboard-card-subtitle">وصول سريع للصفحات المهمة</p>
+                        </div>
+                    </div>
+                    <div class="dashboard-card-body">
+                        <div class="dashboard-quick-actions">
+                            <a href="{{ route('admin.generators.create') }}" class="dashboard-quick-action">
+                                <div class="dashboard-quick-action-icon bg-success">
+                                    <i class="bi bi-lightning-charge-fill"></i>
+                                </div>
+                                <div class="dashboard-quick-action-text">
+                                    <div class="dashboard-quick-action-title">إضافة مولد</div>
+                                    <div class="dashboard-quick-action-desc">تسجيل مولد جديد</div>
+                                </div>
+                            </a>
+                            <a href="{{ route('admin.operation-logs.create') }}" class="dashboard-quick-action">
+                                <div class="dashboard-quick-action-icon bg-warning">
+                                    <i class="bi bi-journal-plus"></i>
+                                </div>
+                                <div class="dashboard-quick-action-text">
+                                    <div class="dashboard-quick-action-title">سجل تشغيل</div>
+                                    <div class="dashboard-quick-action-desc">إضافة سجل جديد</div>
+                                </div>
+                            </a>
+                            <a href="{{ route('admin.maintenance-records.create') }}" class="dashboard-quick-action">
+                                <div class="dashboard-quick-action-icon bg-danger">
+                                    <i class="bi bi-tools"></i>
+                                </div>
+                                <div class="dashboard-quick-action-text">
+                                    <div class="dashboard-quick-action-title">سجل صيانة</div>
+                                    <div class="dashboard-quick-action-desc">تسجيل عملية صيانة</div>
+                                </div>
+                            </a>
+                            @php
+                                $operator = auth()->user()->ownedOperators->first();
+                            @endphp
+                            @if($operator)
+                                <a href="{{ route('admin.operators.employees', $operator) }}" class="dashboard-quick-action">
+                                    <div class="dashboard-quick-action-icon bg-info">
+                                        <i class="bi bi-people"></i>
+                                    </div>
+                                    <div class="dashboard-quick-action-text">
+                                        <div class="dashboard-quick-action-title">إدارة الموظفين</div>
+                                        <div class="dashboard-quick-action-desc">عرض وإدارة الموظفين</div>
+                                    </div>
+                                </a>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @elseif(auth()->user()->isAdmin())
+        <!-- Quick Actions - للأدمن (سلطة الطاقة) -->
+        <div class="row g-3 mb-4">
+            <div class="col-12">
+                <div class="dashboard-card">
+                    <div class="dashboard-card-header">
+                        <div>
+                            <h5 class="dashboard-card-title">
+                                <i class="bi bi-lightning-charge me-2"></i>
+                                إجراءات سريعة
+                            </h5>
+                            <p class="dashboard-card-subtitle">وصول سريع للصفحات المهمة</p>
+                        </div>
+                    </div>
+                    <div class="dashboard-card-body">
+                        <div class="dashboard-quick-actions">
+                            <a href="{{ route('admin.operators.index') }}" class="dashboard-quick-action">
+                                <div class="dashboard-quick-action-icon bg-info">
+                                    <i class="bi bi-building"></i>
+                                </div>
+                                <div class="dashboard-quick-action-text">
+                                    <div class="dashboard-quick-action-title">المشغلون</div>
+                                    <div class="dashboard-quick-action-desc">عرض جميع المشغلين</div>
+                                </div>
+                            </a>
+                            <a href="{{ route('admin.generators.index') }}" class="dashboard-quick-action">
+                                <div class="dashboard-quick-action-icon bg-success">
+                                    <i class="bi bi-lightning-charge-fill"></i>
+                                </div>
+                                <div class="dashboard-quick-action-text">
+                                    <div class="dashboard-quick-action-title">المولدات</div>
+                                    <div class="dashboard-quick-action-desc">عرض جميع المولدات</div>
+                                </div>
+                            </a>
+                            <a href="{{ route('admin.operation-logs.index') }}" class="dashboard-quick-action">
+                                <div class="dashboard-quick-action-icon bg-warning">
+                                    <i class="bi bi-journal-text"></i>
+                                </div>
+                                <div class="dashboard-quick-action-text">
+                                    <div class="dashboard-quick-action-title">سجلات التشغيل</div>
+                                    <div class="dashboard-quick-action-desc">عرض جميع السجلات</div>
+                                </div>
+                            </a>
+                            <a href="{{ route('admin.complaints-suggestions.index') }}" class="dashboard-quick-action">
+                                <div class="dashboard-quick-action-icon bg-primary">
+                                    <i class="bi bi-chat-left-text"></i>
+                                </div>
+                                <div class="dashboard-quick-action-text">
+                                    <div class="dashboard-quick-action-title">الشكاوى والمقترحات</div>
+                                    <div class="dashboard-quick-action-desc">عرض الشكاوى والمقترحات</div>
+                                </div>
+                            </a>
+                            <a href="{{ route('admin.compliance-safeties.index') }}" class="dashboard-quick-action">
+                                <div class="dashboard-quick-action-icon bg-danger">
+                                    <i class="bi bi-shield-check"></i>
+                                </div>
+                                <div class="dashboard-quick-action-text">
+                                    <div class="dashboard-quick-action-title">الامتثال والسلامة</div>
+                                    <div class="dashboard-quick-action-desc">عرض الشهادات والامتثال</div>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @elseif(auth()->user()->isSuperAdmin())
+        <!-- Quick Actions - للسوبر أدمن -->
+        <div class="row g-3 mb-4">
+            <div class="col-12">
+                <div class="dashboard-card">
+                    <div class="dashboard-card-header">
+                        <div>
+                            <h5 class="dashboard-card-title">
+                                <i class="bi bi-lightning-charge me-2"></i>
+                                إجراءات سريعة
+                            </h5>
+                            <p class="dashboard-card-subtitle">وصول سريع للصفحات المهمة</p>
+                        </div>
+                    </div>
+                    <div class="dashboard-card-body">
+                        <div class="dashboard-quick-actions">
                             <a href="{{ route('admin.operators.create') }}" class="dashboard-quick-action">
                                 <div class="dashboard-quick-action-icon bg-info">
                                     <i class="bi bi-building"></i>
@@ -130,43 +317,290 @@
                                     <div class="dashboard-quick-action-desc">إنشاء حساب جديد</div>
                                 </div>
                             </a>
-                        @endif
-                        <a href="{{ route('admin.generators.create') }}" class="dashboard-quick-action">
-                            <div class="dashboard-quick-action-icon bg-success">
-                                <i class="bi bi-lightning-charge-fill"></i>
-                            </div>
-                            <div class="dashboard-quick-action-text">
-                                <div class="dashboard-quick-action-title">إضافة مولد</div>
-                                <div class="dashboard-quick-action-desc">تسجيل مولد جديد</div>
-                            </div>
-                        </a>
-                        <a href="{{ route('admin.operation-logs.create') }}" class="dashboard-quick-action">
-                            <div class="dashboard-quick-action-icon bg-warning">
-                                <i class="bi bi-journal-plus"></i>
-                            </div>
-                            <div class="dashboard-quick-action-text">
-                                <div class="dashboard-quick-action-title">سجل تشغيل</div>
-                                <div class="dashboard-quick-action-desc">إضافة سجل جديد</div>
-                            </div>
-                        </a>
-                        <a href="{{ route('admin.maintenance-records.create') }}" class="dashboard-quick-action">
-                            <div class="dashboard-quick-action-icon bg-danger">
-                                <i class="bi bi-tools"></i>
-                            </div>
-                            <div class="dashboard-quick-action-text">
-                                <div class="dashboard-quick-action-title">سجل صيانة</div>
-                                <div class="dashboard-quick-action-desc">تسجيل عملية صيانة</div>
-                            </div>
-                        </a>
+                            <a href="{{ route('admin.generators.create') }}" class="dashboard-quick-action">
+                                <div class="dashboard-quick-action-icon bg-success">
+                                    <i class="bi bi-lightning-charge-fill"></i>
+                                </div>
+                                <div class="dashboard-quick-action-text">
+                                    <div class="dashboard-quick-action-title">إضافة مولد</div>
+                                    <div class="dashboard-quick-action-desc">تسجيل مولد جديد</div>
+                                </div>
+                            </a>
+                            <a href="{{ route('admin.operation-logs.create') }}" class="dashboard-quick-action">
+                                <div class="dashboard-quick-action-icon bg-warning">
+                                    <i class="bi bi-journal-plus"></i>
+                                </div>
+                                <div class="dashboard-quick-action-text">
+                                    <div class="dashboard-quick-action-title">سجل تشغيل</div>
+                                    <div class="dashboard-quick-action-desc">إضافة سجل جديد</div>
+                                </div>
+                            </a>
+                            <a href="{{ route('admin.maintenance-records.create') }}" class="dashboard-quick-action">
+                                <div class="dashboard-quick-action-icon bg-danger">
+                                    <i class="bi bi-tools"></i>
+                                </div>
+                                <div class="dashboard-quick-action-text">
+                                    <div class="dashboard-quick-action-title">سجل صيانة</div>
+                                    <div class="dashboard-quick-action-desc">تسجيل عملية صيانة</div>
+                                </div>
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
+    @endif
 
     <!-- Main Statistics Cards -->
     <div class="row g-3 mb-4">
-        @if(auth()->user()->isSuperAdmin())
+        @if(auth()->user()->isEmployee() || auth()->user()->isTechnician())
+            {{-- إحصائيات الموظف والفني --}}
+            <!-- Generators -->
+            <div class="col-12 col-sm-6 col-lg-3">
+                <div class="dashboard-stat-card dashboard-stat-success">
+                    <div class="dashboard-stat-icon">
+                        <i class="bi bi-lightning-charge-fill"></i>
+                    </div>
+                    <div class="dashboard-stat-content">
+                        <div class="dashboard-stat-label">المولدات</div>
+                        <div class="dashboard-stat-value">{{ number_format($stats['generators']['total'] ?? 0) }}</div>
+                        @if(isset($stats['generators']['active']))
+                            <div class="dashboard-stat-badges">
+                                <span class="badge badge-success">
+                                    <i class="bi bi-check-circle me-1"></i>
+                                    {{ $stats['generators']['active'] }} نشطة
+                                </span>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+
+            <!-- Operators -->
+            <div class="col-12 col-sm-6 col-lg-3">
+                <div class="dashboard-stat-card dashboard-stat-info">
+                    <div class="dashboard-stat-icon">
+                        <i class="bi bi-building"></i>
+                    </div>
+                    <div class="dashboard-stat-content">
+                        <div class="dashboard-stat-label">المشغل</div>
+                        <div class="dashboard-stat-value">{{ number_format($stats['operators']['total'] ?? 0) }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Operation Logs -->
+            @if(isset($operationStats) && $operationStats['total'] > 0)
+            <div class="col-12 col-sm-6 col-lg-3">
+                <div class="dashboard-stat-card dashboard-stat-warning">
+                    <div class="dashboard-stat-icon">
+                        <i class="bi bi-journal-text"></i>
+                    </div>
+                    <div class="dashboard-stat-content">
+                        <div class="dashboard-stat-label">سجلات التشغيل</div>
+                        <div class="dashboard-stat-value">{{ number_format($operationStats['total']) }}</div>
+                        <div class="dashboard-stat-badges">
+                            <span class="badge badge-info">{{ $operationStats['this_month'] }} هذا الشهر</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @endif
+
+            <!-- Maintenance Records (للفني فقط) -->
+            @if(auth()->user()->isTechnician() && isset($maintenanceStats) && $maintenanceStats['total'] > 0)
+            <div class="col-12 col-sm-6 col-lg-3">
+                <div class="dashboard-stat-card dashboard-stat-danger">
+                    <div class="dashboard-stat-icon">
+                        <i class="bi bi-tools"></i>
+                    </div>
+                    <div class="dashboard-stat-content">
+                        <div class="dashboard-stat-label">سجلات الصيانة</div>
+                        <div class="dashboard-stat-value">{{ number_format($maintenanceStats['total']) }}</div>
+                        <div class="dashboard-stat-badges">
+                            <span class="badge badge-warning">{{ $maintenanceStats['this_month'] }} هذا الشهر</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @endif
+
+            <!-- Complaints (إذا كانت موجودة) -->
+            @if(isset($complaintsStats) && $complaintsStats['total'] > 0)
+            <div class="col-12 col-sm-6 col-lg-3">
+                <div class="dashboard-stat-card dashboard-stat-primary">
+                    <div class="dashboard-stat-icon">
+                        <i class="bi bi-chat-left-text"></i>
+                    </div>
+                    <div class="dashboard-stat-content">
+                        <div class="dashboard-stat-label">الشكاوى والمقترحات</div>
+                        <div class="dashboard-stat-value">{{ number_format($complaintsStats['total']) }}</div>
+                        @if($complaintsStats['unanswered'] > 0)
+                            <div class="dashboard-stat-badges">
+                                <span class="badge badge-warning">{{ $complaintsStats['unanswered'] }} غير م responded عليها</span>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+            @endif
+        @elseif(auth()->user()->isCompanyOwner())
+            {{-- إحصائيات المشغل - مرتبة حسب الأهمية --}}
+        <!-- Generators -->
+            <div class="col-12 col-sm-6 col-lg-3">
+                <div class="dashboard-stat-card dashboard-stat-success">
+                    <div class="dashboard-stat-icon">
+                        <i class="bi bi-lightning-charge-fill"></i>
+                    </div>
+                    <div class="dashboard-stat-content">
+                        <div class="dashboard-stat-label">المولدات</div>
+                        <div class="dashboard-stat-value">{{ number_format($stats['generators']['total'] ?? 0) }}</div>
+                            @if(isset($stats['generators']['active']))
+                            <div class="dashboard-stat-badges">
+                                <span class="badge badge-success">
+                                    <i class="bi bi-check-circle me-1"></i>
+                                    {{ $stats['generators']['active'] }} نشطة
+                                </span>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+
+            <!-- Employees -->
+            @if(isset($stats['employees']))
+            <div class="col-12 col-sm-6 col-lg-3">
+                <div class="dashboard-stat-card dashboard-stat-warning">
+                    <div class="dashboard-stat-icon">
+                        <i class="bi bi-person-badge"></i>
+                    </div>
+                    <div class="dashboard-stat-content">
+                        <div class="dashboard-stat-label">الموظفون</div>
+                        <div class="dashboard-stat-value">{{ number_format($stats['employees']['total']) }}</div>
+                    </div>
+                </div>
+            </div>
+            @endif
+
+            <!-- Operators -->
+            <div class="col-12 col-sm-6 col-lg-3">
+                <div class="dashboard-stat-card dashboard-stat-info">
+                    <div class="dashboard-stat-icon">
+                        <i class="bi bi-building"></i>
+                    </div>
+                    <div class="dashboard-stat-content">
+                        <div class="dashboard-stat-label">المشغل</div>
+                        <div class="dashboard-stat-value">{{ number_format($stats['operators']['total'] ?? 0) }}</div>
+                        @if(isset($stats['operators']['active']))
+                            <div class="dashboard-stat-badges">
+                                <span class="badge badge-success">
+                                    <i class="bi bi-check-circle me-1"></i>
+                                    {{ $stats['operators']['active'] }} نشط
+                                </span>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+
+            <!-- Complaints -->
+            @if(isset($complaintsStats) && $complaintsStats['total'] > 0)
+            <div class="col-12 col-sm-6 col-lg-3">
+                <div class="dashboard-stat-card dashboard-stat-primary">
+                    <div class="dashboard-stat-icon">
+                        <i class="bi bi-chat-left-text"></i>
+                                </div>
+                    <div class="dashboard-stat-content">
+                        <div class="dashboard-stat-label">الشكاوى والمقترحات</div>
+                        <div class="dashboard-stat-value">{{ number_format($complaintsStats['total']) }}</div>
+                        <div class="dashboard-stat-badges">
+                            @if($complaintsStats['unanswered'] > 0)
+                                <span class="badge badge-warning">{{ $complaintsStats['unanswered'] }} غير م responded عليها</span>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @endif
+        @elseif(auth()->user()->isAdmin())
+            {{-- إحصائيات الأدمن (سلطة الطاقة) --}}
+            <!-- Operators -->
+            <div class="col-12 col-sm-6 col-lg-3">
+                <div class="dashboard-stat-card dashboard-stat-info">
+                    <div class="dashboard-stat-icon">
+                        <i class="bi bi-building"></i>
+                    </div>
+                    <div class="dashboard-stat-content">
+                        <div class="dashboard-stat-label">المشغلون</div>
+                        <div class="dashboard-stat-value">{{ number_format($stats['operators']['total'] ?? 0) }}</div>
+                        @if(isset($stats['operators']['active']))
+                            <div class="dashboard-stat-badges">
+                                <span class="badge badge-success">
+                                    <i class="bi bi-check-circle me-1"></i>
+                                    {{ $stats['operators']['active'] }} نشط
+                                </span>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+
+            <!-- Generators -->
+            <div class="col-12 col-sm-6 col-lg-3">
+                <div class="dashboard-stat-card dashboard-stat-success">
+                    <div class="dashboard-stat-icon">
+                        <i class="bi bi-lightning-charge-fill"></i>
+                    </div>
+                    <div class="dashboard-stat-content">
+                        <div class="dashboard-stat-label">المولدات</div>
+                        <div class="dashboard-stat-value">{{ number_format($stats['generators']['total'] ?? 0) }}</div>
+                        @if(isset($stats['generators']['active']))
+                            <div class="dashboard-stat-badges">
+                                <span class="badge badge-success">
+                                    <i class="bi bi-check-circle me-1"></i>
+                                    {{ $stats['generators']['active'] }} نشطة
+                                </span>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+
+            <!-- Company Owners -->
+            @if(isset($stats['company_owners']))
+            <div class="col-12 col-sm-6 col-lg-3">
+                <div class="dashboard-stat-card dashboard-stat-primary">
+                    <div class="dashboard-stat-icon">
+                        <i class="bi bi-person-badge"></i>
+                    </div>
+                    <div class="dashboard-stat-content">
+                        <div class="dashboard-stat-label">أصحاب المشغلين</div>
+                        <div class="dashboard-stat-value">{{ number_format($stats['company_owners']['total'] ?? 0) }}</div>
+                    </div>
+                </div>
+            </div>
+            @endif
+
+            <!-- Complaints -->
+            @if(isset($complaintsStats) && $complaintsStats['total'] > 0)
+            <div class="col-12 col-sm-6 col-lg-3">
+                <div class="dashboard-stat-card dashboard-stat-warning">
+                    <div class="dashboard-stat-icon">
+                        <i class="bi bi-chat-left-text"></i>
+                    </div>
+                    <div class="dashboard-stat-content">
+                        <div class="dashboard-stat-label">الشكاوى والمقترحات</div>
+                        <div class="dashboard-stat-value">{{ number_format($complaintsStats['total']) }}</div>
+                        <div class="dashboard-stat-badges">
+                            @if($complaintsStats['unanswered'] > 0)
+                                <span class="badge badge-danger">{{ $complaintsStats['unanswered'] }} غير م responded عليها</span>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @endif
+        @elseif(auth()->user()->isSuperAdmin())
             <!-- Users -->
             <div class="col-12 col-sm-6 col-lg-3">
                 <div class="dashboard-stat-card dashboard-stat-primary">
@@ -184,305 +618,987 @@
                     </div>
                 </div>
             </div>
-        @endif
 
-        <!-- Operators -->
-        <div class="col-12 col-sm-6 col-lg-3">
-            <div class="dashboard-stat-card dashboard-stat-info">
-                <div class="dashboard-stat-icon">
-                    <i class="bi bi-building"></i>
-                </div>
-                <div class="dashboard-stat-content">
-                    <div class="dashboard-stat-label">المشغلون</div>
-                    <div class="dashboard-stat-value">{{ number_format($stats['operators']['total']) }}</div>
-                    @if(isset($stats['operators']['active']))
-                        <div class="dashboard-stat-badges">
-                            <span class="badge badge-success">
-                                <i class="bi bi-check-circle me-1"></i>
-                                {{ $stats['operators']['active'] }} نشط
-                            </span>
-                        </div>
-                    @endif
-                </div>
-            </div>
-        </div>
-
-        <!-- Generators -->
-        <div class="col-12 col-sm-6 col-lg-3">
-            <div class="dashboard-stat-card dashboard-stat-success">
-                <div class="dashboard-stat-icon">
-                    <i class="bi bi-lightning-charge-fill"></i>
-                </div>
-                <div class="dashboard-stat-content">
-                    <div class="dashboard-stat-label">المولدات</div>
-                    <div class="dashboard-stat-value">{{ number_format($stats['generators']['total']) }}</div>
-                    @if(isset($stats['generators']['active']))
-                        <div class="dashboard-stat-badges">
-                            <span class="badge badge-success">
-                                <i class="bi bi-check-circle me-1"></i>
-                                {{ $stats['generators']['active'] }} نشطة
-                            </span>
-                        </div>
-                    @endif
-                </div>
-            </div>
-        </div>
-
-        @if(auth()->user()->isCompanyOwner() && isset($stats['employees']))
-            <!-- Employees -->
+            <!-- Operators -->
             <div class="col-12 col-sm-6 col-lg-3">
-                <div class="dashboard-stat-card dashboard-stat-warning">
+                <div class="dashboard-stat-card dashboard-stat-info">
                     <div class="dashboard-stat-icon">
-                        <i class="bi bi-person-badge"></i>
-                    </div>
-                    <div class="dashboard-stat-content">
-                        <div class="dashboard-stat-label">الموظفون</div>
-                        <div class="dashboard-stat-value">{{ number_format($stats['employees']['total']) }}</div>
-                    </div>
-                </div>
-            </div>
-        @endif
-    </div>
-
-    <!-- Operations Statistics -->
-    @if(isset($operationStats) && $operationStats['total'] > 0)
-    <div class="row g-3 mb-4">
-        <div class="col-12">
-            <div class="dashboard-card">
-                <div class="dashboard-card-header">
-                    <div>
-                        <h5 class="dashboard-card-title">
-                            <i class="bi bi-graph-up me-2"></i>
-                            إحصائيات التشغيل
-                        </h5>
-                        <p class="dashboard-card-subtitle">نظرة شاملة على أداء المولدات</p>
-                    </div>
-                    <a href="{{ route('admin.operation-logs.index') }}" class="btn btn-outline-primary btn-sm">
-                        عرض التفاصيل <i class="bi bi-arrow-left ms-1"></i>
-                    </a>
-                </div>
-                <div class="dashboard-card-body">
-                    <div class="row g-3">
-                        <div class="col-6 col-md-3">
-                            <div class="dashboard-stat-mini">
-                                <div class="dashboard-stat-mini-label">إجمالي السجلات</div>
-                                <div class="dashboard-stat-mini-value">{{ number_format($operationStats['total']) }}</div>
-                                <div class="dashboard-stat-mini-badges">
-                                    <span class="badge badge-info">{{ $operationStats['this_month'] }} هذا الشهر</span>
-                                    <span class="badge badge-primary">{{ $operationStats['this_week'] }} هذا الأسبوع</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-6 col-md-3">
-                            <div class="dashboard-stat-mini">
-                                <div class="dashboard-stat-mini-label">الطاقة المنتجة</div>
-                                <div class="dashboard-stat-mini-value">{{ number_format($operationStats['total_energy'], 2) }}</div>
-                                <div class="dashboard-stat-mini-unit">kWh</div>
-                            </div>
-                        </div>
-                        <div class="col-6 col-md-3">
-                            <div class="dashboard-stat-mini">
-                                <div class="dashboard-stat-mini-label">الوقود المستهلك</div>
-                                <div class="dashboard-stat-mini-value">{{ number_format($operationStats['total_fuel'], 2) }}</div>
-                                <div class="dashboard-stat-mini-unit">لتر</div>
-                            </div>
-                        </div>
-                        <div class="col-6 col-md-3">
-                            <div class="dashboard-stat-mini">
-                                <div class="dashboard-stat-mini-label">متوسط نسبة التحميل</div>
-                                <div class="dashboard-stat-mini-value">{{ number_format($operationStats['avg_load'], 1) }}%</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+                        <i class="bi bi-building"></i>
         </div>
-    </div>
-    @endif
-
-    <!-- Additional Statistics Row -->
-    <div class="row g-3 mb-4">
-        @if(isset($maintenanceStats) && $maintenanceStats['total'] > 0)
-            <div class="col-12 col-sm-6 col-lg-3">
-                <div class="dashboard-stat-card dashboard-stat-warning">
-                    <div class="dashboard-stat-icon">
-                        <i class="bi bi-tools"></i>
-                    </div>
                     <div class="dashboard-stat-content">
-                        <div class="dashboard-stat-label">سجلات الصيانة</div>
-                        <div class="dashboard-stat-value">{{ number_format($maintenanceStats['total']) }}</div>
-                        <div class="dashboard-stat-badges">
-                            <span class="badge badge-warning">{{ $maintenanceStats['this_month'] }} هذا الشهر</span>
-                            @if($maintenanceStats['total_cost'] > 0)
-                                <span class="badge badge-danger">{{ number_format($maintenanceStats['total_cost']) }} ₪</span>
-                            @endif
-                        </div>
+                        <div class="dashboard-stat-label">المشغلون</div>
+                        <div class="dashboard-stat-value">{{ number_format($stats['operators']['total']) }}</div>
+                        @if(isset($stats['operators']['active']))
+                            <div class="dashboard-stat-badges">
+                                <span class="badge badge-success">
+                                    <i class="bi bi-check-circle me-1"></i>
+                                    {{ $stats['operators']['active'] }} نشط
+                                </span>
+                            </div>
+                        @endif
                     </div>
                 </div>
             </div>
-        @endif
 
-        @if(isset($fuelStats) && $fuelStats['total'] > 0)
+            <!-- Generators -->
             <div class="col-12 col-sm-6 col-lg-3">
                 <div class="dashboard-stat-card dashboard-stat-success">
                     <div class="dashboard-stat-icon">
-                        <i class="bi bi-fuel-pump"></i>
+                        <i class="bi bi-lightning-charge-fill"></i>
                     </div>
                     <div class="dashboard-stat-content">
-                        <div class="dashboard-stat-label">كفاءة الوقود</div>
-                        <div class="dashboard-stat-value">{{ number_format($fuelStats['avg_fuel_efficiency'], 1) }}%</div>
-                        @if($fuelStats['total_cost'] > 0)
+                        <div class="dashboard-stat-label">المولدات</div>
+                        <div class="dashboard-stat-value">{{ number_format($stats['generators']['total']) }}</div>
+                        @if(isset($stats['generators']['active']))
                             <div class="dashboard-stat-badges">
-                                <span class="badge badge-success">{{ number_format($fuelStats['total_cost']) }} ₪</span>
+                                <span class="badge badge-success">
+                                    <i class="bi bi-check-circle me-1"></i>
+                                    {{ $stats['generators']['active'] }} نشطة
+                                </span>
                             </div>
                         @endif
                     </div>
                 </div>
             </div>
         @endif
-
-        @if(isset($complianceStats) && $complianceStats['total'] > 0)
-            <div class="col-12 col-sm-6 col-lg-3">
-                <div class="dashboard-stat-card dashboard-stat-primary">
-                    <div class="dashboard-stat-icon">
-                        <i class="bi bi-shield-check"></i>
-                    </div>
-                    <div class="dashboard-stat-content">
-                        <div class="dashboard-stat-label">الامتثال والسلامة</div>
-                        <div class="dashboard-stat-value">{{ number_format($complianceStats['valid']) }}</div>
-                        <div class="dashboard-stat-badges">
-                            <span class="badge badge-success">{{ $complianceStats['valid'] }} ساري</span>
-                            @if($complianceStats['expired'] > 0)
-                                <span class="badge badge-danger">{{ $complianceStats['expired'] }} منتهي</span>
-                            @endif
-                        </div>
-                    </div>
-                </div>
-            </div>
-        @endif
-
-        @if(isset($complaintsStats) && $complaintsStats['total'] > 0)
-            <div class="col-12 col-sm-6 col-lg-3">
-                <div class="dashboard-stat-card dashboard-stat-info">
-                    <div class="dashboard-stat-icon">
-                        <i class="bi bi-chat-left-text"></i>
-                    </div>
-                    <div class="dashboard-stat-content">
-                        <div class="dashboard-stat-label">الشكاوى والمقترحات</div>
-                        <div class="dashboard-stat-value">{{ number_format($complaintsStats['total']) }}</div>
-                        <div class="dashboard-stat-badges">
-                            @if($complaintsStats['unanswered'] > 0)
-                                <span class="badge badge-warning">{{ $complaintsStats['unanswered'] }} غير م responded عليها</span>
-                            @endif
-                            <span class="badge badge-primary">{{ $complaintsStats['pending'] }} قيد الانتظار</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        @endif
     </div>
 
-    <!-- Recent Items & Alerts -->
-    <div class="row g-3">
-        <!-- Generators Needing Maintenance -->
-        @if(isset($generatorsNeedingMaintenance) && $generatorsNeedingMaintenance->count() > 0)
-            <div class="col-12 col-lg-6">
-                <div class="dashboard-card dashboard-card-warning">
-                    <div class="dashboard-card-header">
-                        <div>
-                            <h5 class="dashboard-card-title text-warning">
-                                <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                                مولدات تحتاج صيانة
-                            </h5>
-                            <p class="dashboard-card-subtitle">مولدات تحتاج إلى صيانة فورية</p>
-                        </div>
-                        <a href="{{ route('admin.maintenance-records.index') }}" class="btn btn-outline-warning btn-sm">
-                            عرض الكل <i class="bi bi-arrow-left ms-1"></i>
-                        </a>
-                    </div>
-                    <div class="dashboard-card-body p-0">
-                        <div class="dashboard-list-container">
-                            @foreach($generatorsNeedingMaintenance as $generator)
-                                <div class="dashboard-list-item">
-                                    <div class="dashboard-list-item-icon">
-                                        <i class="bi bi-exclamation-circle text-danger"></i>
-                                    </div>
-                                    <div class="dashboard-list-item-content">
-                                        <h6 class="dashboard-list-item-title">{{ $generator->name }}</h6>
-                                        <div class="dashboard-list-item-meta">
-                                            <span class="dashboard-list-item-text">
-                                                <i class="bi bi-building me-1"></i>
-                                                {{ $generator->operator->name }}
-                                            </span>
-                                        </div>
-                                        <small class="dashboard-list-item-time">
-                                            @if($generator->last_major_maintenance_date)
-                                                <i class="bi bi-calendar-x me-1"></i>
-                                                آخر صيانة: {{ $generator->last_major_maintenance_date->diffForHumans() }}
-                                            @else
-                                                <span class="text-danger">
-                                                    <i class="bi bi-exclamation-circle me-1"></i>
-                                                    لم يتم تسجيل صيانة
-                                                </span>
-                                            @endif
-                                        </small>
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
-                    </div>
-                </div>
-            </div>
-        @endif
-
-        <!-- Recent Operation Logs -->
-        @if(isset($recentOperationLogs) && $recentOperationLogs->count() > 0)
-            <div class="col-12 col-lg-6">
+    @if(auth()->user()->isEmployee() || auth()->user()->isTechnician())
+        <!-- Operations Statistics - للموظف والفني -->
+        @if(isset($operationStats) && $operationStats['total'] > 0)
+        <div class="row g-3 mb-4">
+            <div class="col-12">
                 <div class="dashboard-card">
                     <div class="dashboard-card-header">
                         <div>
                             <h5 class="dashboard-card-title">
-                                <i class="bi bi-journal-text me-2 text-info"></i>
-                                آخر سجلات التشغيل
+                                <i class="bi bi-graph-up me-2"></i>
+                                إحصائيات التشغيل
                             </h5>
-                            <p class="dashboard-card-subtitle">آخر السجلات المسجلة</p>
+                            <p class="dashboard-card-subtitle">نظرة شاملة على أداء المولدات</p>
                         </div>
                         <a href="{{ route('admin.operation-logs.index') }}" class="btn btn-outline-primary btn-sm">
-                            عرض الكل <i class="bi bi-arrow-left ms-1"></i>
+                            عرض التفاصيل <i class="bi bi-arrow-left ms-1"></i>
                         </a>
                     </div>
-                    <div class="dashboard-card-body p-0">
-                        <div class="dashboard-list-container">
-                            @foreach($recentOperationLogs as $log)
-                                <div class="dashboard-list-item">
-                                    <div class="dashboard-list-item-icon">
-                                        <i class="bi bi-lightning-charge text-success"></i>
-                                    </div>
-                                    <div class="dashboard-list-item-content">
-                                        <h6 class="dashboard-list-item-title">{{ $log->generator->name }}</h6>
-                                        <div class="dashboard-list-item-meta">
-                                            <span class="dashboard-list-item-text">
-                                                <i class="bi bi-building me-1"></i>
-                                                {{ $log->operator->name }}
-                                            </span>
-                                            @if($log->energy_produced)
-                                                <span class="badge badge-success">{{ number_format($log->energy_produced, 2) }} kWh</span>
-                                            @endif
-                                        </div>
-                                        <small class="dashboard-list-item-time">
-                                            <i class="bi bi-calendar me-1"></i>
-                                            {{ $log->operation_date->format('Y-m-d') }}
-                                            <span class="mx-2">|</span>
-                                            <i class="bi bi-clock me-1"></i>
-                                            {{ $log->created_at->diffForHumans() }}
-                                        </small>
+                    <div class="dashboard-card-body">
+                        <div class="row g-3">
+                            <div class="col-6 col-md-3">
+                                <div class="dashboard-stat-mini">
+                                    <div class="dashboard-stat-mini-label">إجمالي السجلات</div>
+                                    <div class="dashboard-stat-mini-value">{{ number_format($operationStats['total']) }}</div>
+                                    <div class="dashboard-stat-mini-badges">
+                                        <span class="badge badge-info">{{ $operationStats['this_month'] }} هذا الشهر</span>
+                                        <span class="badge badge-primary">{{ $operationStats['this_week'] }} هذا الأسبوع</span>
                                     </div>
                                 </div>
-                            @endforeach
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="dashboard-stat-mini">
+                                    <div class="dashboard-stat-mini-label">الطاقة المنتجة</div>
+                                    <div class="dashboard-stat-mini-value">{{ number_format($operationStats['total_energy'], 2) }}</div>
+                                    <div class="dashboard-stat-mini-unit">kWh</div>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="dashboard-stat-mini">
+                                    <div class="dashboard-stat-mini-label">الوقود المستهلك</div>
+                                    <div class="dashboard-stat-mini-value">{{ number_format($operationStats['total_fuel'], 2) }}</div>
+                                    <div class="dashboard-stat-mini-unit">لتر</div>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="dashboard-stat-mini">
+                                    <div class="dashboard-stat-mini-label">متوسط نسبة التحميل</div>
+                                    <div class="dashboard-stat-mini-value">{{ number_format($operationStats['avg_load'], 1) }}%</div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
+        </div>
+        @endif
+
+        @if(auth()->user()->isTechnician() && isset($maintenanceStats) && $maintenanceStats['total'] > 0)
+        <!-- Maintenance Statistics - للفني -->
+        <div class="row g-3 mb-4">
+            <div class="col-12">
+                <div class="dashboard-card">
+                    <div class="dashboard-card-header">
+                        <div>
+                            <h5 class="dashboard-card-title">
+                                <i class="bi bi-tools me-2"></i>
+                                إحصائيات الصيانة
+                            </h5>
+                            <p class="dashboard-card-subtitle">نظرة شاملة على سجلات الصيانة</p>
+                        </div>
+                        <a href="{{ route('admin.maintenance-records.index') }}" class="btn btn-outline-danger btn-sm">
+                            عرض التفاصيل <i class="bi bi-arrow-left ms-1"></i>
+                        </a>
+                    </div>
+                    <div class="dashboard-card-body">
+                        <div class="row g-3">
+                            <div class="col-6 col-md-4">
+                                <div class="dashboard-stat-mini">
+                                    <div class="dashboard-stat-mini-label">إجمالي السجلات</div>
+                                    <div class="dashboard-stat-mini-value">{{ number_format($maintenanceStats['total']) }}</div>
+                                    <div class="dashboard-stat-mini-badges">
+                                        <span class="badge badge-warning">{{ $maintenanceStats['this_month'] }} هذا الشهر</span>
+                                    </div>
+                                </div>
+                            </div>
+                            @if($maintenanceStats['total_cost'] > 0)
+                            <div class="col-6 col-md-4">
+                                <div class="dashboard-stat-mini">
+                                    <div class="dashboard-stat-mini-label">التكلفة الإجمالية</div>
+                                    <div class="dashboard-stat-mini-value">{{ number_format($maintenanceStats['total_cost'], 0) }}</div>
+                                    <div class="dashboard-stat-mini-unit">₪</div>
+                                </div>
+                            </div>
+                            @endif
+                            @if($maintenanceStats['total_downtime'] > 0)
+                            <div class="col-6 col-md-4">
+                                <div class="dashboard-stat-mini">
+                                    <div class="dashboard-stat-mini-label">وقت التوقف</div>
+                                    <div class="dashboard-stat-mini-value">{{ number_format($maintenanceStats['total_downtime'], 1) }}</div>
+                                    <div class="dashboard-stat-mini-unit">ساعة</div>
+                                </div>
+                            </div>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @endif
+    @elseif(auth()->user()->isAdmin())
+        <!-- Operations Statistics - للأدمن -->
+        @if(isset($operationStats) && $operationStats['total'] > 0)
+        <div class="row g-3 mb-4">
+            <div class="col-12">
+                <div class="dashboard-card">
+                    <div class="dashboard-card-header">
+                        <div>
+                            <h5 class="dashboard-card-title">
+                                <i class="bi bi-graph-up me-2"></i>
+                                إحصائيات التشغيل
+                            </h5>
+                            <p class="dashboard-card-subtitle">نظرة شاملة على أداء المولدات</p>
+                        </div>
+                        <a href="{{ route('admin.operation-logs.index') }}" class="btn btn-outline-primary btn-sm">
+                            عرض التفاصيل <i class="bi bi-arrow-left ms-1"></i>
+                        </a>
+                    </div>
+                    <div class="dashboard-card-body">
+                        <div class="row g-3">
+                            <div class="col-6 col-md-3">
+                                <div class="dashboard-stat-mini">
+                                    <div class="dashboard-stat-mini-label">إجمالي السجلات</div>
+                                    <div class="dashboard-stat-mini-value">{{ number_format($operationStats['total']) }}</div>
+                                    <div class="dashboard-stat-mini-badges">
+                                        <span class="badge badge-info">{{ $operationStats['this_month'] }} هذا الشهر</span>
+                                        <span class="badge badge-primary">{{ $operationStats['this_week'] }} هذا الأسبوع</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="dashboard-stat-mini">
+                                    <div class="dashboard-stat-mini-label">الطاقة المنتجة</div>
+                                    <div class="dashboard-stat-mini-value">{{ number_format($operationStats['total_energy'], 2) }}</div>
+                                    <div class="dashboard-stat-mini-unit">kWh</div>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="dashboard-stat-mini">
+                                    <div class="dashboard-stat-mini-label">الوقود المستهلك</div>
+                                    <div class="dashboard-stat-mini-value">{{ number_format($operationStats['total_fuel'], 2) }}</div>
+                                    <div class="dashboard-stat-mini-unit">لتر</div>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="dashboard-stat-mini">
+                                    <div class="dashboard-stat-mini-label">متوسط نسبة التحميل</div>
+                                    <div class="dashboard-stat-mini-value">{{ number_format($operationStats['avg_load'], 1) }}%</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @endif
+    @elseif(auth()->user()->isCompanyOwner())
+        <!-- Operations Statistics - للمشغل -->
+        @if(isset($operationStats) && $operationStats['total'] > 0)
+        <div class="row g-3 mb-4">
+            <div class="col-12">
+                <div class="dashboard-card">
+                    <div class="dashboard-card-header">
+                        <div>
+                            <h5 class="dashboard-card-title">
+                                <i class="bi bi-graph-up me-2"></i>
+                                إحصائيات التشغيل
+                            </h5>
+                            <p class="dashboard-card-subtitle">نظرة شاملة على أداء المولدات</p>
+                        </div>
+                        <a href="{{ route('admin.operation-logs.index') }}" class="btn btn-outline-primary btn-sm">
+                            عرض التفاصيل <i class="bi bi-arrow-left ms-1"></i>
+                        </a>
+                    </div>
+                    <div class="dashboard-card-body">
+                        <div class="row g-3">
+                            <div class="col-6 col-md-3">
+                                <div class="dashboard-stat-mini">
+                                    <div class="dashboard-stat-mini-label">إجمالي السجلات</div>
+                                    <div class="dashboard-stat-mini-value">{{ number_format($operationStats['total']) }}</div>
+                                    <div class="dashboard-stat-mini-badges">
+                                        <span class="badge badge-info">{{ $operationStats['this_month'] }} هذا الشهر</span>
+                                        <span class="badge badge-primary">{{ $operationStats['this_week'] }} هذا الأسبوع</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="dashboard-stat-mini">
+                                    <div class="dashboard-stat-mini-label">الطاقة المنتجة</div>
+                                    <div class="dashboard-stat-mini-value">{{ number_format($operationStats['total_energy'], 2) }}</div>
+                                    <div class="dashboard-stat-mini-unit">kWh</div>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="dashboard-stat-mini">
+                                    <div class="dashboard-stat-mini-label">الوقود المستهلك</div>
+                                    <div class="dashboard-stat-mini-value">{{ number_format($operationStats['total_fuel'], 2) }}</div>
+                                    <div class="dashboard-stat-mini-unit">لتر</div>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="dashboard-stat-mini">
+                                    <div class="dashboard-stat-mini-label">متوسط نسبة التحميل</div>
+                                    <div class="dashboard-stat-mini-value">{{ number_format($operationStats['avg_load'], 1) }}%</div>
+                                </div>
+                            </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endif
+    @elseif(auth()->user()->isSuperAdmin())
+        <!-- Operations Statistics - للسوبر أدمن -->
+        @if(isset($operationStats) && $operationStats['total'] > 0)
+        <div class="row g-3 mb-4">
+            <div class="col-12">
+                <div class="dashboard-card">
+                    <div class="dashboard-card-header">
+                        <div>
+                            <h5 class="dashboard-card-title">
+                                <i class="bi bi-graph-up me-2"></i>
+                                إحصائيات التشغيل
+                            </h5>
+                            <p class="dashboard-card-subtitle">نظرة شاملة على أداء المولدات</p>
+                        </div>
+                        <a href="{{ route('admin.operation-logs.index') }}" class="btn btn-outline-primary btn-sm">
+                            عرض التفاصيل <i class="bi bi-arrow-left ms-1"></i>
+                        </a>
+                    </div>
+                    <div class="dashboard-card-body">
+                        <div class="row g-3">
+                            <div class="col-6 col-md-3">
+                                <div class="dashboard-stat-mini">
+                                    <div class="dashboard-stat-mini-label">إجمالي السجلات</div>
+                                    <div class="dashboard-stat-mini-value">{{ number_format($operationStats['total']) }}</div>
+                                    <div class="dashboard-stat-mini-badges">
+                                        <span class="badge badge-info">{{ $operationStats['this_month'] }} هذا الشهر</span>
+                                        <span class="badge badge-primary">{{ $operationStats['this_week'] }} هذا الأسبوع</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="dashboard-stat-mini">
+                                    <div class="dashboard-stat-mini-label">الطاقة المنتجة</div>
+                                    <div class="dashboard-stat-mini-value">{{ number_format($operationStats['total_energy'], 2) }}</div>
+                                    <div class="dashboard-stat-mini-unit">kWh</div>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="dashboard-stat-mini">
+                                    <div class="dashboard-stat-mini-label">الوقود المستهلك</div>
+                                    <div class="dashboard-stat-mini-value">{{ number_format($operationStats['total_fuel'], 2) }}</div>
+                                    <div class="dashboard-stat-mini-unit">لتر</div>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="dashboard-stat-mini">
+                                    <div class="dashboard-stat-mini-label">متوسط نسبة التحميل</div>
+                                    <div class="dashboard-stat-mini-value">{{ number_format($operationStats['avg_load'], 1) }}%</div>
+                                </div>
+                            </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endif
+                                        @endif
+
+    @if(auth()->user()->isEmployee() || auth()->user()->isTechnician())
+        <!-- Additional Statistics Row - للموظف والفني -->
+        <div class="row g-3 mb-4">
+            @if(isset($fuelStats) && $fuelStats['total'] > 0)
+                <div class="col-12 col-sm-6 col-lg-4">
+                    <div class="dashboard-stat-card dashboard-stat-success">
+                        <div class="dashboard-stat-icon">
+                            <i class="bi bi-fuel-pump"></i>
+                        </div>
+                        <div class="dashboard-stat-content">
+                            <div class="dashboard-stat-label">كفاءة الوقود</div>
+                            <div class="dashboard-stat-value">{{ number_format($fuelStats['avg_fuel_efficiency'], 1) }}%</div>
+                            @if($fuelStats['total_cost'] > 0)
+                                <div class="dashboard-stat-badges">
+                                    <span class="badge badge-success">{{ number_format($fuelStats['total_cost']) }} ₪</span>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            @endif
+
+            @if(isset($complianceStats) && $complianceStats['total'] > 0)
+                <div class="col-12 col-sm-6 col-lg-4">
+                    <div class="dashboard-stat-card dashboard-stat-primary">
+                        <div class="dashboard-stat-icon">
+                            <i class="bi bi-shield-check"></i>
+                        </div>
+                        <div class="dashboard-stat-content">
+                            <div class="dashboard-stat-label">الامتثال والسلامة</div>
+                            <div class="dashboard-stat-value">{{ number_format($complianceStats['valid']) }}</div>
+                            <div class="dashboard-stat-badges">
+                                <span class="badge badge-success">{{ $complianceStats['valid'] }} ساري</span>
+                                @if($complianceStats['expired'] > 0)
+                                    <span class="badge badge-danger">{{ $complianceStats['expired'] }} منتهي</span>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endif
+        </div>
+    @elseif(auth()->user()->isAdmin())
+        <!-- Additional Statistics Row - للأدمن -->
+        <div class="row g-3 mb-4">
+            @if(isset($maintenanceStats) && $maintenanceStats['total'] > 0)
+                <div class="col-12 col-sm-6 col-lg-3">
+                    <div class="dashboard-stat-card dashboard-stat-warning">
+                        <div class="dashboard-stat-icon">
+                            <i class="bi bi-tools"></i>
+                        </div>
+                        <div class="dashboard-stat-content">
+                            <div class="dashboard-stat-label">سجلات الصيانة</div>
+                            <div class="dashboard-stat-value">{{ number_format($maintenanceStats['total']) }}</div>
+                            <div class="dashboard-stat-badges">
+                                <span class="badge badge-warning">{{ $maintenanceStats['this_month'] }} هذا الشهر</span>
+                                @if($maintenanceStats['total_cost'] > 0)
+                                    <span class="badge badge-danger">{{ number_format($maintenanceStats['total_cost']) }} ₪</span>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
+            @if(isset($fuelStats) && $fuelStats['total'] > 0)
+                <div class="col-12 col-sm-6 col-lg-3">
+                    <div class="dashboard-stat-card dashboard-stat-success">
+                        <div class="dashboard-stat-icon">
+                            <i class="bi bi-fuel-pump"></i>
+                        </div>
+                        <div class="dashboard-stat-content">
+                            <div class="dashboard-stat-label">كفاءة الوقود</div>
+                            <div class="dashboard-stat-value">{{ number_format($fuelStats['avg_fuel_efficiency'], 1) }}%</div>
+                            @if($fuelStats['total_cost'] > 0)
+                                <div class="dashboard-stat-badges">
+                                    <span class="badge badge-success">{{ number_format($fuelStats['total_cost']) }} ₪</span>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            @endif
+
+            @if(isset($complianceStats) && $complianceStats['total'] > 0)
+                <div class="col-12 col-sm-6 col-lg-3">
+                    <div class="dashboard-stat-card dashboard-stat-primary">
+                        <div class="dashboard-stat-icon">
+                            <i class="bi bi-shield-check"></i>
+                        </div>
+                        <div class="dashboard-stat-content">
+                            <div class="dashboard-stat-label">الامتثال والسلامة</div>
+                            <div class="dashboard-stat-value">{{ number_format($complianceStats['valid']) }}</div>
+                            <div class="dashboard-stat-badges">
+                                <span class="badge badge-success">{{ $complianceStats['valid'] }} ساري</span>
+                                @if($complianceStats['expired'] > 0)
+                                    <span class="badge badge-danger">{{ $complianceStats['expired'] }} منتهي</span>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endif
+        </div>
+    @elseif(auth()->user()->isCompanyOwner())
+        <!-- Additional Statistics Row - للمشغل -->
+        <div class="row g-3 mb-4">
+            @if(isset($maintenanceStats) && $maintenanceStats['total'] > 0)
+                <div class="col-12 col-sm-6 col-lg-4">
+                    <div class="dashboard-stat-card dashboard-stat-warning">
+                        <div class="dashboard-stat-icon">
+                            <i class="bi bi-tools"></i>
+                                </div>
+                        <div class="dashboard-stat-content">
+                            <div class="dashboard-stat-label">سجلات الصيانة</div>
+                            <div class="dashboard-stat-value">{{ number_format($maintenanceStats['total']) }}</div>
+                            <div class="dashboard-stat-badges">
+                                <span class="badge badge-warning">{{ $maintenanceStats['this_month'] }} هذا الشهر</span>
+                                @if($maintenanceStats['total_cost'] > 0)
+                                    <span class="badge badge-danger">{{ number_format($maintenanceStats['total_cost']) }} ₪</span>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
+            @if(isset($fuelStats) && $fuelStats['total'] > 0)
+                <div class="col-12 col-sm-6 col-lg-4">
+                    <div class="dashboard-stat-card dashboard-stat-success">
+                        <div class="dashboard-stat-icon">
+                            <i class="bi bi-fuel-pump"></i>
+                        </div>
+                        <div class="dashboard-stat-content">
+                            <div class="dashboard-stat-label">كفاءة الوقود</div>
+                            <div class="dashboard-stat-value">{{ number_format($fuelStats['avg_fuel_efficiency'], 1) }}%</div>
+                            @if($fuelStats['total_cost'] > 0)
+                                <div class="dashboard-stat-badges">
+                                    <span class="badge badge-success">{{ number_format($fuelStats['total_cost']) }} ₪</span>
+                                </div>
+                            @endif
+                    </div>
+                </div>
+            </div>
+        @endif
+
+        @if(isset($complianceStats) && $complianceStats['total'] > 0)
+                <div class="col-12 col-sm-6 col-lg-4">
+                    <div class="dashboard-stat-card dashboard-stat-primary">
+                        <div class="dashboard-stat-icon">
+                            <i class="bi bi-shield-check"></i>
+                        </div>
+                        <div class="dashboard-stat-content">
+                            <div class="dashboard-stat-label">الامتثال والسلامة</div>
+                            <div class="dashboard-stat-value">{{ number_format($complianceStats['valid']) }}</div>
+                            <div class="dashboard-stat-badges">
+                                <span class="badge badge-success">{{ $complianceStats['valid'] }} ساري</span>
+                                        @if($complianceStats['expired'] > 0)
+                                    <span class="badge badge-danger">{{ $complianceStats['expired'] }} منتهي</span>
+                                        @endif
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endif
+        </div>
+    @elseif(auth()->user()->isSuperAdmin())
+        <!-- Additional Statistics Row - للسوبر أدمن -->
+        <div class="row g-3 mb-4">
+            @if(isset($maintenanceStats) && $maintenanceStats['total'] > 0)
+                <div class="col-12 col-sm-6 col-lg-3">
+                    <div class="dashboard-stat-card dashboard-stat-warning">
+                        <div class="dashboard-stat-icon">
+                            <i class="bi bi-tools"></i>
+                        </div>
+                        <div class="dashboard-stat-content">
+                            <div class="dashboard-stat-label">سجلات الصيانة</div>
+                            <div class="dashboard-stat-value">{{ number_format($maintenanceStats['total']) }}</div>
+                            <div class="dashboard-stat-badges">
+                                <span class="badge badge-warning">{{ $maintenanceStats['this_month'] }} هذا الشهر</span>
+                                @if($maintenanceStats['total_cost'] > 0)
+                                    <span class="badge badge-danger">{{ number_format($maintenanceStats['total_cost']) }} ₪</span>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
+            @if(isset($fuelStats) && $fuelStats['total'] > 0)
+                <div class="col-12 col-sm-6 col-lg-3">
+                    <div class="dashboard-stat-card dashboard-stat-success">
+                        <div class="dashboard-stat-icon">
+                            <i class="bi bi-fuel-pump"></i>
+                        </div>
+                        <div class="dashboard-stat-content">
+                            <div class="dashboard-stat-label">كفاءة الوقود</div>
+                            <div class="dashboard-stat-value">{{ number_format($fuelStats['avg_fuel_efficiency'], 1) }}%</div>
+                            @if($fuelStats['total_cost'] > 0)
+                                <div class="dashboard-stat-badges">
+                                    <span class="badge badge-success">{{ number_format($fuelStats['total_cost']) }} ₪</span>
+            </div>
+        @endif
+    </div>
+                    </div>
+                </div>
+            @endif
+
+            @if(isset($complianceStats) && $complianceStats['total'] > 0)
+                <div class="col-12 col-sm-6 col-lg-3">
+                    <div class="dashboard-stat-card dashboard-stat-primary">
+                        <div class="dashboard-stat-icon">
+                            <i class="bi bi-shield-check"></i>
+                        </div>
+                        <div class="dashboard-stat-content">
+                            <div class="dashboard-stat-label">الامتثال والسلامة</div>
+                            <div class="dashboard-stat-value">{{ number_format($complianceStats['valid']) }}</div>
+                            <div class="dashboard-stat-badges">
+                                <span class="badge badge-success">{{ $complianceStats['valid'] }} ساري</span>
+                                @if($complianceStats['expired'] > 0)
+                                    <span class="badge badge-danger">{{ $complianceStats['expired'] }} منتهي</span>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
+            @if(isset($complaintsStats) && $complaintsStats['total'] > 0)
+                <div class="col-12 col-sm-6 col-lg-3">
+                    <div class="dashboard-stat-card dashboard-stat-info">
+                        <div class="dashboard-stat-icon">
+                            <i class="bi bi-chat-left-text"></i>
+                        </div>
+                        <div class="dashboard-stat-content">
+                            <div class="dashboard-stat-label">الشكاوى والمقترحات</div>
+                            <div class="dashboard-stat-value">{{ number_format($complaintsStats['total']) }}</div>
+                            <div class="dashboard-stat-badges">
+                                @if($complaintsStats['unanswered'] > 0)
+                                    <span class="badge badge-warning">{{ $complaintsStats['unanswered'] }} غير م responded عليها</span>
+                                @endif
+                                <span class="badge badge-primary">{{ $complaintsStats['pending'] }} قيد الانتظار</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endif
+    </div>
+    @endif
+
+    <!-- Recent Items & Alerts -->
+    <div class="row g-3">
+        @if(auth()->user()->isEmployee() || auth()->user()->isTechnician())
+            <!-- Generators Needing Maintenance - للموظف والفني -->
+            @if(isset($generatorsNeedingMaintenance) && $generatorsNeedingMaintenance->count() > 0)
+                <div class="col-12 col-lg-6">
+                    <div class="dashboard-card dashboard-card-warning">
+                        <div class="dashboard-card-header">
+                            <div>
+                                <h5 class="dashboard-card-title text-warning">
+                                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                    مولدات تحتاج صيانة
+                                </h5>
+                                <p class="dashboard-card-subtitle">مولدات تحتاج إلى صيانة فورية</p>
+                            </div>
+                            <a href="{{ route('admin.maintenance-records.index') }}" class="btn btn-outline-warning btn-sm">
+                                عرض الكل <i class="bi bi-arrow-left ms-1"></i>
+                            </a>
+                        </div>
+                        <div class="dashboard-card-body p-0">
+                            <div class="dashboard-list-container">
+                                @foreach($generatorsNeedingMaintenance as $generator)
+                                    <div class="dashboard-list-item">
+                                        <div class="dashboard-list-item-icon">
+                                            <i class="bi bi-exclamation-circle text-danger"></i>
+                                        </div>
+                                        <div class="dashboard-list-item-content">
+                                            <h6 class="dashboard-list-item-title">{{ $generator->name }}</h6>
+                                            <div class="dashboard-list-item-meta">
+                                                @if($generator->operator)
+                                                    <span class="dashboard-list-item-text">
+                                                        <i class="bi bi-building me-1"></i>
+                                                        {{ $generator->operator->name }}
+                                                    </span>
+                                                @endif
+                                            </div>
+                                            <small class="dashboard-list-item-time">
+                                                @if($generator->last_major_maintenance_date)
+                                                    <i class="bi bi-calendar-x me-1"></i>
+                                                    آخر صيانة: {{ $generator->last_major_maintenance_date->diffForHumans() }}
+                                                @else
+                                                    <span class="text-danger">
+                                                        <i class="bi bi-exclamation-circle me-1"></i>
+                                                        لم يتم تسجيل صيانة
+                                                    </span>
+                                                @endif
+                                            </small>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
+            <!-- Recent Operation Logs - للموظف والفني -->
+            @if(isset($recentOperationLogs) && $recentOperationLogs->count() > 0)
+                <div class="col-12 col-lg-6">
+                    <div class="dashboard-card">
+                        <div class="dashboard-card-header">
+                            <div>
+                                <h5 class="dashboard-card-title">
+                                    <i class="bi bi-journal-text me-2 text-info"></i>
+                                    آخر سجلات التشغيل
+                                </h5>
+                                <p class="dashboard-card-subtitle">آخر السجلات المسجلة</p>
+                            </div>
+                            <a href="{{ route('admin.operation-logs.index') }}" class="btn btn-outline-primary btn-sm">
+                                عرض الكل <i class="bi bi-arrow-left ms-1"></i>
+                            </a>
+                        </div>
+                        <div class="dashboard-card-body p-0">
+                            <div class="dashboard-list-container">
+                                @foreach($recentOperationLogs as $log)
+                                    <div class="dashboard-list-item">
+                                        <div class="dashboard-list-item-icon">
+                                            <i class="bi bi-lightning-charge text-success"></i>
+                                        </div>
+                                        <div class="dashboard-list-item-content">
+                                            <h6 class="dashboard-list-item-title">{{ $log->generator->name }}</h6>
+                                            <div class="dashboard-list-item-meta">
+                                                @if($log->energy_produced)
+                                                    <span class="badge badge-success">{{ number_format($log->energy_produced, 2) }} kWh</span>
+                                                @endif
+                                                @if($log->operator)
+                                                    <span class="dashboard-list-item-text">
+                                                        <i class="bi bi-building me-1"></i>
+                                                        {{ $log->operator->name }}
+                                                    </span>
+                                                @endif
+                                            </div>
+                                            <small class="dashboard-list-item-time">
+                                                <i class="bi bi-calendar me-1"></i>
+                                                {{ $log->operation_date->format('Y-m-d') }}
+                                                <span class="mx-2">|</span>
+                                                <i class="bi bi-clock me-1"></i>
+                                                {{ $log->created_at->diffForHumans() }}
+                                            </small>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endif
+        @elseif(auth()->user()->isCompanyOwner())
+            <!-- Generators Needing Maintenance - للمشغل -->
+            @if(isset($generatorsNeedingMaintenance) && $generatorsNeedingMaintenance->count() > 0)
+                <div class="col-12 col-lg-6">
+                    <div class="dashboard-card dashboard-card-warning">
+                        <div class="dashboard-card-header">
+                            <div>
+                                <h5 class="dashboard-card-title text-warning">
+                                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                    مولدات تحتاج صيانة
+                    </h5>
+                                <p class="dashboard-card-subtitle">مولدات تحتاج إلى صيانة فورية</p>
+                            </div>
+                            <a href="{{ route('admin.maintenance-records.index') }}" class="btn btn-outline-warning btn-sm">
+                                عرض الكل <i class="bi bi-arrow-left ms-1"></i>
+                    </a>
+                </div>
+                        <div class="dashboard-card-body p-0">
+                            <div class="dashboard-list-container">
+                                @foreach($generatorsNeedingMaintenance as $generator)
+                                    <div class="dashboard-list-item">
+                                        <div class="dashboard-list-item-icon">
+                                            <i class="bi bi-exclamation-circle text-danger"></i>
+                                        </div>
+                                        <div class="dashboard-list-item-content">
+                                            <h6 class="dashboard-list-item-title">{{ $generator->name }}</h6>
+                                            <div class="dashboard-list-item-meta">
+                                                @if($generator->operator)
+                                                    <span class="dashboard-list-item-text">
+                                                        <i class="bi bi-building me-1"></i>
+                                                        {{ $generator->operator->name }}
+                                                    </span>
+                                                @endif
+                                            </div>
+                                            <small class="dashboard-list-item-time">
+                                                @if($generator->last_major_maintenance_date)
+                                                    <i class="bi bi-calendar-x me-1"></i>
+                                                    آخر صيانة: {{ $generator->last_major_maintenance_date->diffForHumans() }}
+                                                @else
+                                                    <span class="text-danger">
+                                                        <i class="bi bi-exclamation-circle me-1"></i>
+                                                        لم يتم تسجيل صيانة
+                                        </span>
+                                                @endif
+                                        </small>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endif
+        @elseif(auth()->user()->isAdmin())
+            <!-- Generators Needing Maintenance - للأدمن -->
+            @if(isset($generatorsNeedingMaintenance) && $generatorsNeedingMaintenance->count() > 0)
+                <div class="col-12 col-lg-6">
+                    <div class="dashboard-card dashboard-card-warning">
+                        <div class="dashboard-card-header">
+                            <div>
+                                <h5 class="dashboard-card-title text-warning">
+                                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                    مولدات تحتاج صيانة
+                                </h5>
+                                <p class="dashboard-card-subtitle">مولدات تحتاج إلى صيانة فورية</p>
+                            </div>
+                            <a href="{{ route('admin.maintenance-records.index') }}" class="btn btn-outline-warning btn-sm">
+                                عرض الكل <i class="bi bi-arrow-left ms-1"></i>
+                            </a>
+                        </div>
+                        <div class="dashboard-card-body p-0">
+                            <div class="dashboard-list-container">
+                                @foreach($generatorsNeedingMaintenance as $generator)
+                                    <div class="dashboard-list-item">
+                                        <div class="dashboard-list-item-icon">
+                                            <i class="bi bi-exclamation-circle text-danger"></i>
+                                        </div>
+                                        <div class="dashboard-list-item-content">
+                                            <h6 class="dashboard-list-item-title">{{ $generator->name }}</h6>
+                                            <div class="dashboard-list-item-meta">
+                                                <span class="dashboard-list-item-text">
+                                                    <i class="bi bi-building me-1"></i>
+                                                    {{ $generator->operator->name }}
+                                                </span>
+                                            </div>
+                                            <small class="dashboard-list-item-time">
+                                                @if($generator->last_major_maintenance_date)
+                                                    <i class="bi bi-calendar-x me-1"></i>
+                                                    آخر صيانة: {{ $generator->last_major_maintenance_date->diffForHumans() }}
+                                                @else
+                                                    <span class="text-danger">
+                                                        <i class="bi bi-exclamation-circle me-1"></i>
+                                                        لم يتم تسجيل صيانة
+                                                    </span>
+                                                @endif
+                                            </small>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
+            <!-- Recent Operation Logs - للأدمن -->
+            @if(isset($recentOperationLogs) && $recentOperationLogs->count() > 0)
+                <div class="col-12 col-lg-6">
+                    <div class="dashboard-card">
+                        <div class="dashboard-card-header">
+                            <div>
+                                <h5 class="dashboard-card-title">
+                                    <i class="bi bi-journal-text me-2 text-info"></i>
+                                    آخر سجلات التشغيل
+                                </h5>
+                                <p class="dashboard-card-subtitle">آخر السجلات المسجلة</p>
+                            </div>
+                            <a href="{{ route('admin.operation-logs.index') }}" class="btn btn-outline-primary btn-sm">
+                                عرض الكل <i class="bi bi-arrow-left ms-1"></i>
+                            </a>
+                        </div>
+                        <div class="dashboard-card-body p-0">
+                            <div class="dashboard-list-container">
+                                @foreach($recentOperationLogs as $log)
+                                    <div class="dashboard-list-item">
+                                        <div class="dashboard-list-item-icon">
+                                            <i class="bi bi-lightning-charge text-success"></i>
+                                        </div>
+                                        <div class="dashboard-list-item-content">
+                                            <h6 class="dashboard-list-item-title">{{ $log->generator->name }}</h6>
+                                            <div class="dashboard-list-item-meta">
+                                                <span class="dashboard-list-item-text">
+                                                    <i class="bi bi-building me-1"></i>
+                                                    {{ $log->operator->name }}
+                                                </span>
+                                                @if($log->energy_produced)
+                                                    <span class="badge badge-success">{{ number_format($log->energy_produced, 2) }} kWh</span>
+                                                @endif
+                                            </div>
+                                            <small class="dashboard-list-item-time">
+                                                <i class="bi bi-calendar me-1"></i>
+                                                {{ $log->operation_date->format('Y-m-d') }}
+                                                <span class="mx-2">|</span>
+                                                <i class="bi bi-clock me-1"></i>
+                                                {{ $log->created_at->diffForHumans() }}
+                                            </small>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endif
+        @elseif(auth()->user()->isSuperAdmin())
+            <!-- Generators Needing Maintenance - للسوبر أدمن -->
+            @if(isset($generatorsNeedingMaintenance) && $generatorsNeedingMaintenance->count() > 0)
+                <div class="col-12 col-lg-6">
+                    <div class="dashboard-card dashboard-card-warning">
+                        <div class="dashboard-card-header">
+                            <div>
+                                <h5 class="dashboard-card-title text-warning">
+                                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                    مولدات تحتاج صيانة
+                                </h5>
+                                <p class="dashboard-card-subtitle">مولدات تحتاج إلى صيانة فورية</p>
+                            </div>
+                            <a href="{{ route('admin.maintenance-records.index') }}" class="btn btn-outline-warning btn-sm">
+                                عرض الكل <i class="bi bi-arrow-left ms-1"></i>
+                            </a>
+                        </div>
+                        <div class="dashboard-card-body p-0">
+                            <div class="dashboard-list-container">
+                                @foreach($generatorsNeedingMaintenance as $generator)
+                                    <div class="dashboard-list-item">
+                                        <div class="dashboard-list-item-icon">
+                                            <i class="bi bi-exclamation-circle text-danger"></i>
+                                        </div>
+                                        <div class="dashboard-list-item-content">
+                                            <h6 class="dashboard-list-item-title">{{ $generator->name }}</h6>
+                                            <div class="dashboard-list-item-meta">
+                                                <span class="dashboard-list-item-text">
+                                                    <i class="bi bi-building me-1"></i>
+                                                    {{ $generator->operator->name }}
+                                                </span>
+                                            </div>
+                                            <small class="dashboard-list-item-time">
+                                                @if($generator->last_major_maintenance_date)
+                                                    <i class="bi bi-calendar-x me-1"></i>
+                                                    آخر صيانة: {{ $generator->last_major_maintenance_date->diffForHumans() }}
+                                                @else
+                                                    <span class="text-danger">
+                                                        <i class="bi bi-exclamation-circle me-1"></i>
+                                                        لم يتم تسجيل صيانة
+                                                    </span>
+                                                @endif
+                                            </small>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                </div>
+            </div>
+        </div>
+            @endif
+        @endif
+
+        <!-- Recent Operation Logs -->
+        @if(isset($recentOperationLogs) && $recentOperationLogs->count() > 0)
+            @if(auth()->user()->isCompanyOwner())
+                <div class="col-12 col-lg-6">
+                    <div class="dashboard-card">
+                        <div class="dashboard-card-header">
+                            <div>
+                                <h5 class="dashboard-card-title">
+                                    <i class="bi bi-journal-text me-2 text-info"></i>
+                                    آخر سجلات التشغيل
+                                </h5>
+                                <p class="dashboard-card-subtitle">آخر السجلات المسجلة</p>
+                            </div>
+                            <a href="{{ route('admin.operation-logs.index') }}" class="btn btn-outline-primary btn-sm">
+                                عرض الكل <i class="bi bi-arrow-left ms-1"></i>
+                            </a>
+                        </div>
+                        <div class="dashboard-card-body p-0">
+                            <div class="dashboard-list-container">
+                                @foreach($recentOperationLogs as $log)
+                                    <div class="dashboard-list-item">
+                                        <div class="dashboard-list-item-icon">
+                                            <i class="bi bi-lightning-charge text-success"></i>
+                                        </div>
+                                        <div class="dashboard-list-item-content">
+                                            <h6 class="dashboard-list-item-title">{{ $log->generator->name }}</h6>
+                                            <div class="dashboard-list-item-meta">
+                                                @if($log->energy_produced)
+                                                    <span class="badge badge-success">{{ number_format($log->energy_produced, 2) }} kWh</span>
+                                                @endif
+                                            </div>
+                                            <small class="dashboard-list-item-time">
+                                                <i class="bi bi-calendar me-1"></i>
+                                                {{ $log->operation_date->format('Y-m-d') }}
+                                                <span class="mx-2">|</span>
+                                                <i class="bi bi-clock me-1"></i>
+                                                {{ $log->created_at->diffForHumans() }}
+                                            </small>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @elseif(auth()->user()->isSuperAdmin())
+                <div class="col-12 col-lg-6">
+                    <div class="dashboard-card">
+                        <div class="dashboard-card-header">
+                            <div>
+                                <h5 class="dashboard-card-title">
+                                    <i class="bi bi-journal-text me-2 text-info"></i>
+                                    آخر سجلات التشغيل
+                                </h5>
+                                <p class="dashboard-card-subtitle">آخر السجلات المسجلة</p>
+                            </div>
+                            <a href="{{ route('admin.operation-logs.index') }}" class="btn btn-outline-primary btn-sm">
+                                عرض الكل <i class="bi bi-arrow-left ms-1"></i>
+                            </a>
+                        </div>
+                        <div class="dashboard-card-body p-0">
+                            <div class="dashboard-list-container">
+                                @foreach($recentOperationLogs as $log)
+                                    <div class="dashboard-list-item">
+                                        <div class="dashboard-list-item-icon">
+                                            <i class="bi bi-lightning-charge text-success"></i>
+                                        </div>
+                                        <div class="dashboard-list-item-content">
+                                            <h6 class="dashboard-list-item-title">{{ $log->generator->name }}</h6>
+                                            <div class="dashboard-list-item-meta">
+                                                <span class="dashboard-list-item-text">
+                                                    <i class="bi bi-building me-1"></i>
+                                                    {{ $log->operator->name }}
+                                                </span>
+                                                @if($log->energy_produced)
+                                                    <span class="badge badge-success">{{ number_format($log->energy_produced, 2) }} kWh</span>
+                                                @endif
+                                            </div>
+                                            <small class="dashboard-list-item-time">
+                                                <i class="bi bi-calendar me-1"></i>
+                                                {{ $log->operation_date->format('Y-m-d') }}
+                                                <span class="mx-2">|</span>
+                                                <i class="bi bi-clock me-1"></i>
+                                                {{ $log->created_at->diffForHumans() }}
+                                            </small>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endif
         @endif
     </div>
 
@@ -497,7 +1613,7 @@
                             <h5 class="dashboard-card-title text-info">
                                 <i class="bi bi-chat-left-text me-2"></i>
                                 شكاوى ومقترحات غير م responded عليها
-                            </h5>
+                        </h5>
                             <p class="dashboard-card-subtitle">طلبات تحتاج إلى متابعة</p>
                         </div>
                         <a href="{{ route('admin.complaints-suggestions.index') }}" class="btn btn-outline-info btn-sm">
@@ -533,7 +1649,7 @@
                                     </div>
                                 </div>
                             @endforeach
-                        </div>
+                            </div>
                     </div>
                 </div>
             </div>
@@ -548,7 +1664,7 @@
                             <h5 class="dashboard-card-title text-danger">
                                 <i class="bi bi-shield-exclamation me-2"></i>
                                 شهادات منتهية أو قريبة من الانتهاء
-                            </h5>
+                        </h5>
                             <p class="dashboard-card-subtitle">شهادات تحتاج إلى متابعة</p>
                         </div>
                         <a href="{{ route('admin.compliance-safeties.index') }}" class="btn btn-outline-danger btn-sm">
@@ -645,7 +1761,7 @@
             </div>
         </div>
 
-        @if(auth()->user()->isSuperAdmin() && $recentOperators->count() > 0)
+        @if((auth()->user()->isSuperAdmin() || auth()->user()->isAdmin()) && isset($recentOperators) && $recentOperators->count() > 0)
             <!-- Recent Operators -->
             <div class="col-12 col-lg-6">
                 <div class="dashboard-card">
@@ -694,7 +1810,7 @@
             </div>
         @endif
     </div>
-</div>
+    </div>
 @endsection
 
 @push('styles')

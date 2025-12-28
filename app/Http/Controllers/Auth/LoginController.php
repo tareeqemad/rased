@@ -16,9 +16,17 @@ class LoginController extends Controller
 
     public function login(Request $request)
     {
+        // Check honeypot field (anti-bot protection)
+        if ($request->filled('website')) {
+            // Bot detected, return generic error
+            throw ValidationException::withMessages([
+                'username' => __('بيانات الدخول غير صحيحة.'),
+            ]);
+        }
+
         $request->validate([
-            'username' => ['required', 'string'],
-            'password' => ['required', 'string'],
+            'username' => ['required', 'string', 'max:255'],
+            'password' => ['required', 'string', 'max:255'],
         ]);
 
         $credentials = $this->getCredentials($request);
@@ -28,6 +36,9 @@ class LoginController extends Controller
 
             return redirect()->intended(route('admin.dashboard'));
         }
+
+        // Add small delay to prevent brute force attacks
+        sleep(1);
 
         throw ValidationException::withMessages([
             'username' => __('بيانات الدخول غير صحيحة.'),

@@ -18,9 +18,14 @@ class StoreMaintenanceRecordRequest extends FormRequest
             'generator_id' => ['required', 'exists:generators,id'],
             'maintenance_type' => ['required', 'string', Rule::in(['periodic', 'emergency'])],
             'maintenance_date' => ['required', 'date'],
+            'start_time' => ['nullable', 'date_format:H:i'],
+            'end_time' => ['nullable', 'date_format:H:i'],
             'technician_name' => ['nullable', 'string', 'max:255'],
             'work_performed' => ['nullable', 'string'],
             'downtime_hours' => ['nullable', 'numeric', 'min:0'],
+            'parts_cost' => ['nullable', 'numeric', 'min:0'],
+            'labor_hours' => ['nullable', 'numeric', 'min:0'],
+            'labor_rate_per_hour' => ['nullable', 'numeric', 'min:0'],
             'maintenance_cost' => ['nullable', 'numeric', 'min:0'],
         ];
     }
