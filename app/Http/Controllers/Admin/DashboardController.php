@@ -51,6 +51,12 @@ class DashboardController extends Controller
         // إحصائيات سجلات التشغيل
         $operationStats = $this->getOperationStats($operatorIds, $generatorIds);
 
+        // بيانات المخططات (آخر 30 يوم)
+        $chartData = $this->getChartData($operatorIds, $generatorIds);
+
+        // بيانات المخطط الدائري (المولدات/المشغلين والطاقة المنتجة)
+        $pieChartData = $this->getPieChartData($operatorIds, $generatorIds);
+
         // إحصائيات الصيانة
         $maintenanceStats = $this->getMaintenanceStats($generatorIds);
 
@@ -110,6 +116,8 @@ class DashboardController extends Controller
         return view('admin.dashboard', compact(
             'stats',
             'operationStats',
+            'chartData',
+            'pieChartData',
             'maintenanceStats',
             'fuelStats',
             'complianceStats',
@@ -255,6 +263,198 @@ class DashboardController extends Controller
             'total_energy' => round($totalEnergy, 2),
             'total_fuel' => round($totalFuel, 2),
             'avg_load' => round($avgLoad, 2),
+        ];
+    }
+
+    private function getChartData(?array $operatorIds, ?array $generatorIds): array
+    {
+        $baseQuery = function() use ($operatorIds, $generatorIds) {
+            $query = OperationLog::query();
+            if ($operatorIds) {
+                $query->whereIn('operator_id', $operatorIds);
+            }
+            if ($generatorIds) {
+                $query->whereIn('generator_id', $generatorIds);
+            }
+            return $query;
+        };
+
+        // الحصول على بيانات آخر 30 يوم
+        $startDate = Carbon::now()->subDays(30);
+        $endDate = Carbon::now();
+
+        $query = (clone $baseQuery())
+            ->whereBetween('operation_date', [$startDate, $endDate])
+            ->select(
+                DB::raw('DATE(operation_date) as date'),
+                DB::raw('SUM(energy_produced) as total_energy'),
+                DB::raw('SUM(fuel_consumed) as total_fuel'),
+                DB::raw('COUNT(*) as records_count'),
+                DB::raw('AVG(load_percentage) as avg_load')
+            )
+            ->groupBy('date')
+            ->orderBy('date', 'asc')
+            ->get();
+
+        // إنشاء مصفوفة بجميع الأيام (آخر 30 يوم)
+        $dates = [];
+        $energyData = [];
+        $fuelData = [];
+        $recordsData = [];
+        $loadData = [];
+
+        // تحويل نتائج الاستعلام إلى مصفوفة مفهرسة بالتاريخ
+        $dataByDate = [];
+        foreach ($query as $row) {
+            $dataByDate[$row->date] = $row;
+        }
+
+        for ($i = 30; $i >= 0; $i--) {
+            $date = Carbon::now()->subDays($i)->format('Y-m-d');
+            $dates[] = Carbon::now()->subDays($i)->format('d/m');
+            
+            $dayData = $dataByDate[$date] ?? null;
+            
+            $energyData[] = $dayData ? round((float)$dayData->total_energy, 2) : 0;
+            $fuelData[] = $dayData ? round((float)$dayData->total_fuel, 2) : 0;
+            $recordsData[] = $dayData ? (int)$dayData->records_count : 0;
+            $loadData[] = $dayData ? round((float)$dayData->avg_load, 2) : 0;
+        }
+
+        return [
+            'labels' => $dates,
+            'energy' => $energyData,
+            'fuel' => $fuelData,
+            'records' => $recordsData,
+            'load' => $loadData,
+        ];
+    }
+
+    private function getPieChartData(?array $operatorIds, ?array $generatorIds): array
+    {
+        $baseQuery = function() use ($operatorIds, $generatorIds) {
+            $query = OperationLog::query();
+            if ($operatorIds) {
+                $query->whereIn('operator_id', $operatorIds);
+            }
+            if ($generatorIds) {
+                $query->whereIn('generator_id', $generatorIds);
+            }
+            return $query;
+        };
+
+        // بيانات المولدات مع الطاقة المنتجة والوقود المستهلك
+        $generatorsData = (clone $baseQuery())
+            ->join('generators', 'operation_logs.generator_id', '=', 'generators.id')
+            ->leftJoin('fuel_tanks', 'generators.id', '=', 'fuel_tanks.generator_id')
+            ->select(
+                'generators.id',
+                'generators.name',
+                DB::raw('SUM(operation_logs.energy_produced) as total_energy'),
+                DB::raw('SUM(operation_logs.fuel_consumed) as total_fuel_consumed'),
+                DB::raw('COALESCE(SUM(fuel_tanks.capacity), 0) as total_tank_capacity')
+            )
+            ->whereNotNull('operation_logs.energy_produced')
+            ->groupBy('generators.id', 'generators.name')
+            ->orderByDesc('total_energy')
+            ->limit(10)
+            ->get()
+            ->map(function($item) {
+                $totalCapacity = (float)$item->total_tank_capacity;
+                $consumed = (float)$item->total_fuel_consumed;
+                $fuelSurplus = max(0, $totalCapacity - $consumed);
+                
+                return [
+                    'id' => $item->id,
+                    'name' => $item->name,
+                    'energy' => round((float)$item->total_energy, 2),
+                    'fuel_consumed' => round($consumed, 2),
+                    'fuel_capacity' => round($totalCapacity, 2),
+                    'fuel_surplus' => round($fuelSurplus, 2),
+                ];
+            });
+
+        // بيانات المشغلين مع الطاقة المنتجة والوقود المستهلك والفائض
+        $operatorsData = (clone $baseQuery())
+            ->join('operators', 'operation_logs.operator_id', '=', 'operators.id')
+            ->join('generators', 'operation_logs.generator_id', '=', 'generators.id')
+            ->leftJoin('fuel_tanks', 'generators.id', '=', 'fuel_tanks.generator_id')
+            ->select(
+                'operators.id',
+                'operators.name',
+                DB::raw('SUM(operation_logs.energy_produced) as total_energy'),
+                DB::raw('SUM(operation_logs.fuel_consumed) as total_fuel_consumed'),
+                DB::raw('COALESCE(SUM(fuel_tanks.capacity), 0) as total_tank_capacity')
+            )
+            ->whereNotNull('operation_logs.energy_produced')
+            ->groupBy('operators.id', 'operators.name')
+            ->orderByDesc('total_energy')
+            ->limit(10)
+            ->get()
+            ->map(function($item) {
+                $totalCapacity = (float)$item->total_tank_capacity;
+                $consumed = (float)$item->total_fuel_consumed;
+                $fuelSurplus = max(0, $totalCapacity - $consumed);
+                
+                return [
+                    'id' => $item->id,
+                    'name' => $item->name,
+                    'energy' => round((float)$item->total_energy, 2),
+                    'fuel_consumed' => round($consumed, 2),
+                    'fuel_capacity' => round($totalCapacity, 2),
+                    'fuel_surplus' => round($fuelSurplus, 2),
+                ];
+            });
+
+        // بيانات المحافظات مع الطاقة المنتجة والوقود المستهلك والفائض
+        $governoratesData = (clone $baseQuery())
+            ->join('operators', 'operation_logs.operator_id', '=', 'operators.id')
+            ->join('generators', 'operation_logs.generator_id', '=', 'generators.id')
+            ->leftJoin('fuel_tanks', 'generators.id', '=', 'fuel_tanks.generator_id')
+            ->select(
+                'operators.governorate',
+                DB::raw('SUM(operation_logs.energy_produced) as total_energy'),
+                DB::raw('SUM(operation_logs.fuel_consumed) as total_fuel_consumed'),
+                DB::raw('COALESCE(SUM(fuel_tanks.capacity), 0) as total_tank_capacity')
+            )
+            ->whereNotNull('operation_logs.energy_produced')
+            ->whereNotNull('operators.governorate')
+            ->groupBy('operators.governorate')
+            ->orderByDesc('total_energy')
+            ->get()
+            ->map(function($item) {
+                $governorate = \App\Governorate::fromValue((int)$item->governorate);
+                $totalCapacity = (float)$item->total_tank_capacity;
+                $consumed = (float)$item->total_fuel_consumed;
+                $fuelSurplus = max(0, $totalCapacity - $consumed);
+                
+                return [
+                    'id' => $item->governorate,
+                    'name' => $governorate ? $governorate->label() : 'غير محدد',
+                    'code' => $governorate ? $governorate->code() : '',
+                    'energy' => round((float)$item->total_energy, 2),
+                    'fuel_consumed' => round($consumed, 2),
+                    'fuel_capacity' => round($totalCapacity, 2),
+                    'fuel_surplus' => round($fuelSurplus, 2),
+                ];
+            });
+
+        return [
+            'generators' => [
+                'labels' => $generatorsData->pluck('name')->toArray(),
+                'data' => $generatorsData->pluck('energy')->toArray(),
+                'details' => $generatorsData->toArray(),
+            ],
+            'operators' => [
+                'labels' => $operatorsData->pluck('name')->toArray(),
+                'data' => $operatorsData->pluck('energy')->toArray(),
+                'details' => $operatorsData->toArray(),
+            ],
+            'governorates' => [
+                'labels' => $governoratesData->pluck('name')->toArray(),
+                'data' => $governoratesData->pluck('energy')->toArray(),
+                'details' => $governoratesData->toArray(),
+            ],
         ];
     }
 
