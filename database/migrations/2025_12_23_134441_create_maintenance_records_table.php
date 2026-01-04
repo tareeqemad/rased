@@ -14,12 +14,15 @@ return new class extends Migration
         Schema::create('maintenance_records', function (Blueprint $table) {
             $table->id();
             $table->foreignId('generator_id')->constrained('generators')->cascadeOnDelete();
+            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
 
             // نوع الصيانة
             $table->string('maintenance_type'); // periodic, emergency
 
             // تاريخ الصيانة
             $table->date('maintenance_date');
+            $table->date('next_maintenance_date')->nullable()->comment('تاريخ الصيانة القادمة المتوقع');
+            $table->string('next_maintenance_type')->nullable()->comment('نوع الصيانة القادمة');
 
             // الفني المسؤول
             $table->string('technician_name')->nullable(); // اسم الفني المسؤول
@@ -35,6 +38,9 @@ return new class extends Migration
 
             $table->timestamps();
             $table->softDeletes();
+            
+            // فهارس للبحث السريع
+            $table->index(['generator_id', 'maintenance_date'], 'idx_maintenance_records_generator_date');
         });
     }
 

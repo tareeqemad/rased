@@ -26,13 +26,13 @@
 
             <div class="col-md-6">
                 <label class="form-label fw-semibold">اسم المستخدم <span class="text-danger">*</span></label>
-                <input type="text" name="username" class="form-control" placeholder="مثال: op_ahmed" required>
+                <input type="text" name="username" class="form-control" placeholder="مثال: op_ahmed">
             </div>
 
             <div class="col-md-6">
                 <label class="form-label fw-semibold">كلمة المرور <span class="text-danger">*</span></label>
                 <div class="input-group">
-                    <input type="password" name="password" id="op_password" class="form-control" minlength="8" required>
+                    <input type="password" name="password" id="op_password" class="form-control" minlength="8">
                     <button class="btn btn-outline-secondary" type="button" data-toggle-pass>
                         <i class="bi bi-eye"></i>
                     </button>
@@ -59,7 +59,7 @@
         <div class="row g-3">
             <div class="col-md-6">
                 <label class="form-label fw-semibold">اسم المشغل <span class="text-danger">*</span></label>
-                <input type="text" name="name" class="form-control" value="{{ $operator->name }}" required>
+                <input type="text" name="name" class="form-control" value="{{ $operator->name }}">
             </div>
 
             <div class="col-md-6">

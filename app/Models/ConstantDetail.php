@@ -12,6 +12,7 @@ class ConstantDetail extends Model
 
     protected $fillable = [
         'constant_master_id',
+        'parent_detail_id',
         'label',
         'code',
         'value',
@@ -30,6 +31,16 @@ class ConstantDetail extends Model
     public function master(): BelongsTo
     {
         return $this->belongsTo(ConstantMaster::class, 'constant_master_id');
+    }
+
+    public function parent(): BelongsTo
+    {
+        return $this->belongsTo(ConstantDetail::class, 'parent_detail_id');
+    }
+
+    public function children(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(ConstantDetail::class, 'parent_detail_id')->where('is_active', true)->orderBy('order');
     }
 
     /**

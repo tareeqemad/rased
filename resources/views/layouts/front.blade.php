@@ -4,7 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'راصد - منصة رقمية لإدارة سوق الطاقة')</title>
+    @php
+        $siteName = $siteName ?? \App\Models\Setting::get('site_name', 'راصد');
+    @endphp
+    <title>@yield('title', $siteName . ' - منصة رقمية لإدارة سوق الطاقة')</title>
     <meta name="description" content="@yield('description', 'منصة رقمية متكاملة لتنظيم وإدارة سوق الطاقة في محافظات غزة')">
     
     <!-- Tajawal Font from Admin Panel -->
@@ -17,14 +20,9 @@
     <link rel="stylesheet" href="{{ asset('assets/front/css/main.css') }}">
     
     <style>
-        /* Override navigation background with correct path */
+        /* Navigation background without pattern image */
         .public-nav {
-            background: 
-                url('{{ asset("assets/front/images/generator-pattern.svg") }}'),
-                rgba(20, 26, 107, 0.95) !important;
-            background-size: 200px 200px, cover !important;
-            background-position: center, center !important;
-            background-repeat: repeat, no-repeat !important;
+            background: rgba(20, 26, 107, 0.95) !important;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.1) !important;
             border-bottom: 2px solid rgba(255, 255, 255, 0.15) !important;
             backdrop-filter: blur(10px) !important;
@@ -32,9 +30,7 @@
         
         /* تحسين التباين في الصفحة الرئيسية */
         body:has(.hero-section) .public-nav {
-            background: 
-                url('{{ asset("assets/front/images/generator-pattern.svg") }}'),
-                rgba(15, 20, 80, 0.98) !important;
+            background: rgba(15, 20, 80, 0.98) !important;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.2) !important;
         }
     </style>
@@ -86,7 +82,7 @@
         <div class="footer-container">
             <div class="footer-grid">
                 <div class="footer-col">
-                    <h3 class="footer-title">عن راصد</h3>
+                    <h3 class="footer-title">عن {{ $siteName ?? 'راصد' }}</h3>
                     <p class="footer-text">
                         منصة رقمية متكاملة لتنظيم وإدارة سوق الطاقة في محافظات غزة. نسعى لتوفير خدمة أفضل للمواطنين والمشغلين.
                     </p>
@@ -112,7 +108,7 @@
             </div>
             
             <div class="footer-bottom">
-                <p>&copy; {{ date('Y') }} راصد. جميع الحقوق محفوظة.</p>
+                <p>&copy; {{ date('Y') }} {{ $siteName ?? 'راصد' }}. جميع الحقوق محفوظة.</p>
             </div>
         </div>
     </footer>

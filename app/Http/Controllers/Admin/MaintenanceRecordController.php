@@ -74,33 +74,27 @@ class MaintenanceRecordController extends Controller
             $query->whereDate('maintenance_date', '<=', $request->input('date_to'));
         }
 
-        // Group by generator if requested
-        $groupByGenerator = $request->boolean('group_by_generator', false);
-        $groupedLogs = null;
-        
-        if ($groupByGenerator) {
-            // Paginate first, then group the current page's logs
-            $maintenanceRecords = $query->latest('maintenance_date')->paginate(15);
-            // Group the current page's logs by generator
-            $groupedLogs = $maintenanceRecords->groupBy('generator_id');
-        } else {
-            $maintenanceRecords = $query->latest('maintenance_date')->paginate(15);
-        }
+        // Paginate - 100 items per page
+        $maintenanceRecords = $query->latest('maintenance_date')->paginate(100);
 
         if ($request->ajax() || $request->wantsJson()) {
-            if ($groupByGenerator && $groupedLogs) {
-                $html = view('admin.maintenance-records.partials.grouped-list', [
-                    'groupedLogs' => $groupedLogs,
-                    'maintenanceRecords' => $maintenanceRecords
-                ])->render();
-            } else {
-                $html = view('admin.maintenance-records.partials.list', compact('maintenanceRecords'))->render();
-            }
+            // Return tbody rows only
+            $html = view('admin.maintenance-records.partials.tbody-rows', compact('maintenanceRecords'))->render();
+            $pagination = view('admin.maintenance-records.partials.pagination', compact('maintenanceRecords'))->render();
+            
             return response()->json([
                 'success' => true,
                 'html' => $html,
+                'pagination' => $pagination,
                 'count' => $maintenanceRecords->total(),
             ]);
+        }
+
+        // For normal page load, check if group_by_generator is requested
+        $groupByGenerator = $request->boolean('group_by_generator', false);
+        $groupedLogs = null;
+        if ($groupByGenerator) {
+            $groupedLogs = $maintenanceRecords->groupBy('generator_id');
         }
 
         $operators = collect();

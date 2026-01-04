@@ -172,87 +172,17 @@
 @endsection
 
 @push('scripts')
-<script src="{{ asset('assets/admin/libs/jquery/jquery.min.js') }}"></script>
 <script>
-    (function($) {
-        $(document).ready(function() {
-            const $form = $('#complianceSafetyForm');
-            const $submitBtn = $form.find('button[type="submit"]');
-
-            $form.on('submit', function(e) {
-                e.preventDefault();
-                
-                if (!$form[0].checkValidity()) {
-                    $form[0].reportValidity();
-                    return false;
-                }
-
-                $submitBtn.prop('disabled', true);
-                const originalText = $submitBtn.html();
-                $submitBtn.html('<span class="spinner-border spinner-border-sm me-2"></span>جاري الحفظ...');
-
-                const formData = new FormData(this);
-
-                $.ajax({
-                    url: $form.attr('action'),
-                    method: 'POST',
-                    data: formData,
-                    processData: false,
-                    contentType: false,
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'Accept': 'application/json'
-                    },
-                    success: function(response) {
-                        if (response.success) {
-                            if (typeof window.showToast === 'function') {
-                                window.showToast(response.message || 'تم إنشاء سجل الامتثال والسلامة بنجاح', 'success');
-                            } else {
-                                alert(response.message || 'تم إنشاء سجل الامتثال والسلامة بنجاح');
-                            }
-                            setTimeout(function() {
-                                window.location.href = '{{ route('admin.compliance-safeties.index') }}';
-                            }, 500);
-                        }
-                    },
-                    error: function(xhr) {
-                        $submitBtn.prop('disabled', false);
-                        $submitBtn.html(originalText);
-
-                        if (xhr.status === 422) {
-                            const errors = xhr.responseJSON?.errors || {};
-                            let firstError = '';
-                            
-                            $form.find('.is-invalid').removeClass('is-invalid');
-                            $form.find('.invalid-feedback').remove();
-
-                            $.each(errors, function(field, messages) {
-                                const $field = $form.find('[name="' + field + '"]');
-                                if ($field.length) {
-                                    $field.addClass('is-invalid');
-                                    const errorMsg = Array.isArray(messages) ? messages[0] : messages;
-                                    if (!firstError) firstError = errorMsg;
-                                    $field.after('<div class="invalid-feedback d-block">' + errorMsg + '</div>');
-                                }
-                            });
-
-                            if (typeof window.showToast === 'function') {
-                                window.showToast(firstError || 'يرجى التحقق من الحقول المطلوبة', 'error');
-                            } else {
-                                alert(firstError || 'يرجى التحقق من الحقول المطلوبة');
-                            }
-                        } else {
-                            const errorMsg = xhr.responseJSON?.message || 'حدث خطأ أثناء حفظ البيانات';
-                            if (typeof window.showToast === 'function') {
-                                window.showToast(errorMsg, 'error');
-                            } else {
-                                alert(errorMsg);
-                            }
-                        }
-                    }
-                });
-            });
+    $(document).ready(function() {
+        AdminCRUD.submitForm({
+            form: '#complianceSafetyForm',
+            method: 'POST',
+            onSuccess: function(response) {
+                setTimeout(function() {
+                    window.location.href = '{{ route('admin.compliance-safeties.index') }}';
+                }, 500);
+            }
         });
-    })(jQuery);
+    });
 </script>
 @endpush

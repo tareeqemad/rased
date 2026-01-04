@@ -284,7 +284,6 @@
 @endsection
 
 @push('scripts')
-<script src="{{ asset('assets/admin/libs/jquery/jquery.min.js') }}"></script>
 <script>
     (function($) {
         $(document).ready(function() {

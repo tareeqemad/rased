@@ -37,7 +37,9 @@ class SettingsController extends Controller
         $request->validate([
             'settings' => 'required|array',
             'logo' => 'nullable|image|mimes:png,jpg,jpeg,webp,svg|max:2048',
-            'favicon' => 'nullable|image|mimes:png,jpg,jpeg,ico,svg|max:512',
+            'favicon' => 'nullable|mimes:ico|max:512',
+        ], [
+            'favicon.mimes' => 'يجب أن يكون ملف Favicon بامتداد .ico فقط',
         ]);
 
         // Handle logo upload
@@ -58,12 +60,18 @@ class SettingsController extends Controller
         // Handle favicon upload
         if ($request->hasFile('favicon')) {
             $favicon = $request->file('favicon');
-            $faviconName = 'favicon.' . $favicon->getClientOriginalExtension();
+            // Force .ico extension
+            $faviconName = 'favicon.ico';
             
             // Copy to public directory
             $publicPath = public_path('assets/admin/images/brand-logos');
             if (!file_exists($publicPath)) {
                 mkdir($publicPath, 0755, true);
+            }
+            // Delete old favicon if exists
+            $oldFavicon = $publicPath . '/favicon.ico';
+            if (file_exists($oldFavicon)) {
+                unlink($oldFavicon);
             }
             $favicon->move($publicPath, $faviconName);
             
@@ -71,16 +79,42 @@ class SettingsController extends Controller
         }
 
         // Update other settings
-        foreach ($request->input('settings', []) as $key => $value) {
+        $settings = $request->input('settings', []);
+        
+        // Handle primary_color - prefer hex value if provided
+        if (isset($settings['primary_color_hex']) && !empty($settings['primary_color_hex'])) {
+            $settings['primary_color'] = $settings['primary_color_hex'];
+        }
+        unset($settings['primary_color_hex']); // Remove hex key to avoid duplicate
+        
+        // Handle dark_color - prefer hex value if provided
+        if (isset($settings['dark_color_hex']) && !empty($settings['dark_color_hex'])) {
+            $settings['dark_color'] = $settings['dark_color_hex'];
+        }
+        unset($settings['dark_color_hex']); // Remove hex key to avoid duplicate
+        
+        foreach ($settings as $key => $value) {
             $setting = Setting::where('key', $key)->first();
             if ($setting) {
                 $setting->update(['value' => $value]);
             } else {
+                $group = 'general';
+                $type = 'text';
+                
+                // Set appropriate group and type for specific settings
+                if ($key === 'primary_color' || $key === 'dark_color') {
+                    $group = 'design';
+                    $type = 'color';
+                } elseif ($key === 'menu_styles') {
+                    $group = 'design';
+                    $type = 'select';
+                }
+                
                 Setting::create([
                     'key' => $key,
                     'value' => $value,
-                    'type' => 'text',
-                    'group' => 'general',
+                    'type' => $type,
+                    'group' => $group,
                 ]);
             }
         }

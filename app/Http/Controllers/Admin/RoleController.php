@@ -21,7 +21,26 @@ class RoleController extends Controller
     {
         $this->authorize('viewAny', Role::class);
 
-        $query = Role::withCount(['users', 'permissions']);
+        $user = auth()->user();
+        $query = Role::withCount(['users', 'permissions'])->with('operator');
+
+        // فلترة الأدوار حسب المستخدم
+        if ($user->isCompanyOwner()) {
+            $operator = $user->ownedOperators()->first();
+            if ($operator) {
+                // المشغل يشوف أدواره فقط + الأدوار النظامية (لا يشوف الأدوار العامة أو أدوار مشغلين آخرين)
+                $query->where(function ($q) use ($operator) {
+                    $q->where('is_system', true)
+                      ->orWhere('operator_id', $operator->id);
+                });
+            } else {
+                // إذا لم يكن لديه مشغل، يشوف الأدوار النظامية فقط
+                $query->where('is_system', true);
+            }
+        } elseif (!$user->isSuperAdmin()) {
+            // غير مصرح
+            abort(403);
+        }
 
         // البحث
         if ($request->filled('search')) {
@@ -48,9 +67,28 @@ class RoleController extends Controller
     {
         $this->authorize('create', Role::class);
 
-        $permissions = Permission::orderBy('group')->orderBy('order')->get()->groupBy('group');
+        $user = auth()->user();
+        
+        // الحصول على الصلاحيات المتاحة
+        $permissions = Permission::orderBy('group')->orderBy('order')->get();
+        
+        if ($user->isCompanyOwner()) {
+            // فلترة الصلاحيات - إزالة صلاحيات النظام
+            $systemPermissions = $this->getSystemPermissions();
+            $permissions = $permissions->reject(function ($permission) use ($systemPermissions) {
+                return in_array($permission->name, $systemPermissions);
+            });
+        }
+        
+        $permissions = $permissions->groupBy('group');
 
-        return view('admin.roles.create', compact('permissions'));
+        // الحصول على المشغلين (للسوبر أدمن فقط)
+        $operators = collect();
+        if ($user->isSuperAdmin()) {
+            $operators = \App\Models\Operator::orderBy('name')->get(['id', 'name', 'unit_number']);
+        }
+
+        return view('admin.roles.create', compact('permissions', 'operators'));
     }
 
     /**
@@ -58,17 +96,46 @@ class RoleController extends Controller
      */
     public function store(StoreRoleRequest $request): RedirectResponse
     {
+        $user = auth()->user();
+        $operatorId = null;
+        
+        // إذا كان المشغل، ربط الدور بمشغله
+        if ($user->isCompanyOwner()) {
+            $operator = $user->ownedOperators()->first();
+            if (!$operator) {
+                return redirect()->back()
+                    ->withInput()
+                    ->with('error', 'لا يوجد مشغل مرتبط بحسابك. أكمل ملف المشغل أولاً.');
+            }
+            $operatorId = $operator->id;
+        } elseif ($user->isSuperAdmin()) {
+            // السوبر أدمن يمكنه اختيار المشغل أو تركه null (دور عام)
+            $operatorId = $request->validated('operator_id');
+            if ($operatorId === '' || $operatorId === null) {
+                $operatorId = null;
+            }
+        }
+
+        // التحقق من الصلاحيات - منع منح صلاحيات النظام للمشغل
+        $permissionIds = $request->validated('permissions', []);
+        if ($user->isCompanyOwner() && !empty($permissionIds)) {
+            $systemPermissions = $this->getSystemPermissions();
+            $systemPermissionIds = Permission::whereIn('name', $systemPermissions)->pluck('id')->toArray();
+            $permissionIds = array_diff($permissionIds, $systemPermissionIds);
+        }
+
         $role = Role::create([
             'name' => $request->validated('name'),
             'label' => $request->validated('label'),
             'description' => $request->validated('description'),
             'is_system' => false,
             'order' => $request->validated('order', 0),
+            'operator_id' => $operatorId,
         ]);
 
         // ربط الصلاحيات بالدور
-        if ($request->has('permissions')) {
-            $role->permissions()->attach($request->validated('permissions'));
+        if (!empty($permissionIds)) {
+            $role->permissions()->attach($permissionIds);
         }
 
         return redirect()->route('admin.roles.index')
@@ -94,10 +161,29 @@ class RoleController extends Controller
     {
         $this->authorize('update', $role);
 
-        $permissions = Permission::orderBy('group')->orderBy('order')->get()->groupBy('group');
+        $user = auth()->user();
+        
+        // الحصول على الصلاحيات المتاحة
+        $permissions = Permission::orderBy('group')->orderBy('order')->get();
+        
+        if ($user->isCompanyOwner()) {
+            // فلترة الصلاحيات - إزالة صلاحيات النظام
+            $systemPermissions = $this->getSystemPermissions();
+            $permissions = $permissions->reject(function ($permission) use ($systemPermissions) {
+                return in_array($permission->name, $systemPermissions);
+            });
+        }
+        
+        $permissions = $permissions->groupBy('group');
         $rolePermissions = $role->permissions->pluck('id')->toArray();
 
-        return view('admin.roles.edit', compact('role', 'permissions', 'rolePermissions'));
+        // الحصول على المشغلين (للسوبر أدمن فقط)
+        $operators = collect();
+        if ($user->isSuperAdmin()) {
+            $operators = \App\Models\Operator::orderBy('name')->get(['id', 'name', 'unit_number']);
+        }
+
+        return view('admin.roles.edit', compact('role', 'permissions', 'rolePermissions', 'operators'));
     }
 
     /**
@@ -105,6 +191,8 @@ class RoleController extends Controller
      */
     public function update(UpdateRoleRequest $request, Role $role): RedirectResponse
     {
+        $user = auth()->user();
+        
         // منع تحديث الأدوار النظامية (name و is_system)
         if ($role->is_system) {
             $updateData = [
@@ -119,13 +207,28 @@ class RoleController extends Controller
                 'description' => $request->validated('description'),
                 'order' => $request->validated('order', $role->order),
             ];
+            
+            // السوبر أدمن يمكنه تغيير المشغل
+            if ($user->isSuperAdmin() && $request->has('operator_id')) {
+                $operatorId = $request->validated('operator_id');
+                $updateData['operator_id'] = $operatorId === '' || $operatorId === null ? null : $operatorId;
+            }
         }
 
         $role->update($updateData);
 
         // تحديث الصلاحيات
         if ($request->has('permissions')) {
-            $role->permissions()->sync($request->validated('permissions'));
+            $permissionIds = $request->validated('permissions');
+            
+            // التحقق من الصلاحيات - منع منح صلاحيات النظام للمشغل
+            if ($user->isCompanyOwner() && !empty($permissionIds)) {
+                $systemPermissions = $this->getSystemPermissions();
+                $systemPermissionIds = Permission::whereIn('name', $systemPermissions)->pluck('id')->toArray();
+                $permissionIds = array_diff($permissionIds, $systemPermissionIds);
+            }
+            
+            $role->permissions()->sync($permissionIds);
         } else {
             $role->permissions()->detach();
         }
@@ -178,5 +281,23 @@ class RoleController extends Controller
 
         return redirect()->route('admin.roles.index')
             ->with('success', 'تم حذف الدور بنجاح.');
+    }
+
+    /**
+     * الحصول على قائمة الصلاحيات النظامية التي لا يمكن للمشغل منحها
+     */
+    private function getSystemPermissions(): array
+    {
+        return [
+            'users.view',
+            'users.create',
+            'users.update',
+            'users.delete',
+            'operators.view',
+            'operators.create',
+            'operators.update',
+            'operators.delete',
+            'permissions.manage',
+        ];
     }
 }

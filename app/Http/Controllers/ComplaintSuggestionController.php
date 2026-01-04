@@ -26,8 +26,8 @@ class ComplaintSuggestionController extends Controller
      */
     public function create()
     {
-        // جلب المحافظات من الثوابت
-        $governorates = ConstantsHelper::getByName('المحافظة');
+        // جلب المحافظات من الثوابت (رقم ثابت المحافظات = 1)
+        $governorates = ConstantsHelper::get(1);
 
         return view('complaints-suggestions.create', compact('governorates'));
     }
@@ -133,7 +133,7 @@ class ComplaintSuggestionController extends Controller
                 return [
                     'id' => $operator->id,
                     'name' => $operator->name,
-                    'city' => $operator->city,
+                    'city' => $operator->getCityName(),
                     'unit_number' => $operator->unit_number,
                     'status' => $operator->status,
                 ];

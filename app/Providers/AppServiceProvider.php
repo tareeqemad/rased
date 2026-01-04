@@ -36,6 +36,8 @@ class AppServiceProvider extends ServiceProvider
         FuelEfficiency::class => FuelEfficiencyPolicy::class,
         MaintenanceRecord::class => MaintenanceRecordPolicy::class,
         ComplianceSafety::class => ComplianceSafetyPolicy::class,
+        \App\Models\AuditLog::class => \App\Policies\AuditLogPolicy::class,
+        \App\Models\Message::class => \App\Policies\MessagePolicy::class,
     ];
 
     /**
@@ -57,6 +59,16 @@ class AppServiceProvider extends ServiceProvider
 
         // استخدام Bootstrap pagination
         Paginator::useBootstrap();
+
+        // Share settings to all views
+        View::composer('*', function ($view) {
+            try {
+                $siteName = \App\Models\Setting::get('site_name', 'راصد');
+            } catch (\Exception $e) {
+                $siteName = 'راصد';
+            }
+            $view->with(['siteName' => $siteName]);
+        });
 
         // Share settings to front layout
         View::composer('layouts.front', function ($view) {

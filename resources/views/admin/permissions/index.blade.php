@@ -247,7 +247,6 @@
 @endsection
 
 @push('scripts')
-    <script src="{{ asset('assets/admin/libs/jquery/jquery.min.js') }}"></script>
     <script src="{{ asset('assets/admin/libs/select2/select2.min.js') }}"></script>
     @if(file_exists(public_path('assets/admin/libs/select2/i18n/ar.js')))
         <script src="{{ asset('assets/admin/libs/select2/i18n/ar.js') }}"></script>

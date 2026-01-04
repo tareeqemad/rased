@@ -18,6 +18,10 @@ return new class extends Migration
             $table->foreignId('operator_id')->constrained('operators')->cascadeOnDelete();
             $table->text('description')->nullable();
             $table->string('status')->default('active');
+            
+            // تتبع المستخدمين
+            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('last_updated_by')->nullable()->constrained('users')->nullOnDelete();
 
             // المواصفات الفنية
             $table->decimal('capacity_kva', 10, 2)->nullable();
@@ -30,12 +34,14 @@ return new class extends Migration
             $table->year('manufacturing_year')->nullable();
             $table->string('injection_system')->nullable();
             $table->decimal('fuel_consumption_rate', 8, 2)->nullable();
+            $table->decimal('ideal_fuel_efficiency', 8, 3)->nullable()->comment('كفاءة الوقود المثالية (kWh/لتر)');
             $table->integer('internal_tank_capacity')->nullable();
             $table->string('measurement_indicator')->nullable();
 
             // الحالة الفنية والتوثيق
             $table->string('technical_condition')->nullable();
             $table->date('last_major_maintenance_date')->nullable();
+            $table->date('last_operation_date')->nullable()->comment('تاريخ آخر تشغيل');
             $table->string('engine_data_plate_image')->nullable();
             $table->string('generator_data_plate_image')->nullable();
 
@@ -45,6 +51,7 @@ return new class extends Migration
             $table->string('control_panel_status')->nullable();
             $table->string('control_panel_image')->nullable();
             $table->integer('operating_hours')->nullable();
+            $table->integer('total_operating_hours')->default(0)->comment('إجمالي ساعات التشغيل');
 
             // خزانات الوقود
             $table->boolean('external_fuel_tank')->default(false);
@@ -52,6 +59,10 @@ return new class extends Migration
 
             $table->timestamps();
             $table->softDeletes();
+            
+            // فهارس للبحث السريع
+            $table->index(['operator_id', 'status'], 'idx_generators_operator_status');
+            $table->index(['name', 'generator_number'], 'idx_generators_search');
         });
     }
 

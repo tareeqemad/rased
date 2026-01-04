@@ -52,6 +52,15 @@
                             <span class="side-menu__label">شجرة الصلاحيات</span>
                         </a>
                     </li>
+                    
+                    @if($u->isCompanyOwner())
+                        <li class="slide {{ $isActive('admin.roles.*') }}">
+                            <a href="{{ route('admin.roles.index') }}" class="side-menu__item">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" width="24" height="24" viewBox="0 0 24 24"><path d="M12 2L4 5v6.09c0 5.05 3.41 9.76 8 10.91 4.59-1.15 8-5.86 8-10.91V5l-8-3zm6 9.09c0 4-2.55 7.7-6 8.83-3.45-1.13-6-4.83-6-8.83V6.31l6-2.12 6 2.12v4.78z"/></svg>
+                                <span class="side-menu__label">الأدوار المخصصة</span>
+                            </a>
+                        </li>
+                    @endif
                 @endif
 
                 {{-- إدارة النظام: SuperAdmin فقط (الثوابت/الأدوار/المستخدمين الكلّي) --}}
@@ -122,8 +131,8 @@
 
                 {{-- المشغلون --}}
                 @can('viewAny', App\Models\Operator::class)
-                    <li class="slide has-sub {{ $isOpen('admin.operators.*') || $isOpen('admin.users.*') ? 'open' : '' }}">
-                        <a href="javascript:void(0);" class="side-menu__item {{ $isActive('admin.operators.*') || $isActive('admin.users.*') ? 'active' : '' }}">
+                    <li class="slide has-sub {{ $isOpen('admin.operators.*') || $isOpen('admin.users.*') || $isOpen('admin.operators.tariff-prices.*') ? 'open' : '' }}">
+                        <a href="javascript:void(0);" class="side-menu__item {{ $isActive('admin.operators.*') || $isActive('admin.users.*') || $isActive('admin.operators.tariff-prices.*') ? 'active' : '' }}">
                             <svg xmlns="http://www.w3.org/2000/svg" class="side-menu__angle" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
                             <svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" width="24" height="24" viewBox="0 0 24 24"><path d="M4 21h16v-2H4v2zm0-4h16v-2H4v2zm0-4h16v-2H4v2zm0-4h7V5H4v4zm9 0h7V5h-7v4z"/></svg>
                             <span class="side-menu__label">
@@ -131,7 +140,7 @@
                             </span>
                         </a>
 
-                        <ul class="slide-menu child1" style="{{ ($show('admin.operators.*') || $show('admin.users.*')) ? 'display:block' : '' }}">
+                        <ul class="slide-menu child1" style="{{ ($show('admin.operators.*') || $show('admin.users.*') || $show('admin.operators.tariff-prices.*')) ? 'display:block' : '' }}">
                             @if($u->isCompanyOwner())
                                 <li class="slide">
                                     <a href="{{ route('admin.operators.profile') }}" class="side-menu__item {{ $isActive('admin.operators.profile') }}">
@@ -147,6 +156,13 @@
                                     <li class="slide">
                                         <a href="{{ route('admin.users.create') }}" class="side-menu__item {{ $isActive('admin.users.create') }}">
                                             إضافة موظف/فني
+                                        </a>
+                                    </li>
+                                @endcan
+                                @can('viewAny', App\Models\ElectricityTariffPrice::class)
+                                    <li class="slide">
+                                        <a href="{{ route('admin.operators.tariff-prices.index', $u->ownedOperators()->first()) }}" class="side-menu__item {{ $isActive('admin.operators.tariff-prices.*') }}">
+                                            أسعار التعرفة
                                         </a>
                                     </li>
                                 @endcan

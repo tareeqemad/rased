@@ -48,9 +48,9 @@ class ComplaintSuggestionController extends Controller
             $query->where('status', $request->status);
         }
 
-        // البحث
-        if ($request->filled('search')) {
-            $search = $request->search;
+        // البحث (يدعم 'search' أو 'q')
+        $search = trim((string) ($request->input('search') ?? $request->input('q', '')));
+        if ($search !== '') {
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
                     ->orWhere('phone', 'like', "%{$search}%")
@@ -60,17 +60,32 @@ class ComplaintSuggestionController extends Controller
             });
         }
 
-        $complaintsSuggestions = $query->orderBy('created_at', 'desc')->paginate(20);
+        $complaintsSuggestions = $query->orderBy('created_at', 'desc')->paginate(100);
 
         // إحصائيات
+        $baseQuery = clone $query;
         $stats = [
-            'total' => (clone $query)->count(),
-            'complaints' => (clone $query)->where('type', 'complaint')->count(),
-            'suggestions' => (clone $query)->where('type', 'suggestion')->count(),
-            'pending' => (clone $query)->where('status', 'pending')->count(),
-            'in_progress' => (clone $query)->where('status', 'in_progress')->count(),
-            'resolved' => (clone $query)->where('status', 'resolved')->count(),
+            'total' => $baseQuery->count(),
+            'complaints' => (clone $baseQuery)->where('type', 'complaint')->count(),
+            'suggestions' => (clone $baseQuery)->where('type', 'suggestion')->count(),
+            'pending' => (clone $baseQuery)->where('status', 'pending')->count(),
+            'in_progress' => (clone $baseQuery)->where('status', 'in_progress')->count(),
+            'resolved' => (clone $baseQuery)->where('status', 'resolved')->count(),
         ];
+
+        if ($request->ajax() || $request->wantsJson()) {
+            // Return HTML for tbody rows
+            $html = view('admin.complaints-suggestions.partials.tbody-rows', compact('complaintsSuggestions'))->render();
+            $pagination = view('admin.complaints-suggestions.partials.pagination', compact('complaintsSuggestions'))->render();
+            
+            return response()->json([
+                'success' => true,
+                'html' => $html,
+                'pagination' => $pagination,
+                'count' => $complaintsSuggestions->total(),
+                'stats' => $stats,
+            ]);
+        }
 
         return view('admin.complaints-suggestions.index', compact('complaintsSuggestions', 'stats'));
     }

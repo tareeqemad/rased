@@ -12,7 +12,7 @@ class RolePolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->isSuperAdmin();
+        return $user->isSuperAdmin() || $user->isCompanyOwner();
     }
 
     /**
@@ -20,7 +20,25 @@ class RolePolicy
      */
     public function view(User $user, Role $role): bool
     {
-        return $user->isSuperAdmin();
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
+
+        if ($user->isCompanyOwner()) {
+            // المشغل يمكنه رؤية الأدوار النظامية وأدوار مشغله فقط
+            if ($role->is_system) {
+                return true;
+            }
+            // الأدوار الخاصة بمشغل - يمكن رؤيتها فقط إذا كانت لمشغله
+            if ($role->operator_id) {
+                $operator = $role->operator;
+                return $operator && $user->ownsOperator($operator);
+            }
+            // الأدوار العامة (operator_id = null) - لا يمكن رؤيتها
+            return false;
+        }
+
+        return false;
     }
 
     /**
@@ -28,7 +46,7 @@ class RolePolicy
      */
     public function create(User $user): bool
     {
-        return $user->isSuperAdmin();
+        return $user->isSuperAdmin() || $user->isCompanyOwner();
     }
 
     /**
@@ -36,7 +54,20 @@ class RolePolicy
      */
     public function update(User $user, Role $role): bool
     {
-        return $user->isSuperAdmin();
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
+
+        if ($user->isCompanyOwner()) {
+            // المشغل يمكنه تحديث أدواره فقط (لا يمكن تحديث الأدوار النظامية)
+            if ($role->is_system || !$role->operator_id) {
+                return false;
+            }
+            $operator = $role->operator;
+            return $operator && $user->ownsOperator($operator);
+        }
+
+        return false;
     }
 
     /**
@@ -49,7 +80,20 @@ class RolePolicy
             return false;
         }
 
-        return $user->isSuperAdmin();
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
+
+        if ($user->isCompanyOwner()) {
+            // المشغل يمكنه حذف أدواره فقط
+            if (!$role->operator_id) {
+                return false;
+            }
+            $operator = $role->operator;
+            return $operator && $user->ownsOperator($operator);
+        }
+
+        return false;
     }
 
     /**

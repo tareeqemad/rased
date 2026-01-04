@@ -8,11 +8,13 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\FuelEfficiencyController;
 use App\Http\Controllers\Admin\GeneratorController;
 use App\Http\Controllers\Admin\MaintenanceRecordController;
+use App\Http\Controllers\Admin\MessageController;
 use App\Http\Controllers\Admin\NotificationController;
 use App\Http\Controllers\Admin\OperationLogController;
 use App\Http\Controllers\Admin\OperatorController;
 use App\Http\Controllers\Admin\OperatorProfileController;
 use App\Http\Controllers\Admin\OperatorUnitNumberController;
+use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\PermissionAuditLogController;
 use App\Http\Controllers\Admin\PermissionsController;
 use App\Http\Controllers\Admin\RoleController;
@@ -46,6 +48,12 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('permission-audit-logs/{permissionAuditLog}', [PermissionAuditLogController::class, 'show'])->name('permission-audit-logs.show');
 
     /**
+     * Activity Logs (Audit Logs)
+     */
+    Route::get('activity-logs', [AuditLogController::class, 'index'])->name('activity-logs.index');
+    Route::get('activity-logs/{auditLog}', [AuditLogController::class, 'show'])->name('activity-logs.show');
+
+    /**
      * Roles (SuperAdmin only via Policy)
      */
     Route::resource('roles', RoleController::class);
@@ -68,6 +76,7 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::put('constant-details/{constantDetail}', [ConstantDetailController::class, 'update'])->name('constant-details.update');
     Route::delete('constant-details/{constantDetail}', [ConstantDetailController::class, 'destroy'])->name('constant-details.destroy');
     Route::get('constant-details/by-master/{constantMaster}', [ConstantDetailController::class, 'getByMaster'])->name('constant-details.by-master');
+    Route::get('constant-details/cities-by-governorate', [ConstantDetailController::class, 'getCitiesByGovernorate'])->name('constant-details.cities-by-governorate');
 
     /**
      * Users
@@ -76,6 +85,7 @@ Route::middleware(['auth', 'admin'])->group(function () {
     ->name('users.ajaxOperators');
     Route::post('users/{user}/impersonate', [UserController::class, 'impersonate'])->name('users.impersonate');
     Route::post('users/stop-impersonating', [UserController::class, 'stopImpersonating'])->name('users.stop-impersonating');
+    Route::post('users/{user}/toggle-status', [UserController::class, 'toggleStatus'])->name('users.toggle-status');
     Route::resource('users', UserController::class);
 
     // Operator employees (lock it via policy at route-level too)
@@ -90,6 +100,8 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::put('operators/profile', [OperatorProfileController::class, 'update'])->name('operators.profile.update');
 
     Route::get('operators/next-unit-number/{governorate}', [OperatorUnitNumberController::class, 'getNextUnitNumber'])->name('operators.next-unit-number');
+    Route::post('operators/generate-unit-code', [OperatorUnitNumberController::class, 'generateUnitCode'])->name('operators.generate-unit-code');
+    Route::post('operators/{operator}/generate-generator-number', [OperatorController::class, 'generateGeneratorNumber'])->name('operators.generate-generator-number');
     
     // API للحصول على المشغلين حسب المحافظة
     Route::get('operators/by-governorate/{governorate}', [OperatorController::class, 'getByGovernorate'])->name('operators.by-governorate');
@@ -97,7 +109,21 @@ Route::middleware(['auth', 'admin'])->group(function () {
     /**
      * Operators
      */
+    Route::post('operators/{operator}/toggle-status', [OperatorController::class, 'toggleStatus'])->name('operators.toggle-status');
     Route::resource('operators', OperatorController::class);
+    
+    // Electricity Tariff Prices (nested under operators)
+    Route::prefix('operators/{operator}')->name('operators.')->group(function () {
+        Route::get('tariff-prices', [\App\Http\Controllers\Admin\ElectricityTariffPriceController::class, 'index'])->name('tariff-prices.index');
+        Route::get('tariff-prices/create', [\App\Http\Controllers\Admin\ElectricityTariffPriceController::class, 'create'])->name('tariff-prices.create');
+        Route::post('tariff-prices', [\App\Http\Controllers\Admin\ElectricityTariffPriceController::class, 'store'])->name('tariff-prices.store');
+        Route::get('tariff-prices/{tariffPrice}/edit', [\App\Http\Controllers\Admin\ElectricityTariffPriceController::class, 'edit'])->name('tariff-prices.edit');
+        Route::put('tariff-prices/{tariffPrice}', [\App\Http\Controllers\Admin\ElectricityTariffPriceController::class, 'update'])->name('tariff-prices.update');
+        Route::delete('tariff-prices/{tariffPrice}', [\App\Http\Controllers\Admin\ElectricityTariffPriceController::class, 'destroy'])->name('tariff-prices.destroy');
+        
+        // API route for getting tariff price
+        Route::get('api/tariff-price', [\App\Http\Controllers\Admin\ElectricityTariffPriceController::class, 'getTariffPrice'])->name('api.tariff-price');
+    });
 
     /**
      * Generators & related modules
@@ -125,4 +151,12 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::post('notifications/{notification}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
     Route::post('notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.read-all');
     Route::delete('notifications/{notification}', [NotificationController::class, 'destroy'])->name('notifications.destroy');
+
+    /**
+     * Messages (Internal Messaging System)
+     */
+    Route::get('messages/unread-count', [MessageController::class, 'getUnreadCount'])->name('messages.unread-count');
+    Route::get('messages/recent', [MessageController::class, 'getRecentMessages'])->name('messages.recent');
+    Route::post('messages/{message}/mark-read', [MessageController::class, 'markAsRead'])->name('messages.mark-read');
+    Route::resource('messages', MessageController::class);
 });

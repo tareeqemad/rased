@@ -46,12 +46,7 @@ body {
 
 /* Navigation */
 .public-nav {
-    background: 
-        url('../images/generator-pattern.svg'),
-        rgba(20, 26, 107, 0.95);
-    background-size: 200px 200px, cover;
-    background-position: center, center;
-    background-repeat: repeat, no-repeat;
+    background: rgba(20, 26, 107, 0.95);
     color: white;
     padding: 1rem 0;
     position: sticky;

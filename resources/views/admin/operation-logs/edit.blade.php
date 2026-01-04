@@ -279,6 +279,25 @@
                                 </div>
                             </div>
 
+                            <div class="row g-3 mt-2">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">
+                                        سعر التعرفة الكهربائية (₪/kWh)
+                                    </label>
+                                    <input type="number" step="0.0001" name="electricity_tariff_price" 
+                                           class="form-control @error('electricity_tariff_price') is-invalid @enderror" 
+                                           value="{{ old('electricity_tariff_price', $operationLog->electricity_tariff_price) }}" 
+                                           min="0" 
+                                           max="500"
+                                           placeholder="0.0000"
+                                           id="electricity_tariff_price">
+                                    <small class="text-muted">سيتم تعبئته تلقائياً حسب المشغل وتاريخ التشغيل (يمكن التعديل) - مثال: في غزة قد يصل السعر إلى 30+ شيكل</small>
+                                    @error('electricity_tariff_price')
+                                        <div class="invalid-feedback d-block">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+
                             <hr class="my-4">
 
                             <div class="row g-3">
@@ -337,7 +356,6 @@
 @endsection
 
 @push('scripts')
-<script src="{{ asset('assets/admin/libs/jquery/jquery.min.js') }}"></script>
 <script>
     (function($) {
         $(document).ready(function() {
@@ -409,6 +427,43 @@
             
             if (energyStart) energyStart.addEventListener('input', calculateEnergy);
             if (energyEnd) energyEnd.addEventListener('input', calculateEnergy);
+
+            // Auto-fill electricity tariff price based on operator and date
+            const tariffPriceInput = document.getElementById('electricity_tariff_price');
+            const operationDateInput = document.querySelector('input[name="operation_date"]');
+            const operatorSelect = document.getElementById('operator_id');
+            
+            async function loadTariffPrice() {
+                const operatorId = operatorSelect?.value || {{ $operationLog->operator_id }};
+                const operationDate = operationDateInput?.value || '{{ $operationLog->operation_date->format('Y-m-d') }}';
+                
+                if (!operatorId || !operationDate || !tariffPriceInput) return;
+                
+                try {
+                    const response = await fetch(`/admin/operators/${operatorId}/api/tariff-price?date=${operationDate}`, {
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                        }
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.price && !tariffPriceInput.value) {
+                            tariffPriceInput.value = parseFloat(data.price).toFixed(4);
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error loading tariff price:', error);
+                }
+            }
+            
+            if (operatorSelect) operatorSelect.addEventListener('change', loadTariffPrice);
+            if (operationDateInput) operationDateInput.addEventListener('change', loadTariffPrice);
+            
+            // Load on page load
+            loadTariffPrice();
 
             $form.on('submit', function(e) {
                 e.preventDefault();

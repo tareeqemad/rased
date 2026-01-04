@@ -69,6 +69,7 @@ class RoleSeeder extends Seeder
                     'fuel_efficiencies.view',
                     'maintenance_records.view',
                     'compliance_safeties.view',
+                    'electricity_tariff_prices.view', // الأدمن يمكنهم الاستعلام فقط
                 ])->pluck('id'));
             } elseif ($role->name === 'company_owner') {
                 // CompanyOwner - صلاحيات كاملة على بياناته وموظفيه

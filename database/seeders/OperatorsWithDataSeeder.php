@@ -26,20 +26,48 @@ class OperatorsWithDataSeeder extends Seeder
     {
         $this->command->info('بدء إنشاء البيانات...');
 
-        // المحافظات المتاحة
-        $governorates = [
-            ['value' => 10, 'name' => 'غزة', 'cities' => ['غزة', 'الشجاعية', 'الرمال', 'الصبرة']],
-            ['value' => 20, 'name' => 'الوسطى', 'cities' => ['دير البلح', 'المغازي', 'النصيرات', 'البريج']],
-            ['value' => 30, 'name' => 'خانيونس', 'cities' => ['خانيونس', 'عبسان', 'القرارة', 'بني سهيلا']],
-            ['value' => 40, 'name' => 'رفح', 'cities' => ['رفح', 'الشوكة', 'البروك', 'السودانية']],
-        ];
+        // الحصول على المحافظات والمدن من الثوابت
+        $governoratesMaster = ConstantsHelper::get(1); // رقم ثابت المحافظات
+        $citiesMaster = ConstantsHelper::get(20); // رقم ثابت المدن
+        
+        if ($governoratesMaster->isEmpty() || $citiesMaster->isEmpty()) {
+            $this->command->error('يجب تشغيل ConstantSeeder أولاً!');
+            return;
+        }
+        
+        // تحضير بيانات المحافظات مع المدن من الثوابت
+        $governoratesData = [];
+        foreach ($governoratesMaster as $gov) {
+            $cities = ConstantsHelper::getCitiesByGovernorate($gov->id);
+            if ($cities->isNotEmpty()) {
+                $governoratesData[] = [
+                    'id' => $gov->id,
+                    'code' => $gov->code,
+                    'value' => (int) $gov->value,
+                    'name' => $gov->label,
+                    'cities' => $cities->map(function($city) {
+                        return [
+                            'id' => $city->id,
+                            'code' => $city->code,
+                            'label' => $city->label,
+                        ];
+                    })->toArray(),
+                ];
+            }
+        }
+        
+        if (empty($governoratesData)) {
+            $this->command->error('لا توجد محافظات مع مدن في الثوابت!');
+            return;
+        }
 
-        // إحداثيات تقريبية لكل محافظة
+        // إحداثيات تقريبية لكل محافظة (استخدام value من الثوابت)
         $governorateCoordinates = [
-            10 => ['lat' => 31.3547, 'lng' => 34.3088], // غزة
-            20 => ['lat' => 31.4170, 'lng' => 34.3500], // الوسطى
-            30 => ['lat' => 31.3436, 'lng' => 34.3061], // خانيونس
-            40 => ['lat' => 31.2969, 'lng' => 34.2436], // رفح
+            10 => ['lat' => 31.3547, 'lng' => 34.3088], // شمال غزة
+            20 => ['lat' => 31.3547, 'lng' => 34.3088], // غزة
+            30 => ['lat' => 31.4170, 'lng' => 34.3500], // الوسطى
+            40 => ['lat' => 31.3436, 'lng' => 34.3061], // خانيونس
+            50 => ['lat' => 31.2969, 'lng' => 34.2436], // رفح
         ];
 
         // أسماء عربية للمشغلين
@@ -104,13 +132,13 @@ class OperatorsWithDataSeeder extends Seeder
         $mmlukOperator = null; // مشغل المملوك
 
         // جلب الثوابت (نستخدمها لاحقاً)
-        $statusConstants = ConstantsHelper::getByName('حالة المولد');
-        $engineTypeConstants = ConstantsHelper::getByName('نوع المحرك');
-        $injectionSystemConstants = ConstantsHelper::getByName('نظام الحقن');
-        $measurementIndicatorConstants = ConstantsHelper::getByName('مؤشر القياس');
-        $technicalConditionConstants = ConstantsHelper::getByName('الحالة الفنية');
-        $controlPanelTypeConstants = ConstantsHelper::getByName('نوع لوحة التحكم');
-        $controlPanelStatusConstants = ConstantsHelper::getByName('حالة لوحة التحكم');
+        $statusConstants = ConstantsHelper::get(3); // حالة المولد
+        $engineTypeConstants = ConstantsHelper::get(4); // نوع المحرك
+        $injectionSystemConstants = ConstantsHelper::get(5); // نظام الحقن
+        $measurementIndicatorConstants = ConstantsHelper::get(6); // مؤشر القياس
+        $technicalConditionConstants = ConstantsHelper::get(7); // الحالة الفنية
+        $controlPanelTypeConstants = ConstantsHelper::get(8); // نوع لوحة التحكم
+        $controlPanelStatusConstants = ConstantsHelper::get(9); // حالة لوحة التحكم
 
         // دالة مساعدة للحصول على قيمة ثابت
         $getConstantValue = function($collection, $default) {
@@ -125,31 +153,43 @@ class OperatorsWithDataSeeder extends Seeder
             // التحقق من عدم وجود المشغل مسبقاً
             $existingOperator = Operator::where('name', 'مشغل المملوك')->first();
             if (!$existingOperator) {
-                $mmlukOperator = Operator::create([
-                    'name' => 'مشغل المملوك',
-                    'email' => 'info@mmluk.ps',
-                    'phone' => '0599123456',
-                    'phone_alt' => '0599123457',
-                    'address' => 'غزة - شارع المملوك',
-                    'owner_id' => $mmlukOwner->id,
-                    'unit_number' => 'GAZ-001',
-                    'unit_code' => 'GAZ-001',
-                    'unit_name' => 'وحدة المملوك',
-                    'governorate' => 10, // Gaza
-                    'city' => 'غزة',
-                    'detailed_address' => 'غزة - شارع المملوك - مبنى رقم 5',
-                    'latitude' => 31.3547,
-                    'longitude' => 34.3088,
-                    'total_capacity' => 500,
-                    'generators_count' => 4,
-                    'synchronization_available' => true,
-                    'max_synchronization_capacity' => 400,
-                    'beneficiaries_count' => 150,
-                    'beneficiaries_description' => 'سكان المنطقة والمؤسسات',
-                    'environmental_compliance_status' => 'compliant',
-                    'status' => 'active',
-                    'profile_completed' => true,
-                ]);
+                // الحصول على محافظة غزة ومدينة غزة من الثوابت
+                $gazaGovernorate = $governoratesMaster->where('code', 'GZ')->first();
+                $gazaCity = $citiesMaster->where('code', 'GZ')->first();
+                
+                if ($gazaGovernorate && $gazaCity) {
+                    $governorateEnum = Governorate::fromValue((int) $gazaGovernorate->value);
+                    
+                    // توليد رقم الوحدة وكود الوحدة
+                    $unitNumber = Operator::getNextUnitNumber($governorateEnum, $gazaCity->id);
+                    $unitCode = Operator::generateUnitCode($governorateEnum, $gazaCity->id, $unitNumber);
+                    
+                    $mmlukOperator = Operator::create([
+                        'name' => 'مشغل المملوك',
+                        'email' => 'info@mmluk.ps',
+                        'phone' => '0599123456',
+                        'phone_alt' => '0599123457',
+                        'address' => 'غزة - شارع المملوك',
+                        'owner_id' => $mmlukOwner->id,
+                        'unit_number' => $unitNumber,
+                        'unit_code' => $unitCode,
+                        'unit_name' => 'وحدة المملوك',
+                        'governorate' => $governorateEnum,
+                        'city_id' => $gazaCity->id,
+                        'detailed_address' => 'غزة - شارع المملوك - مبنى رقم 5',
+                        'latitude' => 31.3547,
+                        'longitude' => 34.3088,
+                        'total_capacity' => 500,
+                        'generators_count' => 4,
+                        'synchronization_available' => true,
+                        'max_synchronization_capacity' => 400,
+                        'beneficiaries_count' => 150,
+                        'beneficiaries_description' => 'سكان المنطقة والمؤسسات',
+                        'environmental_compliance_status' => 'compliant',
+                        'status' => 'active',
+                        'profile_completed' => true,
+                    ]);
+                }
 
                 $allOperators->push($mmlukOperator);
 
@@ -157,7 +197,6 @@ class OperatorsWithDataSeeder extends Seeder
                 $mmlukGeneratorsData = [
                     [
                         'name' => 'مولد المملوك 1',
-                        'generator_number' => 'GEN-MMLUK-001',
                         'description' => 'مولد ديزل بقوة 100 كيلو فولت أمبير',
                         'capacity_kva' => 100,
                         'power_factor' => 0.8,
@@ -167,6 +206,7 @@ class OperatorsWithDataSeeder extends Seeder
                         'manufacturing_year' => 2020,
                         'injection_system' => $getConstantValue($injectionSystemConstants, 'mechanical'),
                         'fuel_consumption_rate' => 25.5,
+                        'ideal_fuel_efficiency' => 0.5,
                         'internal_tank_capacity' => 200,
                         'measurement_indicator' => $getConstantValue($measurementIndicatorConstants, 'mechanical'),
                         'technical_condition' => $getConstantValue($technicalConditionConstants, 'good'),
@@ -180,7 +220,6 @@ class OperatorsWithDataSeeder extends Seeder
                     ],
                     [
                         'name' => 'مولد المملوك 2',
-                        'generator_number' => 'GEN-MMLUK-002',
                         'description' => 'مولد ديزل بقوة 150 كيلو فولت أمبير',
                         'capacity_kva' => 150,
                         'power_factor' => 0.85,
@@ -190,6 +229,7 @@ class OperatorsWithDataSeeder extends Seeder
                         'manufacturing_year' => 2021,
                         'injection_system' => $getConstantValue($injectionSystemConstants, 'mechanical'),
                         'fuel_consumption_rate' => 35.0,
+                        'ideal_fuel_efficiency' => 0.55,
                         'internal_tank_capacity' => 300,
                         'measurement_indicator' => $getConstantValue($measurementIndicatorConstants, 'mechanical'),
                         'technical_condition' => $getConstantValue($technicalConditionConstants, 'good'),
@@ -203,7 +243,6 @@ class OperatorsWithDataSeeder extends Seeder
                     ],
                     [
                         'name' => 'مولد المملوك 3',
-                        'generator_number' => 'GEN-MMLUK-003',
                         'description' => 'مولد ديزل بقوة 200 كيلو فولت أمبير',
                         'capacity_kva' => 200,
                         'power_factor' => 0.9,
@@ -213,6 +252,7 @@ class OperatorsWithDataSeeder extends Seeder
                         'manufacturing_year' => 2019,
                         'injection_system' => $getConstantValue($injectionSystemConstants, 'mechanical'),
                         'fuel_consumption_rate' => 45.5,
+                        'ideal_fuel_efficiency' => 0.48,
                         'internal_tank_capacity' => 400,
                         'measurement_indicator' => $getConstantValue($measurementIndicatorConstants, 'mechanical'),
                         'technical_condition' => $getConstantValue($technicalConditionConstants, 'good'),
@@ -226,7 +266,6 @@ class OperatorsWithDataSeeder extends Seeder
                     ],
                     [
                         'name' => 'مولد المملوك 4',
-                        'generator_number' => 'GEN-MMLUK-004',
                         'description' => 'مولد ديزل بقوة 50 كيلو فولت أمبير',
                         'capacity_kva' => 50,
                         'power_factor' => 0.75,
@@ -236,6 +275,7 @@ class OperatorsWithDataSeeder extends Seeder
                         'manufacturing_year' => 2022,
                         'injection_system' => $getConstantValue($injectionSystemConstants, 'mechanical'),
                         'fuel_consumption_rate' => 15.0,
+                        'ideal_fuel_efficiency' => 0.52,
                         'internal_tank_capacity' => 150,
                         'measurement_indicator' => $getConstantValue($measurementIndicatorConstants, 'mechanical'),
                         'technical_condition' => $getConstantValue($technicalConditionConstants, 'good'),
@@ -250,6 +290,9 @@ class OperatorsWithDataSeeder extends Seeder
                 ];
 
                 foreach ($mmlukGeneratorsData as $genData) {
+                    // توليد رقم المولد تلقائياً بناءً على unit_code
+                    $genData['generator_number'] = Generator::getNextGeneratorNumber($mmlukOperator->id);
+                    
                     $generator = Generator::create([
                         'operator_id' => $mmlukOperator->id,
                         ...$genData,
@@ -261,8 +304,12 @@ class OperatorsWithDataSeeder extends Seeder
                     // إنشاء خزانات الوقود إذا كان المولد يحتوي على خزانات
                     if (isset($genData['fuel_tanks_count']) && $genData['fuel_tanks_count'] > 0) {
                         for ($t = 0; $t < $genData['fuel_tanks_count']; $t++) {
+                            // توليد كود الخزان تلقائياً
+                            $tankCode = FuelTank::getNextTankCode($generator->id);
+                            
                             FuelTank::create([
                                 'generator_id' => $generator->id,
+                                'tank_code' => $tankCode,
                                 'capacity' => rand(100, 500),
                                 'location' => ['داخلي', 'خارجي', 'أرضي', 'علوي'][rand(0, 3)],
                                 'filtration_system_available' => rand(0, 1) === 1,
@@ -305,37 +352,53 @@ class OperatorsWithDataSeeder extends Seeder
 
         // إنشاء 10 مشغلين
         for ($i = 0; $i < 10; $i++) {
-            $governorate = $governorates[$i % count($governorates)];
-            $city = $governorate['cities'][array_rand($governorate['cities'])];
-            $coords = $governorateCoordinates[$governorate['value']];
+            // اختيار محافظة عشوائية
+            $governorateData = $governoratesData[$i % count($governoratesData)];
+            
+            // اختيار مدينة عشوائية من المحافظة المختارة
+            $cityData = $governorateData['cities'][array_rand($governorateData['cities'])];
+            
+            $coords = $governorateCoordinates[$governorateData['value']] ?? ['lat' => 31.3547, 'lng' => 34.3088];
             
             // إضافة تغيير بسيط في الإحداثيات
             $latitude = $coords['lat'] + (rand(-50, 50) / 1000);
             $longitude = $coords['lng'] + (rand(-50, 50) / 1000);
 
+            // تحويل المحافظة إلى enum
+            $governorateEnum = Governorate::fromValue($governorateData['value']);
+            
+            // توليد رقم الوحدة وكود الوحدة بناءً على المحافظة والمدينة المختارة
+            // ملاحظة: يجب استخدام نفس القيم (governorateEnum و cityData['id']) في Operator::create()
+            $unitNumber = Operator::getNextUnitNumber($governorateEnum, $cityData['id']);
+            $unitCode = Operator::generateUnitCode($governorateEnum, $cityData['id'], $unitNumber);
+
             // إنشاء CompanyOwner
-            $owner = User::create([
-                'name' => 'صاحب شركة ' . ($i + 1),
-                'username' => 'company_owner_' . ($i + 1),
-                'email' => 'owner' . ($i + 1) . '@example.com',
-                'password' => Hash::make('password'),
-                'role' => Role::CompanyOwner,
-            ]);
+            $owner = User::firstOrCreate(
+                ['email' => 'owner' . ($i + 1) . '@example.com'],
+                [
+                    'name' => 'صاحب شركة ' . ($i + 1),
+                    'username' => 'company_owner_' . ($i + 1),
+                    'password' => Hash::make('password'),
+                    'role' => Role::CompanyOwner,
+                    'status' => 'active',
+                ]
+            );
 
             // إنشاء Operator
+            // ملاحظة: governorate و city_id يجب أن تكون نفس القيم المستخدمة في توليد unit_number و unit_code
             $operator = Operator::create([
                 'name' => $operatorNames[$i],
                 'email' => 'operator' . ($i + 1) . '@example.com',
                 'phone' => '059' . str_pad(rand(1000000, 9999999), 7, '0', STR_PAD_LEFT),
                 'phone_alt' => '056' . str_pad(rand(1000000, 9999999), 7, '0', STR_PAD_LEFT),
-                'address' => 'شارع ' . ($i + 1) . '، ' . $city,
+                'address' => 'شارع ' . ($i + 1) . '، ' . $cityData['label'],
                 'owner_id' => $owner->id,
-                'unit_number' => $governorate['value'] . '-' . str_pad($i + 1, 3, '0', STR_PAD_LEFT),
-                'unit_code' => 'CODE-' . strtoupper(Str::random(4)),
+                'unit_number' => $unitNumber, // تم توليده بناءً على governorateEnum و cityData['id']
+                'unit_code' => $unitCode, // تم توليده بناءً على governorateEnum و cityData['id']
                 'unit_name' => 'وحدة ' . $operatorNames[$i],
-                'governorate' => $governorate['value'],
-                'city' => $city,
-                'detailed_address' => 'مبنى رقم ' . ($i + 1) . '، ' . $city . '، ' . $governorate['name'],
+                'governorate' => $governorateEnum, // نفس القيمة المستخدمة في توليد unit_code
+                'city_id' => $cityData['id'], // نفس القيمة المستخدمة في توليد unit_code
+                'detailed_address' => 'مبنى رقم ' . ($i + 1) . '، ' . $cityData['label'] . '، ' . $governorateData['name'],
                 'latitude' => $latitude,
                 'longitude' => $longitude,
                 'total_capacity' => rand(500, 2000),
@@ -347,7 +410,7 @@ class OperatorsWithDataSeeder extends Seeder
                 'operation_entity' => rand(0, 1) === 1 ? 'same_owner' : 'other_party',
                 'operator_id_number' => str_pad(rand(100000, 999999), 6, '0', STR_PAD_LEFT),
                 'beneficiaries_count' => rand(50, 500),
-                'beneficiaries_description' => 'مستفيدون من خدمات الكهرباء في منطقة ' . $city,
+                'beneficiaries_description' => 'مستفيدون من خدمات الكهرباء في منطقة ' . $cityData['label'],
                 'environmental_compliance_status' => rand(0, 1) === 1 ? 'compliant' : 'non_compliant',
                 'status' => 'active',
                 'profile_completed' => true,
@@ -358,7 +421,12 @@ class OperatorsWithDataSeeder extends Seeder
             // إنشاء حوالي 5 مولدات لكل مشغل
             $generatorsCount = rand(4, 6);
             for ($j = 0; $j < $generatorsCount; $j++) {
-                $generatorNumber = 'GEN-' . str_pad($i + 1, 3, '0', STR_PAD_LEFT) . '-' . str_pad($j + 1, 2, '0', STR_PAD_LEFT);
+                // توليد رقم المولد تلقائياً بناءً على unit_code
+                $generatorNumber = Generator::getNextGeneratorNumber($operator->id);
+                if (!$generatorNumber) {
+                    $this->command->warn("تم الوصول إلى الحد الأقصى لعدد المولدات للمشغل {$operator->id}");
+                    break;
+                }
                 
                 // اختيار قيم عشوائية من الثوابت
                 $statusValue = $getConstantValue($statusConstants, 'active');
@@ -383,6 +451,7 @@ class OperatorsWithDataSeeder extends Seeder
                     'manufacturing_year' => rand(2015, 2024),
                     'injection_system' => $injectionSystemValue,
                     'fuel_consumption_rate' => round(rand(10, 50) + (rand(0, 99) / 100), 2),
+                    'ideal_fuel_efficiency' => round(0.4 + (rand(0, 20) / 100), 3), // قيمة عشوائية بين 0.4 و 0.6
                     'internal_tank_capacity' => rand(100, 500),
                     'measurement_indicator' => $measurementIndicatorValue,
                     'technical_condition' => $technicalConditionValue,
@@ -400,8 +469,12 @@ class OperatorsWithDataSeeder extends Seeder
                 // إنشاء خزانات وقود للمولد (إذا كان لديه خزانات)
                 if ($generator->fuel_tanks_count > 0) {
                     for ($t = 0; $t < $generator->fuel_tanks_count; $t++) {
+                        // توليد كود الخزان تلقائياً
+                        $tankCode = FuelTank::getNextTankCode($generator->id);
+                        
                         FuelTank::create([
                             'generator_id' => $generator->id,
+                            'tank_code' => $tankCode,
                             'capacity' => rand(100, 500),
                             'location' => ['داخلي', 'خارجي', 'أرضي', 'علوي'][rand(0, 3)],
                             'filtration_system_available' => rand(0, 1) === 1,
@@ -429,13 +502,16 @@ class OperatorsWithDataSeeder extends Seeder
             ];
 
             for ($k = 0; $k < 6; $k++) {
-                $employee = User::create([
-                    'name' => $employeeNames[$k],
-                    'username' => 'user_' . ($i + 1) . '_' . ($k + 1),
-                    'email' => 'user' . ($i + 1) . '_' . ($k + 1) . '@example.com',
-                    'password' => Hash::make('password'),
-                    'role' => $roles[$k],
-                ]);
+                $employee = User::firstOrCreate(
+                    ['email' => 'user' . ($i + 1) . '_' . ($k + 1) . '@example.com'],
+                    [
+                        'name' => $employeeNames[$k],
+                        'username' => 'user_' . ($i + 1) . '_' . ($k + 1),
+                        'password' => Hash::make('password'),
+                        'role' => $roles[$k],
+                        'status' => 'active',
+                    ]
+                );
 
                 // ربط الموظف/الفني بالمشغل
                 $operator->users()->attach($employee->id);
@@ -483,7 +559,7 @@ class OperatorsWithDataSeeder extends Seeder
                     $startTime = $operationDate->copy()->setTime(rand(6, 10), rand(0, 59));
                     $endTime = $startTime->copy()->addHours(rand(2, 12))->addMinutes(rand(0, 59));
                     
-                    $loadPercentage = round(rand(30, 100) + (rand(0, 99) / 100), 2);
+                    $loadPercentage = round(rand(30, 10000) / 100, 2); // بين 30.00 و 100.00
                     $fuelMeterStart = round(rand(0, 1000) + (rand(0, 99) / 100), 2);
                     $fuelMeterEnd = $fuelMeterStart + round(rand(10, 200) + (rand(0, 99) / 100), 2);
                     $fuelConsumed = $fuelMeterEnd - $fuelMeterStart;
@@ -554,7 +630,7 @@ class OperatorsWithDataSeeder extends Seeder
             $startTime = $operationDate->copy()->setTime(rand(6, 10), rand(0, 59));
             $endTime = $startTime->copy()->addHours(rand(2, 12))->addMinutes(rand(0, 59));
 
-            $loadPercentage = round(rand(30, 100) + (rand(0, 99) / 100), 2);
+            $loadPercentage = round(rand(30, 10000) / 100, 2); // بين 30.00 و 100.00
             $fuelMeterStart = round(rand(0, 1000) + (rand(0, 99) / 100), 2);
             $fuelMeterEnd = $fuelMeterStart + round(rand(10, 200) + (rand(0, 99) / 100), 2);
             $fuelConsumed = $fuelMeterEnd - $fuelMeterStart;
@@ -589,15 +665,37 @@ class OperatorsWithDataSeeder extends Seeder
             for ($i = 0; $i < $mmlukMaintenanceCount; $i++) {
                 $generator = $mmlukGenerators->random();
                 $maintenanceDate = now()->subDays(rand(0, 365));
+                $startHour = rand(8, 14);
+                $startMinute = rand(0, 59);
+                $endHour = $startHour + rand(2, 8);
+                $endMinute = rand(0, 59);
+                if ($endHour >= 24) {
+                    $endHour = 23;
+                    $endMinute = 59;
+                }
+                
+                $startTime = sprintf('%02d:%02d:00', $startHour, $startMinute);
+                $endTime = sprintf('%02d:%02d:00', $endHour, $endMinute);
+                
+                $laborHours = round(rand(2, 8) + (rand(0, 99) / 100), 2);
+                $laborRatePerHour = round(rand(50, 200) + (rand(0, 99) / 100), 2);
+                $partsCost = round(rand(100, 2000) + (rand(0, 99) / 100), 2);
+                $laborCost = round($laborHours * $laborRatePerHour, 2);
+                $maintenanceCost = round($partsCost + $laborCost, 2);
 
                 MaintenanceRecord::create([
                     'generator_id' => $generator->id,
                     'maintenance_type' => $maintenanceTypes[rand(0, count($maintenanceTypes) - 1)],
                     'maintenance_date' => $maintenanceDate,
+                    'start_time' => $startTime,
+                    'end_time' => $endTime,
                     'technician_name' => $technicianNames[rand(0, count($technicianNames) - 1)],
                     'work_performed' => 'تم إجراء ' . $maintenanceTypes[rand(0, count($maintenanceTypes) - 1)] . ' على المولد',
                     'downtime_hours' => round(rand(1, 24) + (rand(0, 99) / 100), 2),
-                    'maintenance_cost' => round(rand(100, 5000) + (rand(0, 99) / 100), 2),
+                    'parts_cost' => $partsCost,
+                    'labor_hours' => $laborHours,
+                    'labor_rate_per_hour' => $laborRatePerHour,
+                    'maintenance_cost' => $maintenanceCost,
                 ]);
             }
             $this->command->info('✓ تم إنشاء ' . $mmlukMaintenanceCount . ' سجل صيانة لمشغل المملوك');
@@ -612,15 +710,37 @@ class OperatorsWithDataSeeder extends Seeder
         for ($i = 0; $i < 100; $i++) {
             $generator = $otherGenerators->random();
             $maintenanceDate = now()->subDays(rand(0, 365));
+            $startHour = rand(8, 14);
+            $startMinute = rand(0, 59);
+            $endHour = $startHour + rand(2, 8);
+            $endMinute = rand(0, 59);
+            if ($endHour >= 24) {
+                $endHour = 23;
+                $endMinute = 59;
+            }
+            
+            $startTime = sprintf('%02d:%02d:00', $startHour, $startMinute);
+            $endTime = sprintf('%02d:%02d:00', $endHour, $endMinute);
+            
+            $laborHours = round(rand(2, 8) + (rand(0, 99) / 100), 2);
+            $laborRatePerHour = round(rand(50, 200) + (rand(0, 99) / 100), 2);
+            $partsCost = round(rand(100, 2000) + (rand(0, 99) / 100), 2);
+            $laborCost = round($laborHours * $laborRatePerHour, 2);
+            $maintenanceCost = round($partsCost + $laborCost, 2);
 
             MaintenanceRecord::create([
                 'generator_id' => $generator->id,
                 'maintenance_type' => $maintenanceTypes[rand(0, count($maintenanceTypes) - 1)],
                 'maintenance_date' => $maintenanceDate,
+                'start_time' => $startTime,
+                'end_time' => $endTime,
                 'technician_name' => $technicianNames[rand(0, count($technicianNames) - 1)],
                 'work_performed' => 'تم إجراء ' . $maintenanceTypes[rand(0, count($maintenanceTypes) - 1)] . ' على المولد',
                 'downtime_hours' => round(rand(1, 24) + (rand(0, 99) / 100), 2),
-                'maintenance_cost' => round(rand(100, 5000) + (rand(0, 99) / 100), 2),
+                'parts_cost' => $partsCost,
+                'labor_hours' => $laborHours,
+                'labor_rate_per_hour' => $laborRatePerHour,
+                'maintenance_cost' => $maintenanceCost,
             ]);
         }
         $this->command->info('✓ تم إنشاء 100 سجل صيانة للمشغلين الآخرين');
@@ -633,15 +753,17 @@ class OperatorsWithDataSeeder extends Seeder
 
             $operatingHours = round(rand(1, 24) + (rand(0, 99) / 100), 2);
             $fuelPricePerLiter = round(rand(5, 10) + (rand(0, 99) / 100), 2);
+            $fuelConsumed = round(rand(50, 500) + (rand(0, 99) / 100), 2);
             $fuelEfficiencyPercentage = round(rand(70, 95) + (rand(0, 99) / 100), 2);
             $energyDistributionEfficiency = round(rand(75, 98) + (rand(0, 99) / 100), 2);
-            $totalOperatingCost = round(rand(500, 5000) + (rand(0, 99) / 100), 2);
+            $totalOperatingCost = round($fuelConsumed * $fuelPricePerLiter, 2);
 
             FuelEfficiency::create([
                 'generator_id' => $generator->id,
                 'consumption_date' => $consumptionDate,
                 'operating_hours' => $operatingHours,
                 'fuel_price_per_liter' => $fuelPricePerLiter,
+                'fuel_consumed' => $fuelConsumed,
                 'fuel_efficiency_percentage' => $fuelEfficiencyPercentage,
                 'fuel_efficiency_comparison' => round($fuelEfficiencyPercentage + rand(-5, 5) + (rand(0, 99) / 100), 2),
                 'energy_distribution_efficiency' => $energyDistributionEfficiency,

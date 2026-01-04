@@ -12,7 +12,8 @@ class UpdateRoleRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return auth()->user()->isSuperAdmin();
+        $user = auth()->user();
+        return $user->isSuperAdmin() || $user->isCompanyOwner();
     }
 
     /**
@@ -24,7 +25,7 @@ class UpdateRoleRequest extends FormRequest
     {
         $role = $this->route('role');
 
-        return [
+        $rules = [
             'name' => [
                 'required',
                 'string',
@@ -37,6 +38,13 @@ class UpdateRoleRequest extends FormRequest
             'permissions' => ['nullable', 'array'],
             'permissions.*' => ['exists:permissions,id'],
         ];
+        
+        // السوبر أدمن فقط يمكنه تغيير المشغل
+        if (auth()->user()->isSuperAdmin()) {
+            $rules['operator_id'] = ['nullable', 'exists:operators,id'];
+        }
+        
+        return $rules;
     }
 
     /**

@@ -37,7 +37,7 @@
 
                             <div class="col-md-6">
                                 <label class="form-label">اسم المشغل <span class="text-danger">*</span></label>
-                                <input type="text" name="name" class="form-control @error('name') is-invalid @enderror" value="{{ old('name', $operator->name) }}" required>
+                                <input type="text" name="name" class="form-control @error('name') is-invalid @enderror" value="{{ old('name', $operator->name) }}">
                                 
                             </div>
 

@@ -79,7 +79,7 @@
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">الحالة <span class="text-danger">*</span></label>
-                                <select name="status" class="form-select" required>
+                                <select name="status" class="form-select">
                                     <option value="pending" {{ old('status', $complaintSuggestion->status) == 'pending' ? 'selected' : '' }}>قيد الانتظار</option>
                                     <option value="in_progress" {{ old('status', $complaintSuggestion->status) == 'in_progress' ? 'selected' : '' }}>قيد المعالجة</option>
                                     <option value="resolved" {{ old('status', $complaintSuggestion->status) == 'resolved' ? 'selected' : '' }}>تم الحل</option>

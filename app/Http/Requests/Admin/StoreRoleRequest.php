@@ -11,7 +11,8 @@ class StoreRoleRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return auth()->user()->isSuperAdmin();
+        $user = auth()->user();
+        return $user->isSuperAdmin() || $user->isCompanyOwner();
     }
 
     /**
@@ -21,7 +22,7 @@ class StoreRoleRequest extends FormRequest
      */
     public function rules(): array
     {
-        return [
+        $rules = [
             'name' => ['required', 'string', 'max:255', 'unique:roles,name'],
             'label' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
@@ -29,6 +30,13 @@ class StoreRoleRequest extends FormRequest
             'permissions' => ['nullable', 'array'],
             'permissions.*' => ['exists:permissions,id'],
         ];
+        
+        // السوبر أدمن فقط يمكنه اختيار المشغل
+        if (auth()->user()->isSuperAdmin()) {
+            $rules['operator_id'] = ['nullable', 'exists:operators,id'];
+        }
+        
+        return $rules;
     }
 
     /**

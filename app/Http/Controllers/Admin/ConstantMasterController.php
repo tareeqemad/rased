@@ -24,8 +24,9 @@ class ConstantMasterController extends Controller
 
         $query = ConstantMaster::withCount('allDetails');
 
-        if ($request->filled('search')) {
-            $search = $request->input('search');
+        // Search filter (using 'search' or 'q' parameter)
+        $search = trim((string) ($request->input('search') ?? $request->input('q', '')));
+        if ($search !== '') {
             $query->where(function ($q) use ($search) {
                 $q->where('constant_number', 'like', "%{$search}%")
                     ->orWhere('constant_name', 'like', "%{$search}%")
@@ -43,31 +44,30 @@ class ConstantMasterController extends Controller
 
         $constants = $query->orderBy('order')
             ->orderBy('constant_number')
-            ->paginate(15);
+            ->paginate(100);
 
         if ($request->ajax() || $request->has('ajax')) {
             $totalActive = ConstantMaster::where('is_active', true)->count();
             $totalInactive = ConstantMaster::where('is_active', false)->count();
             $totalDetails = ConstantMaster::withCount('allDetails')->get()->sum('all_details_count');
 
+            // Return HTML for tbody rows
+            $html = view('admin.constants.partials.tbody-rows', compact('constants'))->render();
+            $pagination = view('admin.constants.partials.pagination', compact('constants'))->render();
+            $modals = view('admin.constants.partials.modals', compact('constants'))->render();
+
             return response()->json([
                 'success' => true,
-                'data' => $constants->items(),
-                'meta' => [
-                    'current_page' => $constants->currentPage(),
-                    'last_page' => $constants->lastPage(),
-                    'per_page' => $constants->perPage(),
-                    'total' => $constants->total(),
-                    'from' => $constants->firstItem(),
-                    'to' => $constants->lastItem(),
-                ],
+                'html' => $html,
+                'pagination' => $pagination,
+                'count' => $constants->total(),
                 'stats' => [
                     'total' => $constants->total(),
                     'active' => $totalActive,
                     'inactive' => $totalInactive,
                     'details' => $totalDetails,
                 ],
-                'modals' => view('admin.constants.partials.modals', compact('constants'))->render(),
+                'modals' => $modals,
             ]);
         }
 
@@ -176,6 +176,10 @@ class ConstantMasterController extends Controller
                 return response()->json([
                     'success' => true,
                     'message' => $message,
+                    'data' => [
+                        'id' => $constantMaster->id,
+                        'constant' => $constantMaster,
+                    ],
                 ]);
             }
 
@@ -202,13 +206,47 @@ class ConstantMasterController extends Controller
     /**
      * Display detailed information about the specified constant master record.
      */
-    public function show(ConstantMaster $constant): View
+    public function show(Request $request, ConstantMaster $constant): View|JsonResponse
     {
         $this->authorize('view', $constant);
 
-        $constant->load('allDetails');
+        $query = $constant->allDetails();
 
-        return view('admin.constants.show', compact('constant'));
+        // Search filter
+        $search = trim((string) ($request->input('search') ?? $request->input('q', '')));
+        if ($search !== '') {
+            $query->where(function ($q) use ($search) {
+                $q->where('label', 'like', "%{$search}%")
+                    ->orWhere('code', 'like', "%{$search}%")
+                    ->orWhere('value', 'like', "%{$search}%")
+                    ->orWhere('notes', 'like', "%{$search}%");
+            });
+        }
+
+        // Status filter
+        if ($request->filled('status')) {
+            if ($request->input('status') === 'active') {
+                $query->where('is_active', true);
+            } elseif ($request->input('status') === 'inactive') {
+                $query->where('is_active', false);
+            }
+        }
+
+        $details = $query->orderBy('order')->orderBy('id')->paginate(15);
+
+        if ($request->ajax() || $request->has('ajax')) {
+            $html = view('admin.constants.partials.details-tbody-rows', compact('details'))->render();
+            $pagination = view('admin.constants.partials.details-pagination', compact('details'))->render();
+
+            return response()->json([
+                'success' => true,
+                'html' => $html,
+                'pagination' => $pagination,
+                'count' => $details->total(),
+            ]);
+        }
+
+        return view('admin.constants.show', compact('constant', 'details'));
     }
 
     /**

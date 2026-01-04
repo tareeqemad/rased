@@ -126,17 +126,17 @@ class GeneratorController extends Controller
         }
 
         $constants = [
-            'status' => ConstantsHelper::getByName('حالة المولد'),
-            'engine_type' => ConstantsHelper::getByName('نوع المحرك'),
-            'injection_system' => ConstantsHelper::getByName('نظام الحقن'),
-            'measurement_indicator' => ConstantsHelper::getByName('مؤشر القياس'),
-            'technical_condition' => ConstantsHelper::getByName('الحالة الفنية'),
-            'control_panel_type' => ConstantsHelper::getByName('نوع لوحة التحكم'),
-            'control_panel_status' => ConstantsHelper::getByName('حالة لوحة التحكم'),
-            'material' => ConstantsHelper::getByName('مادة التصنيع'),
-            'usage' => ConstantsHelper::getByName('الاستخدام'),
-            'measurement_method' => ConstantsHelper::getByName('طريقة القياس'),
-            'location' => ConstantsHelper::getByName('موقع الخزان'),
+            'status' => ConstantsHelper::get(3), // حالة المولد
+            'engine_type' => ConstantsHelper::get(4), // نوع المحرك
+            'injection_system' => ConstantsHelper::get(5), // نظام الحقن
+            'measurement_indicator' => ConstantsHelper::get(6), // مؤشر القياس
+            'technical_condition' => ConstantsHelper::get(7), // الحالة الفنية
+            'control_panel_type' => ConstantsHelper::get(8), // نوع لوحة التحكم
+            'control_panel_status' => ConstantsHelper::get(9), // حالة لوحة التحكم
+            'material' => ConstantsHelper::get(10), // مادة التصنيع
+            'usage' => ConstantsHelper::get(11), // الاستخدام
+            'measurement_method' => ConstantsHelper::get(19), // طريقة القياس
+            'location' => ConstantsHelper::get(18), // موقع الخزان
         ];
 
         return view('admin.generators.create', compact('operators', 'constants'));
@@ -203,12 +203,26 @@ class GeneratorController extends Controller
             $data['external_fuel_tank'] = (bool) $data['external_fuel_tank'];
         }
 
+        // توليد رقم المولد تلقائياً إذا لم يكن محدداً
+        if (empty($data['generator_number']) && isset($data['operator_id'])) {
+            $data['generator_number'] = Generator::getNextGeneratorNumber($data['operator_id']);
+            if (!$data['generator_number']) {
+                return redirect()->back()
+                    ->withInput()
+                    ->with('error', 'تعذر توليد رقم المولد. تأكد من أن المشغل لديه unit_code وأن عدد المولدات لم يتجاوز 99.');
+            }
+        }
+
         $generator = Generator::create($data);
 
         if (! empty($fuelTanksData)) {
             foreach ($fuelTanksData as $index => $tankData) {
+                // توليد كود الخزان تلقائياً
+                $tankCode = FuelTank::getNextTankCode($generator->id);
+                
                 FuelTank::create([
                     'generator_id' => $generator->id,
+                    'tank_code' => $tankCode,
                     'capacity' => $tankData['capacity'] ?? null,
                     'location' => $tankData['location'] ?? null,
                     'filtration_system_available' => $tankData['filtration_system_available'] ?? false,
@@ -276,17 +290,17 @@ class GeneratorController extends Controller
         }
 
         $constants = [
-            'status' => ConstantsHelper::getByName('حالة المولد'),
-            'engine_type' => ConstantsHelper::getByName('نوع المحرك'),
-            'injection_system' => ConstantsHelper::getByName('نظام الحقن'),
-            'measurement_indicator' => ConstantsHelper::getByName('مؤشر القياس'),
-            'technical_condition' => ConstantsHelper::getByName('الحالة الفنية'),
-            'control_panel_type' => ConstantsHelper::getByName('نوع لوحة التحكم'),
-            'control_panel_status' => ConstantsHelper::getByName('حالة لوحة التحكم'),
-            'material' => ConstantsHelper::getByName('مادة التصنيع'),
-            'usage' => ConstantsHelper::getByName('الاستخدام'),
-            'measurement_method' => ConstantsHelper::getByName('طريقة القياس'),
-            'location' => ConstantsHelper::getByName('موقع الخزان'),
+            'status' => ConstantsHelper::get(3), // حالة المولد
+            'engine_type' => ConstantsHelper::get(4), // نوع المحرك
+            'injection_system' => ConstantsHelper::get(5), // نظام الحقن
+            'measurement_indicator' => ConstantsHelper::get(6), // مؤشر القياس
+            'technical_condition' => ConstantsHelper::get(7), // الحالة الفنية
+            'control_panel_type' => ConstantsHelper::get(8), // نوع لوحة التحكم
+            'control_panel_status' => ConstantsHelper::get(9), // حالة لوحة التحكم
+            'material' => ConstantsHelper::get(10), // مادة التصنيع
+            'usage' => ConstantsHelper::get(11), // الاستخدام
+            'measurement_method' => ConstantsHelper::get(19), // طريقة القياس
+            'location' => ConstantsHelper::get(18), // موقع الخزان
         ];
 
         return view('admin.generators.edit', compact('generator', 'operators', 'constants'));
@@ -338,8 +352,12 @@ class GeneratorController extends Controller
 
         if (! empty($fuelTanksData)) {
             foreach ($fuelTanksData as $index => $tankData) {
+                // توليد كود الخزان تلقائياً
+                $tankCode = FuelTank::getNextTankCode($generator->id);
+                
                 FuelTank::create([
                     'generator_id' => $generator->id,
+                    'tank_code' => $tankCode,
                     'capacity' => $tankData['capacity'] ?? null,
                     'location' => $tankData['location'] ?? null,
                     'filtration_system_available' => $tankData['filtration_system_available'] ?? false,

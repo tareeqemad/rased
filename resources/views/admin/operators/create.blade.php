@@ -41,7 +41,7 @@
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">اسم المستخدم <span class="text-danger">*</span></label>
-                                <input type="text" name="username" id="username" class="form-control @error('username') is-invalid @enderror" value="{{ old('username') }}" required>
+                                <input type="text" name="username" id="username" class="form-control @error('username') is-invalid @enderror" value="{{ old('username') }}">
                                 @error('username')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -51,7 +51,7 @@
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">كلمة المرور <span class="text-danger">*</span></label>
                                 <div class="input-group">
-                                    <input type="password" name="password" id="password" class="form-control @error('password') is-invalid @enderror" required minlength="8">
+                                    <input type="password" name="password" id="password" class="form-control @error('password') is-invalid @enderror" minlength="8">
                                     <button class="btn btn-outline-secondary" type="button" id="togglePassword">
                                         <i class="bi bi-eye" id="togglePasswordIcon"></i>
                                     </button>

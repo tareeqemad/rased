@@ -5,7 +5,7 @@
             <span>
                 © {{ date('Y') }}
                 <a href="#" class="text-primary fw-semibold text-decoration-underline">
-                    راصد
+                    {{ \App\Models\Setting::get('site_name', 'راصد') }}
                 </a>
                 — جميع الحقوق محفوظة.
             </span>

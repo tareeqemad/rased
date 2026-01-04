@@ -16,6 +16,7 @@ class Role extends Model
         'description',
         'is_system',
         'order',
+        'operator_id',
     ];
 
     protected function casts(): array
@@ -34,6 +35,11 @@ class Role extends Model
     public function users(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(User::class);
+    }
+
+    public function operator(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Operator::class);
     }
 
     public function hasPermission(string $permissionName): bool

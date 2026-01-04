@@ -3,11 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>راصد - خريطة المشغلين</title>
+    @php
+        $siteName = \App\Models\Setting::get('site_name', 'راصد');
+    @endphp
+    <title>{{ $siteName }} - خريطة المشغلين</title>
     <meta name="description" content="خريطة تفاعلية لعرض جميع المشغلين في محافظات غزة. ابحث عن المشغلين في محافظتك واحصل على معلومات الاتصال الكاملة.">
-    <meta name="keywords" content="راصد, خريطة المشغلين, مولدات كهرباء, غزة, محافظات غزة, مشغلين">
-    <meta name="author" content="راصد">
-    <meta property="og:title" content="راصد - خريطة المشغلين">
+    <meta name="keywords" content="{{ $siteName }}, خريطة المشغلين, مولدات كهرباء, غزة, محافظات غزة, مشغلين">
+    <meta name="author" content="{{ $siteName }}">
+    <meta property="og:title" content="{{ $siteName }} - خريطة المشغلين">
     <meta property="og:description" content="خريطة تفاعلية لعرض جميع المشغلين في محافظات غزة">
     <meta property="og:type" content="website">
     <link rel="canonical" href="{{ url('/map') }}">
@@ -977,7 +980,7 @@
                     </svg>
                 </div>
                 <div>
-                    <h1>راصد - خريطة المشغلين</h1>
+                    <h1>{{ $siteName }} - خريطة المشغلين</h1>
                     <p>استكشف مواقع المشغلين على الخريطة</p>
                 </div>
             </div>

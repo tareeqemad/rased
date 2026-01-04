@@ -20,6 +20,7 @@ class DatabaseSeeder extends Seeder
             ConstantSeeder::class,
             UserSeeder::class,
             OperatorsWithDataSeeder::class,
+            ComplaintSuggestionSeeder::class,
         ]);
     }
 }

@@ -66,11 +66,112 @@ select:disabled,
     cursor: not-allowed !important;
 }
 
-/* Readonly Input - Default Cursor */
+/* Readonly Input - Not Allowed Cursor with Visual Feedback */
 input[readonly],
 textarea[readonly],
 select[readonly],
 .form-control[readonly],
 .form-select[readonly] {
-    cursor: default !important;
+    cursor: not-allowed !important;
+    background-color: #f8f9fa !important;
+    opacity: 0.85;
+    user-select: text; /* Allow text selection for copying */
+}
+
+input[readonly]:hover,
+textarea[readonly]:hover,
+select[readonly]:hover,
+.form-control[readonly]:hover,
+.form-select[readonly]:hover {
+    opacity: 1;
+    background-color: #e9ecef !important;
+}
+
+/* Dark Mode Support for Cards and Tables */
+[data-theme-mode=dark] .card {
+    background-color: rgb(var(--body-bg-rgb)) !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    color: #eaecf3 !important;
+}
+
+[data-theme-mode=dark] .card-header {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+    border-bottom-color: rgba(255, 255, 255, 0.1) !important;
+    color: #eaecf3 !important;
+}
+
+[data-theme-mode=dark] .card-header.bg-light {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+[data-theme-mode=dark] .card-body {
+    background-color: transparent !important;
+    color: #eaecf3 !important;
+}
+
+[data-theme-mode=dark] .table {
+    color: #eaecf3 !important;
+}
+
+[data-theme-mode=dark] .table thead th {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    color: #eaecf3 !important;
+}
+
+[data-theme-mode=dark] .table tbody tr {
+    border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+[data-theme-mode=dark] .table tbody tr:hover {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+[data-theme-mode=dark] .table td,
+[data-theme-mode=dark] .table th {
+    border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+[data-theme-mode=dark] .form-control,
+[data-theme-mode=dark] .form-select {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    color: #eaecf3 !important;
+}
+
+[data-theme-mode=dark] .form-control:focus,
+[data-theme-mode=dark] .form-select:focus {
+    background-color: rgba(255, 255, 255, 0.08) !important;
+    border-color: rgb(var(--primary-rgb)) !important;
+    color: #eaecf3 !important;
+}
+
+[data-theme-mode=dark] .form-control::placeholder,
+[data-theme-mode=dark] .form-select::placeholder {
+    color: rgba(234, 236, 243, 0.5) !important;
+}
+
+[data-theme-mode=dark] .text-muted {
+    color: rgba(234, 236, 243, 0.6) !important;
+}
+
+[data-theme-mode=dark] .border {
+    border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+[data-theme-mode=dark] input[readonly],
+[data-theme-mode=dark] textarea[readonly],
+[data-theme-mode=dark] select[readonly],
+[data-theme-mode=dark] .form-control[readonly],
+[data-theme-mode=dark] .form-select[readonly] {
+    background-color: rgba(255, 255, 255, 0.03) !important;
+    color: rgba(234, 236, 243, 0.7) !important;
+}
+
+[data-theme-mode=dark] input[readonly]:hover,
+[data-theme-mode=dark] textarea[readonly]:hover,
+[data-theme-mode=dark] select[readonly]:hover,
+[data-theme-mode=dark] .form-control[readonly]:hover,
+[data-theme-mode=dark] .form-select[readonly]:hover {
+    background-color: rgba(255, 255, 255, 0.05) !important;
 }

@@ -1,6 +1,9 @@
 @extends('layouts.front')
 
-@section('title', 'خريطة المشغلين - راصد')
+@php
+    $siteName = $siteName ?? \App\Models\Setting::get('site_name', 'راصد');
+@endphp
+@section('title', 'خريطة المشغلين - ' . $siteName)
 
 @push('styles')
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -379,17 +382,17 @@
 
     .map-layout-modern {
         display: grid;
-        grid-template-columns: 380px 1fr;
-        gap: 2rem;
+        grid-template-columns: 1fr 240px;
+        gap: 1rem;
         margin-top: 2rem;
     }
 
     .map-sidebar-modern {
         background: white;
-        border-radius: 20px;
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+        border-radius: 12px;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
         padding: 0;
-        max-height: 750px;
+        height: 750px;
         overflow: hidden;
         display: flex;
         flex-direction: column;
@@ -399,26 +402,32 @@
     .sidebar-header-modern {
         background: linear-gradient(135deg, #19228f 0%, #1e3a8a 100%);
         color: white;
-        padding: 1.5rem;
-        border-radius: 20px 20px 0 0;
+        padding: 0.85rem 1rem;
+        border-radius: 12px 12px 0 0;
     }
 
     .sidebar-header-modern h3 {
-        font-size: 1.25rem;
+        font-size: 1rem;
         font-weight: 800;
-        margin-bottom: 0.5rem;
+        margin-bottom: 0.3rem;
+        line-height: 1.3;
     }
 
     .sidebar-header-modern .count {
-        font-size: 0.9rem;
+        font-size: 0.8rem;
         opacity: 0.9;
         display: flex;
         align-items: center;
-        gap: 0.5rem;
+        gap: 0.35rem;
+    }
+
+    .sidebar-header-modern .count svg {
+        width: 14px;
+        height: 14px;
     }
 
     .sidebar-content {
-        padding: 1.5rem;
+        padding: 0.75rem;
         overflow-y: auto;
         flex: 1;
     }
@@ -430,10 +439,10 @@
     }
 
     .operators-list-modern li {
-        padding: 1.25rem;
-        margin-bottom: 1rem;
+        padding: 0.75rem;
+        margin-bottom: 0.6rem;
         background: #f8fafc;
-        border-radius: 12px;
+        border-radius: 8px;
         cursor: pointer;
         transition: all 0.3s ease;
         border: 2px solid transparent;
@@ -474,17 +483,30 @@
         transform: scaleY(1);
     }
 
-    .operator-name-modern {
-        font-weight: 800;
+    .operator-name-modern,
+    .operators-list-modern li .operator-name {
+        font-weight: 700;
         color: #1e293b;
-        margin-bottom: 0.5rem;
-        font-size: 1.05rem;
+        margin-bottom: 0.35rem;
+        font-size: 0.9rem;
+        line-height: 1.3;
     }
 
-    .operator-details-modern {
-        font-size: 0.9rem;
+    .operator-details-modern,
+    .operators-list-modern li .operator-details {
+        font-size: 0.75rem;
         color: #64748b;
-        line-height: 1.6;
+        line-height: 1.4;
+    }
+
+    .operators-list-modern li .operator-details br {
+        display: none;
+    }
+
+    .operators-list-modern li .operator-details {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
     }
 
     .map-wrapper-modern {
@@ -591,6 +613,12 @@
     }
 
     /* Responsive Design */
+    @media (max-width: 1200px) {
+        .map-layout-modern {
+            grid-template-columns: 1fr 220px;
+        }
+    }
+
     @media (max-width: 1024px) {
         .map-layout-modern {
             grid-template-columns: 1fr;
@@ -788,14 +816,9 @@
                 <div class="stats-preview-modern" id="statsPreview">
                     <!-- سيتم ملؤها ديناميكياً -->
                 </div>
-            </div>
-        </div>
-    </div>
 
-    <!-- Map Section -->
-    <div class="map-section">
-        <div class="container">
-            <div class="map-layout-modern" id="mapLayout" style="display: none;">
+                <!-- Map and Operators List inside search card -->
+                <div class="map-layout-modern" id="mapLayout" style="display: none; margin-top: 2rem;">
                 <div class="map-sidebar-modern" id="sidebar">
                     <div class="sidebar-header-modern">
                         <h3>قائمة المشغلين</h3>
@@ -836,8 +859,12 @@
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
 
-            <!-- Welcome Message -->
+    <!-- Welcome Message -->
+    <div class="map-section">
+        <div class="container">
             <div class="welcome-message-modern" id="welcomeMessage">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>

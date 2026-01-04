@@ -2,8 +2,12 @@
     'use strict';
     if (localStorage.getItem("nowadarktheme")) {
         document.querySelector("html").setAttribute("data-theme-mode", "dark")
-        document.querySelector("html").setAttribute("data-menu-styles", "dark")
         document.querySelector("html").setAttribute("data-header-styles", "dark")
+        // لا تغيير menu-styles تلقائياً، احتفظ بالقيمة الحالية (من localStorage أو الإعدادات)
+        const savedMenuStyle = localStorage.getItem("nowaMenu");
+        if (savedMenuStyle) {
+            document.querySelector("html").setAttribute("data-menu-styles", savedMenuStyle)
+        }
     }
     if (localStorage.nowartl) {
         let html = document.querySelector('html');

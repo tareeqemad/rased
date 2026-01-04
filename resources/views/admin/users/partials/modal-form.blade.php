@@ -21,25 +21,25 @@
     <div class="row g-3">
         <div class="col-md-6">
             <label class="form-label">الاسم <span class="text-danger">*</span></label>
-            <input name="name" class="form-control" value="{{ old('name', $user->name ?? '') }}" required>
+            <input name="name" class="form-control" value="{{ old('name', $user->name ?? '') }}">
             <div class="text-danger small mt-1 d-none" data-error-for="name"></div>
         </div>
 
         <div class="col-md-6">
             <label class="form-label">اسم المستخدم <span class="text-danger">*</span></label>
-            <input name="username" class="form-control" value="{{ old('username', $user->username ?? '') }}" required>
+            <input name="username" class="form-control" value="{{ old('username', $user->username ?? '') }}">
             <div class="text-danger small mt-1 d-none" data-error-for="username"></div>
         </div>
 
         <div class="col-md-6">
             <label class="form-label">البريد الإلكتروني <span class="text-danger">*</span></label>
-            <input type="email" name="email" class="form-control" value="{{ old('email', $user->email ?? '') }}" required>
+            <input type="email" name="email" class="form-control" value="{{ old('email', $user->email ?? '') }}">
             <div class="text-danger small mt-1 d-none" data-error-for="email"></div>
         </div>
 
         <div class="col-md-6">
             <label class="form-label">الدور <span class="text-danger">*</span></label>
-            <select name="role" id="roleSelect" class="form-select" required>
+            <select name="role" id="roleSelect" class="form-select">
                 <option value="">اختر الدور</option>
                 @foreach($roles as $r)
                     <option value="{{ $r->value }}" {{ (string)$selectedRole === (string)$r->value ? 'selected' : '' }}>
@@ -78,7 +78,7 @@
             <label class="form-label">
                 كلمة المرور @if($isCreate)<span class="text-danger">*</span>@endif
             </label>
-            <input type="password" name="password" class="form-control" @if($isCreate) required minlength="8" @endif>
+            <input type="password" name="password" class="form-control" @if($isCreate) minlength="8" @endif>
             <div class="text-danger small mt-1 d-none" data-error-for="password"></div>
             <div class="help small text-muted mt-1">
                 {{ $isCreate ? '8 أحرف على الأقل.' : 'اتركها فارغة إذا لا تريد تغييرها.' }}
@@ -89,7 +89,7 @@
             <label class="form-label">
                 تأكيد كلمة المرور @if($isCreate)<span class="text-danger">*</span>@endif
             </label>
-            <input type="password" name="password_confirmation" class="form-control" @if($isCreate) required minlength="8" @endif>
+            <input type="password" name="password_confirmation" class="form-control" @if($isCreate) minlength="8" @endif>
         </div>
     </div>
 

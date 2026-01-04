@@ -19,6 +19,10 @@ return new class extends Migration
             $table->string('phone_alt')->nullable();
             $table->text('address')->nullable();
             $table->foreignId('owner_id')->constrained('users')->cascadeOnDelete();
+            
+            // تتبع المستخدمين
+            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('last_updated_by')->nullable()->constrained('users')->nullOnDelete();
 
             // بيانات الوحدة
             $table->string('unit_number')->nullable();
@@ -55,6 +59,10 @@ return new class extends Migration
 
             $table->timestamps();
             $table->softDeletes();
+            
+            // فهارس للبحث السريع
+            $table->index(['governorate', 'city'], 'idx_operators_location');
+            $table->index(['name', 'unit_number'], 'idx_operators_search');
         });
     }
 

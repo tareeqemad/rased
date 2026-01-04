@@ -43,47 +43,41 @@
                             @method('PUT')
 
                     <!-- Navigation Tabs -->
-                    <ul class="nav nav-pills mb-4 bg-light p-2 rounded-3" id="generatorTabs" role="tablist">
-                        <li class="nav-item flex-fill" role="presentation">
-                            <button class="nav-link active w-100 fw-semibold position-relative" id="basic-tab" data-bs-toggle="pill" 
+                    <ul class="nav nav-tabs mb-4 border-bottom" id="generatorTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="basic-tab" data-bs-toggle="tab" 
                                     data-bs-target="#basic" type="button" role="tab">
-                                <i class="bi bi-info-circle me-2"></i><span class="d-none d-md-inline">المعلومات الأساسية</span><span class="d-md-none">أساسي</span>
-                                <span class="badge bg-white text-primary position-absolute top-0 start-0 m-1" style="font-size: 0.65rem;">1</span>
+                                أساسي
                             </button>
                         </li>
-                        <li class="nav-item flex-fill" role="presentation">
-                            <button class="nav-link w-100 fw-semibold position-relative" id="specs-tab" data-bs-toggle="pill" 
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="specs-tab" data-bs-toggle="tab" 
                                     data-bs-target="#specs" type="button" role="tab">
-                                <i class="bi bi-gear me-2"></i><span class="d-none d-md-inline">المواصفات الفنية</span><span class="d-md-none">مواصفات</span>
-                                <span class="badge bg-white text-muted position-absolute top-0 start-0 m-1" style="font-size: 0.65rem;">2</span>
+                                مواصفات
                             </button>
                         </li>
-                        <li class="nav-item flex-fill" role="presentation">
-                            <button class="nav-link w-100 fw-semibold position-relative" id="fuel-tab" data-bs-toggle="pill" 
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="fuel-tab" data-bs-toggle="tab" 
                                     data-bs-target="#fuel" type="button" role="tab">
-                                <i class="bi bi-fuel-pump me-2"></i><span class="d-none d-md-inline">التشغيل والوقود</span><span class="d-md-none">تشغيل</span>
-                                <span class="badge bg-white text-muted position-absolute top-0 start-0 m-1" style="font-size: 0.65rem;">3</span>
+                                وقود
                             </button>
                         </li>
-                        <li class="nav-item flex-fill" role="presentation">
-                            <button class="nav-link w-100 fw-semibold position-relative" id="technical-tab" data-bs-toggle="pill" 
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="technical-tab" data-bs-toggle="tab" 
                                     data-bs-target="#technical" type="button" role="tab">
-                                <i class="bi bi-clipboard-check me-2"></i><span class="d-none d-md-inline">الحالة الفنية</span><span class="d-md-none">حالة</span>
-                                <span class="badge bg-white text-muted position-absolute top-0 start-0 m-1" style="font-size: 0.65rem;">4</span>
+                                حالة
                             </button>
                         </li>
-                        <li class="nav-item flex-fill" role="presentation">
-                            <button class="nav-link w-100 fw-semibold position-relative" id="control-tab" data-bs-toggle="pill" 
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="control-tab" data-bs-toggle="tab" 
                                     data-bs-target="#control" type="button" role="tab">
-                                <i class="bi bi-cpu me-2"></i><span class="d-none d-md-inline">نظام التحكم</span><span class="d-md-none">تحكم</span>
-                                <span class="badge bg-white text-muted position-absolute top-0 start-0 m-1" style="font-size: 0.65rem;">5</span>
+                                تحكم
                             </button>
                         </li>
-                        <li class="nav-item flex-fill" role="presentation">
-                            <button class="nav-link w-100 fw-semibold position-relative" id="tanks-tab" data-bs-toggle="pill" 
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="tanks-tab" data-bs-toggle="tab" 
                                     data-bs-target="#tanks" type="button" role="tab">
-                                <i class="bi bi-droplet me-2"></i><span class="d-none d-md-inline">خزانات الوقود</span><span class="d-md-none">خزانات</span>
-                                <span class="badge bg-white text-muted position-absolute top-0 start-0 m-1" style="font-size: 0.65rem;">6</span>
+                                خزانات
                             </button>
                         </li>
                     </ul>
@@ -97,19 +91,20 @@
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">اسم المولد <span class="text-danger">*</span></label>
                                 <input type="text" name="name" class="form-control @error('name') is-invalid @enderror" 
-                                       value="{{ old('name', $generator->name) }}" required>
+                                       value="{{ old('name', $generator->name) }}">
                                 
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold">رقم المولد (رقم فريد) <span class="text-danger">*</span></label>
-                                <input type="text" name="generator_number" class="form-control @error('generator_number') is-invalid @enderror" 
-                                       value="{{ old('generator_number', $generator->generator_number) }}" required>
+                                <label class="form-label fw-semibold">رقم المولد <span class="text-danger">*</span></label>
+                                <input type="text" name="generator_number" id="generator_number" class="form-control @error('generator_number') is-invalid @enderror" 
+                                       value="{{ old('generator_number', $generator->generator_number) }}" readonly placeholder="يتم توليده تلقائياً">
+                                <div class="form-text">يتم توليد رقم المولد تلقائياً بناءً على كود وحدة التوليد (الصيغة: {unit_code}-GXX)</div>
                                 
                             </div>
                             @if(auth()->user()->isSuperAdmin())
                                 <div class="col-md-6">
                                     <label class="form-label fw-semibold">المشغل <span class="text-danger">*</span></label>
-                                    <select name="operator_id" class="form-select @error('operator_id') is-invalid @enderror" required>
+                                    <select name="operator_id" class="form-select @error('operator_id') is-invalid @enderror">
                                         <option value="">اختر المشغل</option>
                                         @foreach($operators as $operator)
                                             <option value="{{ $operator->id }}" {{ old('operator_id', $generator->operator_id) == $operator->id ? 'selected' : '' }}>
@@ -124,7 +119,7 @@
                             @endif
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">حالة المولد <span class="text-danger">*</span></label>
-                                <select name="status" class="form-select @error('status') is-invalid @enderror" required>
+                                <select name="status" class="form-select @error('status') is-invalid @enderror">
                                     <option value="">اختر الحالة</option>
                                     @foreach($constants['status'] ?? [] as $status)
                                         <option value="{{ $status->id }}" {{ old('status', $generator->status) == $status->id ? 'selected' : '' }}>
@@ -232,6 +227,15 @@
                                 <input type="number" step="0.01" name="fuel_consumption_rate" class="form-control @error('fuel_consumption_rate') is-invalid @enderror" 
                                        value="{{ old('fuel_consumption_rate', $generator->fuel_consumption_rate) }}" min="0">
                                 
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">كفاءة الوقود المثالية (kWh/لتر)</label>
+                                <input type="number" step="0.001" name="ideal_fuel_efficiency" class="form-control @error('ideal_fuel_efficiency') is-invalid @enderror" 
+                                       value="{{ old('ideal_fuel_efficiency', $generator->ideal_fuel_efficiency ?? '0.5') }}" min="0" max="10" placeholder="0.5">
+                                <small class="form-text text-muted">تستخدم لحساب الفاقد في الوقود في لوحة التحكم (القيمة الافتراضية: 0.5)</small>
+                                @error('ideal_fuel_efficiency')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">سعة خزان الوقود الداخلي (لتر)</label>
@@ -409,7 +413,7 @@
                                         <div class="row g-3">
                                             <div class="col-md-6">
                                                 <label class="form-label fw-semibold">خزان وقود خارجي <span class="text-danger">*</span></label>
-                                                <select name="external_fuel_tank" id="external_fuel_tank" class="form-select @error('external_fuel_tank') is-invalid @enderror" required>
+                                                <select name="external_fuel_tank" id="external_fuel_tank" class="form-select @error('external_fuel_tank') is-invalid @enderror">
                                                     <option value="0" {{ old('external_fuel_tank', $generator->external_fuel_tank ? '1' : '0') == '0' ? 'selected' : '' }}>لا</option>
                                                     <option value="1" {{ old('external_fuel_tank', $generator->external_fuel_tank ? '1' : '0') == '1' ? 'selected' : '' }}>نعم</option>
                                                 </select>
@@ -463,46 +467,39 @@
 
 @push('styles')
 <style>
-    /* تحسين التابات */
-    .nav-pills .nav-link {
+    /* تبسيط التابات */
+    .nav-tabs {
+        border-bottom: 2px solid #e9ecef;
+    }
+    
+    .nav-tabs .nav-link {
         color: #6c757d;
-        border-radius: 0.5rem;
-        transition: all 0.3s ease;
-        padding: 0.75rem 1rem;
+        border: none;
+        border-bottom: 2px solid transparent;
+        padding: 0.75rem 1.25rem;
         font-size: 0.9rem;
-        position: relative;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        background: transparent;
     }
     
-    .nav-pills .nav-link .badge {
-        transition: all 0.3s ease;
+    .nav-tabs .nav-link:hover {
+        color: #19228f;
+        border-bottom-color: #dee2e6;
     }
     
-    .nav-pills .nav-link:hover {
-        background-color: rgba(37, 99, 235, 0.1);
-        color: #2563eb;
-        transform: translateY(-2px);
-    }
-    
-    .nav-pills .nav-link.active {
-        background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
-        color: white !important;
-        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
-    }
-    
-    .nav-pills .nav-link.active .badge {
-        background-color: rgba(255,255,255,0.3) !important;
-        color: white !important;
+    .nav-tabs .nav-link.active {
+        color: #19228f;
+        border-bottom-color: #19228f;
+        background: transparent;
+        font-weight: 600;
     }
     
     /* استجابة للشاشات الصغيرة */
     @media (max-width: 768px) {
-        .nav-pills .nav-link {
-            font-size: 0.75rem;
-            padding: 0.5rem 0.5rem;
-        }
-        
-        .nav-pills .nav-link i {
-            font-size: 0.85rem;
+        .nav-tabs .nav-link {
+            font-size: 0.8rem;
+            padding: 0.6rem 0.8rem;
         }
     }
     
@@ -665,7 +662,6 @@
 @endpush
 
 @push('scripts')
-<script src="{{ asset('assets/admin/libs/jquery/jquery.min.js') }}"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         let currentTab = 0;
@@ -832,24 +828,36 @@
                         $form.find('.invalid-feedback').remove();
 
                         $.each(errors, function(field, messages) {
-                            const $field = $form.find('[name="' + field + '"]');
-                            if ($field.length) {
-                                $field.addClass('is-invalid');
-                                const errorMsg = Array.isArray(messages) ? messages[0] : messages;
-                                if (!firstError) firstError = errorMsg;
-                                $field.after('<div class="invalid-feedback d-block">' + errorMsg + '</div>');
-                            } else {
+                            const errorMsg = Array.isArray(messages) ? messages[0] : messages;
+                            if (!firstError) firstError = errorMsg;
+                            
+                            // معالجة أخطاء خزانات الوقود (fuel_tanks.0.capacity)
+                            if (field.startsWith('fuel_tanks.')) {
                                 const fieldParts = field.split('.');
-                                if (fieldParts[0] === 'fuel_tanks' && fieldParts.length >= 3) {
+                                if (fieldParts.length >= 3) {
                                     const tankIndex = fieldParts[1];
                                     const tankField = fieldParts[2];
                                     const $tankField = $form.find('[name="fuel_tanks[' + tankIndex + '][' + tankField + ']"]');
                                     if ($tankField.length) {
                                         $tankField.addClass('is-invalid');
-                                        const errorMsg = Array.isArray(messages) ? messages[0] : messages;
-                                        if (!firstError) firstError = errorMsg;
+                                        $tankField.closest('.col-md-6, .col-md-4, .col-md-12').find('.invalid-feedback').remove();
                                         $tankField.after('<div class="invalid-feedback d-block">' + errorMsg + '</div>');
+                                        
+                                        // إظهار تنبيه في كارد الخزان
+                                        const $tankCard = $tankField.closest('.card');
+                                        if ($tankCard.length) {
+                                            $tankCard.addClass('border-danger');
+                                            $tankCard.find('.card-header').addClass('bg-danger bg-opacity-10');
+                                        }
                                     }
+                                }
+                            } else {
+                                // معالجة الحقول العادية
+                                const $field = $form.find('[name="' + field + '"]');
+                                if ($field.length) {
+                                    $field.addClass('is-invalid');
+                                    $field.closest('.col-md-6, .col-md-4, .col-md-12').find('.invalid-feedback').remove();
+                                    $field.after('<div class="invalid-feedback d-block">' + errorMsg + '</div>');
                                 }
                             }
                         });
@@ -937,7 +945,7 @@
         }
         
         // Listen to tab changes
-        document.querySelectorAll('#generatorTabs button[data-bs-toggle="pill"]').forEach((tabButton, index) => {
+        document.querySelectorAll('#generatorTabs button[data-bs-toggle="tab"]').forEach((tabButton, index) => {
             tabButton.addEventListener('shown.bs.tab', function() {
                 currentTab = index;
                 updateNavigationButtons();
@@ -1137,17 +1145,18 @@
                             <div class="row g-3">
                                 <div class="col-md-6">
                                     <label class="form-label fw-semibold">سعة الخزان ${i} (لتر) <span class="text-danger">*</span></label>
-                                    <select name="fuel_tanks[${i-1}][capacity]" class="form-select" required>
-                                        <option value="">اختر السعة</option>
-                                        ${Array.from({length: 10}, (_, j) => {
-                                            const capacity = (j + 1) * 50;
-                                            return `<option value="${capacity}">${capacity} لتر</option>`;
-                                        }).join('')}
-                                    </select>
+                                    <input type="number" 
+                                           name="fuel_tanks[${i-1}][capacity]" 
+                                           class="form-control" 
+                                           min="0" 
+                                           max="10000" 
+                                           step="1"
+                                           placeholder="أدخل السعة باللتر">
+                                    <small class="form-text text-muted">يمكن إدخال سعة تصل إلى 10000 لتر</small>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label fw-semibold">موقع الخزان ${i} <span class="text-danger">*</span></label>
-                                    <select name="fuel_tanks[${i-1}][location]" class="form-select" required>
+                                    <select name="fuel_tanks[${i-1}][location]" class="form-select">
                                         <option value="">اختر الموقع</option>
                                         ${(window.GENERATOR_CONSTANTS.location && window.GENERATOR_CONSTANTS.location.length > 0) 
                                             ? window.GENERATOR_CONSTANTS.location.map(loc => `<option value="${loc.id}">${loc.label}</option>`).join('')
@@ -1172,7 +1181,7 @@
                                         <option value="">اختر المادة</option>
                                         ${(window.GENERATOR_CONSTANTS.material && window.GENERATOR_CONSTANTS.material.length > 0) 
                                             ? window.GENERATOR_CONSTANTS.material.map(mat => `<option value="${mat.id}">${mat.label}</option>`).join('')
-                                            : '<option value="حديد">حديد</option><option value="بلاستيك">بلاستيك</option><option value="مقوى">مقوى</option><option value="فايبر">فايبر</option>'
+                                            : '<option value="حديد">حديد</option><option value="بلاستيك">بلاستيك</option><option value="بلاستيك مقوي">بلاستيك مقوي</option><option value="فايبر">فايبر</option>'
                                         }
                                     </select>
                                 </div>
@@ -1192,7 +1201,7 @@
                                         <option value="">اختر الطريقة</option>
                                         ${(window.GENERATOR_CONSTANTS.measurement_method && window.GENERATOR_CONSTANTS.measurement_method.length > 0) 
                                             ? window.GENERATOR_CONSTANTS.measurement_method.map(method => `<option value="${method.id}">${method.label}</option>`).join('')
-                                            : '<option value="سيخ">سيخ</option><option value="مدرج">مدرج</option><option value="ساعه ميكانيكية">ساعه ميكانيكية</option><option value="حساس الكتروني">حساس الكتروني</option><option value="خرطوم شفاف">خرطوم شفاف</option>'
+                                            : '<option value="سيخ مدرج">سيخ مدرج</option><option value="ساعه ميكانيكية">ساعه ميكانيكية</option><option value="حساس الكتروني">حساس الكتروني</option><option value="خرطوم شفاف">خرطوم شفاف</option>'
                                         }
                                     </select>
                                 </div>
@@ -1208,7 +1217,7 @@
         @if($generator->external_fuel_tank && $generator->fuelTanks->count() > 0)
             renderFuelTanks({{ $generator->fuelTanks->count() }});
             @foreach($generator->fuelTanks as $index => $tank)
-                document.querySelector(`select[name="fuel_tanks[{{ $index }}][capacity]"]`).value = '{{ $tank->capacity }}';
+                document.querySelector(`input[name="fuel_tanks[{{ $index }}][capacity]"]`).value = '{{ $tank->capacity }}';
                 document.querySelector(`select[name="fuel_tanks[{{ $index }}][location]"]`).value = '{{ $tank->location }}';
                 document.querySelector(`select[name="fuel_tanks[{{ $index }}][filtration_system_available]"]`).value = '{{ $tank->filtration_system_available ? 1 : 0 }}';
                 document.querySelector(`input[name="fuel_tanks[{{ $index }}][condition]"]`).value = '{{ $tank->condition ?? '' }}';

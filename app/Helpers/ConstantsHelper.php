@@ -63,6 +63,49 @@ class ConstantsHelper
     }
 
     /**
+     * الحصول على المدن حسب المحافظة
+     */
+    public static function getCitiesByGovernorate(int $governorateDetailId): \Illuminate\Support\Collection
+    {
+        return Cache::remember("cities_by_governorate_{$governorateDetailId}", 3600, function () use ($governorateDetailId) {
+            $citiesMaster = ConstantMaster::findByNumber(20);
+            
+            if (!$citiesMaster) {
+                return collect();
+            }
+            
+            return ConstantDetail::where('constant_master_id', $citiesMaster->id)
+                ->where('parent_detail_id', $governorateDetailId)
+                ->where('is_active', true)
+                ->orderBy('order')
+                ->get();
+        });
+    }
+
+    /**
+     * الحصول على المدن حسب كود المحافظة
+     */
+    public static function getCitiesByGovernorateCode(string $governorateCode): \Illuminate\Support\Collection
+    {
+        $governoratesMaster = ConstantMaster::findByNumber(1);
+        
+        if (!$governoratesMaster) {
+            return collect();
+        }
+        
+        $governorate = ConstantDetail::where('constant_master_id', $governoratesMaster->id)
+            ->where('code', $governorateCode)
+            ->where('is_active', true)
+            ->first();
+        
+        if (!$governorate) {
+            return collect();
+        }
+        
+        return self::getCitiesByGovernorate($governorate->id);
+    }
+
+    /**
      * مسح الكاش
      */
     public static function clearCache(?int $constantNumber = null): void

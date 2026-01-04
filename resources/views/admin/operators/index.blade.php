@@ -39,39 +39,55 @@
                             </div>
                         </div>
 
-                        <div class="op-toolbar mt-3">
-                            <div class="row g-2 align-items-center">
-                                <div class="col-lg-6">
-                                    <div class="op-search">
-                                        <i class="bi bi-search"></i>
-                                        <input type="text" id="opSearch" class="form-control"
-                                               placeholder="ابحث بالاسم / رقم الوحدة / اسم المستخدم..."
-                                               value="{{ $q ?? '' }}">
-                                        <button type="button" class="btn op-clear" id="opClearBtn" title="مسح البحث">
-                                            <i class="bi bi-x-circle"></i>
-                                        </button>
+                        {{-- كارد واحد للفلاتر --}}
+                        <div class="card border mt-3 mb-3">
+                            <div class="card-header bg-light">
+                                <h6 class="card-title mb-0">
+                                    <i class="bi bi-funnel me-2"></i>
+                                    فلاتر البحث
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-lg-6">
+                                        <label class="form-label fw-semibold">
+                                            <i class="bi bi-search me-1"></i>
+                                            البحث
+                                        </label>
+                                        <div class="op-search">
+                                            <i class="bi bi-search"></i>
+                                            <input type="text" id="opSearch" class="form-control"
+                                                   placeholder="ابحث بالاسم / رقم الوحدة / اسم المستخدم..."
+                                                   value="{{ $q ?? '' }}">
+                                            <button type="button" class="btn op-clear" id="opClearBtn" title="مسح البحث">
+                                                <i class="bi bi-x-circle"></i>
+                                            </button>
+                                        </div>
                                     </div>
-                                </div>
 
-                                <div class="col-lg-3">
-                                    <select id="opStatus" class="form-select">
-                                        <option value="">كل الحالات</option>
-                                        <option value="active" {{ ($status ?? '') === 'active' ? 'selected' : '' }}>فعّال</option>
-                                        <option value="inactive" {{ ($status ?? '') === 'inactive' ? 'selected' : '' }}>غير فعّال</option>
-                                    </select>
-                                </div>
+                                    <div class="col-lg-3">
+                                        <label class="form-label fw-semibold">
+                                            <i class="bi bi-funnel me-1"></i>
+                                            الحالة
+                                        </label>
+                                        <select id="opStatus" class="form-select">
+                                            <option value="">كل الحالات</option>
+                                            <option value="active" {{ ($status ?? '') === 'active' ? 'selected' : '' }}>فعّال</option>
+                                            <option value="inactive" {{ ($status ?? '') === 'inactive' ? 'selected' : '' }}>غير فعّال</option>
+                                        </select>
+                                    </div>
 
-                                <div class="col-lg-2">
-                                    <button class="btn btn-primary w-100" id="btnOpSearch">
-                                        <i class="bi bi-search me-1"></i>
-                                        بحث
-                                    </button>
-                                </div>
-                                <div class="col-lg-2 d-flex justify-content-lg-end">
-                                    <button class="btn btn-outline-secondary w-100" id="opRefreshBtn">
-                                        <i class="bi bi-arrow-clockwise me-1"></i>
-                                        تحديث
-                                    </button>
+                                    <div class="col-lg-3 d-flex align-items-end">
+                                        <div class="d-flex gap-2 w-100">
+                                            <button class="btn btn-primary flex-fill" id="btnOpSearch">
+                                                <i class="bi bi-search me-1"></i>
+                                                بحث
+                                            </button>
+                                            <button class="btn btn-outline-secondary" id="opRefreshBtn" title="تحديث">
+                                                <i class="bi bi-arrow-clockwise"></i>
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -273,8 +289,6 @@
 @endsection
 
 @push('scripts')
-<script src="{{ asset('assets/admin/libs/jquery/jquery.min.js') }}"></script>
-
 <script>
 (function () {
     // ====== Toast helper (Bootstrap Toast عبر adminNotifications) ======
@@ -530,6 +544,38 @@
         // delete
         $wrap.find('[data-action="delete-operator"]').off('click').on('click', function () {
             askDelete($(this).data('name'), $(this).data('url'));
+        });
+
+        // toggle status
+        $wrap.find('[data-action="toggle-status-operator"]').off('click').on('click', function () {
+            const $btn = $(this);
+            const url = $btn.data('url');
+            const currentStatus = $btn.data('status');
+            const action = currentStatus === 'active' ? 'إيقاف' : 'تفعيل';
+            
+            if (!confirm(`هل أنت متأكد من ${action} هذا المشغل؟`)) {
+                return;
+            }
+
+            $.ajax({
+                url: url,
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                success: function (res) {
+                    if (res.success) {
+                        notify('success', res.message);
+                        loadList({ page: 1 });
+                    } else {
+                        notify('error', res.message || 'حدث خطأ');
+                    }
+                },
+                error: function () {
+                    notify('error', 'حدث خطأ أثناء تغيير الحالة');
+                }
+            });
         });
     }
 

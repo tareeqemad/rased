@@ -33,6 +33,12 @@
                                 </div>
                             </div>
                             <div class="d-flex gap-2">
+                                @can('viewAny', [\App\Models\ElectricityTariffPrice::class, $operator])
+                                    <a href="{{ route('admin.operators.tariff-prices.index', $operator) }}" class="btn btn-info">
+                                        <i class="bi bi-currency-exchange me-2"></i>
+                                        أسعار التعرفة
+                                    </a>
+                                @endcan
                                 @can('update', $operator)
                                     <a href="{{ route('admin.operators.edit', $operator) }}" class="btn btn-primary">
                                         <i class="bi bi-pencil me-2"></i>
@@ -168,7 +174,7 @@
                             <div class="col-md-6">
                                 <div class="info-item">
                                     <label class="info-label">المدينة</label>
-                                    <div class="info-value">{{ $operator->city ?? '—' }}</div>
+                                    <div class="info-value">{{ $operator->getCityName() ?? '—' }}</div>
                                 </div>
                             </div>
                             <div class="col-md-12">

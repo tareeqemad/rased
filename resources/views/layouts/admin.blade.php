@@ -1,15 +1,57 @@
+@php
+    $siteName = \App\Models\Setting::get('site_name', 'راصد');
+    $favicon = \App\Models\Setting::get('site_favicon', 'assets/admin/images/brand-logos/favicon.ico');
+    $primaryColor = \App\Models\Setting::get('primary_color', '#19228f');
+    $darkColor = \App\Models\Setting::get('dark_color', '#3b4863');
+    // استخدام localStorage إذا كان موجوداً، وإلا استخدام الإعدادات
+    // سيتم تطبيق القيمة من localStorage عبر JavaScript
+    $menuStyles = \App\Models\Setting::get('menu_styles', 'color');
+    
+    // Convert hex to RGB (format: --primary-rgb: 25, 34, 143;)
+    $hex = ltrim($primaryColor, '#');
+    // Handle 3-digit hex colors (e.g., #fff -> #ffffff)
+    if (strlen($hex) === 3) {
+        $hex = $hex[0] . $hex[0] . $hex[1] . $hex[1] . $hex[2] . $hex[2];
+    }
+    // Ensure we have a valid 6-digit hex color
+    if (strlen($hex) === 6 && ctype_xdigit($hex)) {
+        $r = hexdec(substr($hex, 0, 2));
+        $g = hexdec(substr($hex, 2, 2));
+        $b = hexdec(substr($hex, 4, 2));
+        $primaryRgb = "{$r}, {$g}, {$b}";
+    } else {
+        // Default fallback: #19228f -> 25, 34, 143
+        $primaryRgb = "25, 34, 143";
+    }
+    
+    // Convert dark color hex to RGB (format: --dark-rgb: 59, 72, 99;)
+    $darkHex = ltrim($darkColor, '#');
+    if (strlen($darkHex) === 3) {
+        $darkHex = $darkHex[0] . $darkHex[0] . $darkHex[1] . $darkHex[1] . $darkHex[2] . $darkHex[2];
+    }
+    if (strlen($darkHex) === 6 && ctype_xdigit($darkHex)) {
+        $dr = hexdec(substr($darkHex, 0, 2));
+        $dg = hexdec(substr($darkHex, 2, 2));
+        $db = hexdec(substr($darkHex, 4, 2));
+        $darkRgb = "{$dr}, {$dg}, {$db}";
+    } else {
+        // Default fallback: #3b4863 -> 59, 72, 99
+        $darkRgb = "59, 72, 99";
+    }
+@endphp
 <!DOCTYPE html>
-<html lang="ar" dir="rtl" data-nav-layout="vertical" data-theme-mode="light" data-header-styles="color" data-menu-styles="color" data-toggled="close">
+<html lang="ar" dir="rtl" data-nav-layout="vertical" data-theme-mode="light" data-header-styles="color" data-menu-styles="{{ $menuStyles }}" data-toggled="close">
 <head>
     <!-- Meta Data -->
     <meta charset="UTF-8">
     <meta name='viewport' content='width=device-width, initial-scale=1.0'>
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'لوحة التحكم') - راصد</title>
+    <meta name="user-id" content="{{ auth()->id() }}">
+    <title>@yield('title', 'لوحة التحكم') - {{ $siteName }}</title>
 
     <!-- Favicon -->
-    <link rel="icon" href="{{ asset('assets/admin/images/brand-logos/favicon.ico') }}" type="image/x-icon">
+    <link rel="icon" href="{{ asset($favicon) }}" type="image/x-icon">
 
     <!-- Choices JS -->
     <script src="{{ asset('assets/admin/libs/choices.js/public/assets/scripts/choices.min.js') }}"></script>
@@ -22,6 +64,40 @@
 
     <!-- Style Css -->
     <link href="{{ asset('assets/admin/css/styles.min.css') }}" rel="stylesheet">
+    
+    <!-- Dynamic Primary Color & Dark Color (must be after styles.min.css to override) -->
+    <style>
+        :root {
+            --primary-rgb: {{ $primaryRgb }};
+            --dark-rgb: {{ $darkRgb }};
+        }
+        [data-menu-styles=dark] {
+            --menu-bg: {{ str_starts_with($darkColor, '#') ? $darkColor : '#' . $darkColor }};
+        }
+    </style>
+    
+    <!-- Apply theme mode and menu styles from localStorage on page load (before main.js) -->
+    <script>
+        (function() {
+            // Apply theme mode from localStorage
+            if (localStorage.getItem("nowadarktheme")) {
+                document.documentElement.setAttribute("data-theme-mode", "dark");
+                document.documentElement.setAttribute("data-header-styles", "dark");
+            } else {
+                document.documentElement.setAttribute("data-theme-mode", "light");
+                document.documentElement.setAttribute("data-header-styles", "color");
+            }
+            
+            // Apply menu styles from localStorage (if exists), otherwise use server value
+            const savedMenuStyle = localStorage.getItem("nowaMenu");
+            if (savedMenuStyle) {
+                document.documentElement.setAttribute("data-menu-styles", savedMenuStyle);
+            } else {
+                // Use server value if no localStorage value
+                document.documentElement.setAttribute("data-menu-styles", "{{ $menuStyles }}");
+            }
+        })();
+    </script>
 
     <!-- Icons Css -->
     <link href="{{ asset('assets/admin/css/icons.css') }}" rel="stylesheet">
@@ -118,6 +194,9 @@
     <div id="responsive-overlay"></div>
     <!-- Scroll To Top -->
 
+    <!-- jQuery -->
+    <script src="{{ asset('assets/admin/libs/jquery/jquery.min.js') }}"></script>
+
     <!-- Popper JS -->
     <script src="{{ asset('assets/admin/libs/@popperjs/core/umd/popper.min.js') }}"></script>
 
@@ -149,6 +228,7 @@
     <script src="{{ asset('assets/admin/js/custom.js') }}"></script>
     <script src="{{ asset('assets/admin/js/notifications.js') }}"></script>
     <script src="{{ asset('assets/admin/js/notification-panel.js') }}"></script>
+    <script src="{{ asset('assets/admin/js/messages-panel.js') }}"></script>
 
     <!-- Flash Messages as Bootstrap Toasts -->
     <script>
@@ -190,6 +270,9 @@
 
     <!-- General Helpers JS -->
     <script src="{{ asset('assets/admin/js/general-helpers.js') }}"></script>
+
+    <!-- Admin CRUD JS -->
+    <script src="{{ asset('assets/admin/js/admin-crud.js') }}"></script>
 
     @stack('scripts')
 </body>

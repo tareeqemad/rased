@@ -22,7 +22,7 @@ class UpdateConstantDetailRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'constant_master_id' => ['required', 'exists:constant_masters,id'],
+            'constant_master_id' => ['nullable', 'exists:constant_masters,id'],
             'label' => ['required', 'string', 'max:255'],
             'code' => ['nullable', 'string', 'max:255'],
             'value' => ['nullable', 'string', 'max:255'],

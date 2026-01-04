@@ -32,17 +32,24 @@
     let html = document.querySelector("html");
     if (html.getAttribute("data-theme-mode") === "dark") {
       html.setAttribute("data-theme-mode", "light");
-      html.setAttribute("data-header-styles", "light");
-      html.setAttribute("data-menu-styles", "light");
+      html.setAttribute("data-header-styles", "color");
+      // لا تغيير menu-styles تلقائياً، احتفظ بالقيمة الحالية من الإعدادات
+      // html.setAttribute("data-menu-styles", "light");
       localStorage.removeItem("nowadarktheme");
-      localStorage.removeItem("nowaMenu");
       localStorage.removeItem("nowaHeader");
+      // لا تحذف nowaMenu إذا كان محفوظاً من الإعدادات
+      // localStorage.removeItem("nowaMenu");
     } else {
       html.setAttribute("data-theme-mode", "dark");
       html.setAttribute("data-header-styles", "dark");
-      html.setAttribute("data-menu-styles", "dark");
+      // إذا كان menu-styles محفوظاً من الإعدادات، احتفظ به
+      // إذا لم يكن محفوظاً، استخدم dark
+      const currentMenuStyle = html.getAttribute("data-menu-styles");
+      if (!currentMenuStyle || currentMenuStyle === "light" || currentMenuStyle === "color") {
+        html.setAttribute("data-menu-styles", "dark");
+        localStorage.setItem("nowaMenu", "dark");
+      }
       localStorage.setItem("nowadarktheme", "true");
-      localStorage.setItem("nowaMenu", "dark");
       localStorage.setItem("nowaHeader", "dark");
     }
   }

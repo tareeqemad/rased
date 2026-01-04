@@ -33,27 +33,27 @@
             <label class="form-label fw-semibold">الاسم <span class="text-danger">*</span></label>
             <input type="text" name="name"
                    class="form-control @error('name') is-invalid @enderror"
-                   value="{{ old('name', $user->name ?? '') }}" required>
+                   value="{{ old('name', $user->name ?? '') }}">
         </div>
 
         <div class="col-md-6">
             <label class="form-label fw-semibold">اسم المستخدم <span class="text-danger">*</span></label>
             <input type="text" name="username"
                    class="form-control @error('username') is-invalid @enderror"
-                   value="{{ old('username', $user->username ?? '') }}" required>
+                   value="{{ old('username', $user->username ?? '') }}">
         </div>
 
         <div class="col-md-6">
             <label class="form-label fw-semibold">البريد الإلكتروني <span class="text-danger">*</span></label>
             <input type="email" name="email"
                    class="form-control @error('email') is-invalid @enderror"
-                   value="{{ old('email', $user->email ?? '') }}" required>
+                   value="{{ old('email', $user->email ?? '') }}">
         </div>
 
         <div class="col-md-6">
             <label class="form-label fw-semibold">الدور <span class="text-danger">*</span></label>
             <select name="role" id="roleSelect"
-                    class="form-select @error('role') is-invalid @enderror" required>
+                    class="form-select @error('role') is-invalid @enderror">
                 <option value="">اختر الدور</option>
                 @foreach($roles as $r)
                     @php
@@ -118,7 +118,7 @@
             </label>
             <input type="password" name="password"
                    class="form-control @error('password') is-invalid @enderror"
-                   @if($isCreate) required minlength="8" @endif>
+                   @if($isCreate) minlength="8" @endif>
             <small class="form-text text-muted">{{ $isCreate ? 'يجب أن تكون 8 أحرف على الأقل.' : 'اتركها فارغة إذا لا تريد تغيير كلمة المرور.' }}</small>
         </div>
 
@@ -128,7 +128,7 @@
             </label>
             <input type="password" name="password_confirmation"
                    class="form-control"
-                   @if($isCreate) required minlength="8" @endif>
+                   @if($isCreate) minlength="8" @endif>
         </div>
     </div>
 </div>

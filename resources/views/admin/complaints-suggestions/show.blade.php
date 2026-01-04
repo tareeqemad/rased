@@ -164,7 +164,7 @@
                         @csrf
                         <div class="mb-3">
                             <label class="form-label fw-semibold">الرد <span class="text-danger">*</span></label>
-                            <textarea name="response" class="form-control" rows="6" required 
+                            <textarea name="response" class="form-control" rows="6" 
                                       placeholder="اكتب ردك هنا...">{{ old('response', $complaintSuggestion->response) }}</textarea>
                             @error('response')
                                 <div class="text-danger small mt-1">{{ $message }}</div>
@@ -172,7 +172,7 @@
                         </div>
                         <div class="mb-3">
                             <label class="form-label fw-semibold">تحديث الحالة <span class="text-danger">*</span></label>
-                            <select name="status" class="form-select" required>
+                            <select name="status" class="form-select">
                                 <option value="pending" {{ old('status', $complaintSuggestion->status) == 'pending' ? 'selected' : '' }}>قيد الانتظار</option>
                                 <option value="in_progress" {{ old('status', $complaintSuggestion->status) == 'in_progress' ? 'selected' : '' }}>قيد المعالجة</option>
                                 <option value="resolved" {{ old('status', $complaintSuggestion->status) == 'resolved' ? 'selected' : '' }}>تم الحل</option>

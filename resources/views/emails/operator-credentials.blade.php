@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>بيانات تسجيل الدخول - نظام راصد</title>
+    @php
+        $siteName = \App\Models\Setting::get('site_name', 'راصد');
+    @endphp
+    <title>بيانات تسجيل الدخول - نظام {{ $siteName }}</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -72,13 +75,13 @@
 </head>
 <body>
     <div class="header">
-        <h1>مرحباً بك في نظام راصد</h1>
+        <h1>مرحباً بك في نظام {{ $siteName }}</h1>
     </div>
     
     <div class="content">
         <p>عزيزي المشغل،</p>
         
-        <p>تم إنشاء حسابك في نظام راصد بنجاح. يمكنك الآن تسجيل الدخول باستخدام البيانات التالية:</p>
+        <p>تم إنشاء حسابك في نظام {{ $siteName }} بنجاح. يمكنك الآن تسجيل الدخول باستخدام البيانات التالية:</p>
         
         <div class="credentials">
             <div class="credentials-item">
@@ -106,11 +109,11 @@
         
         <p>إذا كان لديك أي استفسار، يرجى التواصل معنا.</p>
         
-        <p>مع تحياتنا،<br>فريق نظام راصد</p>
+        <p>مع تحياتنا،<br>فريق نظام {{ $siteName }}</p>
     </div>
     
     <div class="footer">
-        <p>هذا الإيميل تم إرساله تلقائياً من نظام راصد. يرجى عدم الرد على هذا الإيميل.</p>
+        <p>هذا الإيميل تم إرساله تلقائياً من نظام {{ $siteName }}. يرجى عدم الرد على هذا الإيميل.</p>
     </div>
 </body>
 </html>

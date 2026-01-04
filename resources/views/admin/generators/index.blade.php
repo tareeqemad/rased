@@ -38,51 +38,73 @@
                             @endcan
                         </div>
 
-                        <div class="gen-toolbar mt-3">
-                            <div class="row g-2 align-items-center">
-                                <div class="col-md-6">
-                                    {{-- Search Bar --}}
-                                    <div class="gen-searchbar">
-                                        <div class="gen-searchfield">
-                                            <i class="bi bi-search gen-search-icon"></i>
-                                            <input
-                                                type="text"
-                                                id="searchInput"
-                                                class="form-control gen-search-input"
-                                                placeholder="ابحث عن مولد بالاسم/الرقم/المشغل..."
-                                                value="{{ request('q', '') }}"
-                                            >
-                                        </div>
-                                        <button class="btn btn-primary gen-search-action" type="button" id="searchBtn">
+                        {{-- كارد واحد للفلاتر --}}
+                        <div class="card border mt-3 mb-3">
+                            <div class="card-header bg-light">
+                                <h6 class="card-title mb-0">
+                                    <i class="bi bi-funnel me-2"></i>
+                                    فلاتر البحث
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-md-5">
+                                        <label class="form-label fw-semibold">
                                             <i class="bi bi-search me-1"></i>
-                                            بحث
-                                        </button>
-                                        <button
-                                            class="btn gen-clear-btn gen-search-action {{ request('q') ? '' : 'd-none' }}"
-                                            type="button"
-                                            id="clearSearchBtn"
+                                            البحث
+                                        </label>
+                                        <input
+                                            type="text"
+                                            id="searchInput"
+                                            class="form-control"
+                                            placeholder="ابحث عن مولد بالاسم/الرقم/المشغل..."
+                                            value="{{ request('q', '') }}"
                                         >
-                                            <i class="bi bi-x me-1"></i>
-                                            إلغاء
-                                        </button>
                                     </div>
-                                </div>
 
-                                <div class="col-md-6">
-                                    <div class="gen-filters">
-                                        <button type="button" class="gen-filter active" data-filter="all">الكل</button>
-                                        <button type="button" class="gen-filter" data-filter="active">فعال</button>
-                                        <button type="button" class="gen-filter" data-filter="inactive">غير فعال</button>
                                     @if(auth()->user()->isSuperAdmin() && isset($operators) && $operators->count() > 0)
-                                        <select id="operatorFilter" class="form-select form-select-sm gen-filter-select">
-                                            <option value="">كل المشغلين</option>
-                                            @foreach($operators as $op)
-                                                <option value="{{ $op->id }}" {{ request('operator_id') == $op->id ? 'selected' : '' }}>
-                                                    {{ $op->unit_number ? $op->unit_number . ' - ' : '' }}{{ $op->name }}
-                                                </option>
-                                            @endforeach
-                                        </select>
+                                        <div class="col-md-3">
+                                            <label class="form-label fw-semibold">
+                                                <i class="bi bi-building me-1"></i>
+                                                المشغل
+                                            </label>
+                                            <select id="operatorFilter" class="form-select">
+                                                <option value="">كل المشغلين</option>
+                                                @foreach($operators as $op)
+                                                    <option value="{{ $op->id }}" {{ request('operator_id') == $op->id ? 'selected' : '' }}>
+                                                        {{ $op->unit_number ? $op->unit_number . ' - ' : '' }}{{ $op->name }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
                                     @endif
+
+                                    <div class="col-md-3">
+                                        <label class="form-label fw-semibold">
+                                            <i class="bi bi-funnel me-1"></i>
+                                            الحالة
+                                        </label>
+                                        <select id="statusFilter" class="form-select">
+                                            <option value="">الكل</option>
+                                            <option value="active" {{ request('status') == 'active' ? 'selected' : '' }}>فعال</option>
+                                            <option value="inactive" {{ request('status') == 'inactive' ? 'selected' : '' }}>غير فعال</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="col-md-1 d-flex align-items-end">
+                                        <div class="d-flex gap-2 w-100">
+                                            <button class="btn btn-primary flex-fill" type="button" id="searchBtn" title="بحث">
+                                                <i class="bi bi-search"></i>
+                                            </button>
+                                            <button
+                                                class="btn btn-outline-secondary {{ request('q') || request('operator_id') || request('status') ? '' : 'd-none' }}"
+                                                type="button"
+                                                id="clearSearchBtn"
+                                                title="تفريغ"
+                                            >
+                                                <i class="bi bi-x"></i>
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -108,7 +130,6 @@
 @endsection
 
 @push('scripts')
-    <script src="{{ asset('assets/admin/libs/jquery/jquery.min.js') }}"></script>
     <script>
         window.GEN = {
             routes: {

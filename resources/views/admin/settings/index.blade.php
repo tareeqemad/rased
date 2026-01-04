@@ -35,8 +35,8 @@
                         @csrf
                         @method('PUT')
 
-                        <div class="card-body">
-                            <div class="mb-4">
+                        <div class="card-body px-4 py-4">
+                            <div class="mb-4 px-3">
                                 <h6 class="fw-bold mb-3">
                                     <i class="bi bi-image text-primary me-2"></i>
                                     إعدادات اللوجو والأيقونات
@@ -67,15 +67,99 @@
                                                 <img src="{{ asset($currentFavicon) }}" alt="Favicon" id="faviconPreview" style="max-height: 64px; max-width: 64px;" onerror="this.src='{{ asset('assets/admin/images/brand-logos/favicon.ico') }}'">
                                             </div>
                                         </div>
-                                        <input type="file" name="favicon" id="faviconInput" class="form-control" accept="image/png,image/jpeg,image/x-icon,image/svg+xml">
-                                        <small class="text-muted d-block mt-2">الصيغ المدعومة: PNG, ICO, SVG (الحد الأقصى: 512KB)</small>
+                                        <input type="file" name="favicon" id="faviconInput" class="form-control" accept=".ico,image/x-icon">
+                                        <small class="text-muted d-block mt-2">
+                                            <i class="bi bi-info-circle me-1"></i>
+                                            يجب أن يكون ملف Favicon بامتداد <strong>.ico</strong> فقط (الحد الأقصى: 512KB)
+                                        </small>
                                     </div>
                                 </div>
                             </div>
 
                             <hr class="my-4">
 
-                            <div class="mb-4">
+                            <div class="mb-4 px-3">
+                                <h6 class="fw-bold mb-3">
+                                    <i class="bi bi-palette text-primary me-2"></i>
+                                    إعدادات التصميم
+                                </h6>
+
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <label class="form-label fw-semibold mb-0">اللون الأساسي (Primary Color)</label>
+                                            <button type="button" class="btn btn-sm btn-outline-secondary" id="resetPrimaryColor" title="إعادة ضبط اللون الأساسي">
+                                                <i class="bi bi-arrow-counterclockwise me-1"></i>
+                                                إعادة ضبط
+                                            </button>
+                                        </div>
+                                        <div class="input-group">
+                                            <input type="color" name="settings[primary_color]" 
+                                                   class="form-control form-control-color" 
+                                                   id="primaryColorInput"
+                                                   value="{{ \App\Models\Setting::get('primary_color', '#19228f') }}"
+                                                   title="اختر اللون الأساسي">
+                                            <input type="text" name="settings[primary_color_hex]" 
+                                                   class="form-control" 
+                                                   id="primaryColorHex"
+                                                   value="{{ \App\Models\Setting::get('primary_color', '#19228f') }}"
+                                                   placeholder="#19228f"
+                                                   pattern="^#[0-9A-Fa-f]{6}$">
+                                        </div>
+                                        <small class="text-muted d-block mt-2">
+                                            <i class="bi bi-info-circle me-1"></i>
+                                            اللون الأساسي المستخدم في الأزرار والروابط والعناصر الرئيسية
+                                        </small>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">ستايل القائمة الجانبية (Sidebar Menu Style)</label>
+                                        <select name="settings[menu_styles]" class="form-select" id="menuStylesSelect">
+                                            <option value="light" {{ \App\Models\Setting::get('menu_styles', 'color') === 'light' ? 'selected' : '' }}>فاتح (Light)</option>
+                                            <option value="dark" {{ \App\Models\Setting::get('menu_styles', 'color') === 'dark' ? 'selected' : '' }}>داكن (Dark)</option>
+                                            <option value="color" {{ \App\Models\Setting::get('menu_styles', 'color') === 'color' ? 'selected' : '' }}>ملون (Color)</option>
+                                        </select>
+                                        <small class="text-muted d-block mt-2">
+                                            <i class="bi bi-info-circle me-1"></i>
+                                            اختر نمط عرض القائمة الجانبية
+                                        </small>
+                                    </div>
+                                </div>
+
+                                <div class="row g-3 mt-2" id="darkColorPickerRow" style="display: none;">
+                                    <div class="col-md-12">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <label class="form-label fw-semibold mb-0">درجة اللون الداكن (Dark Color)</label>
+                                            <button type="button" class="btn btn-sm btn-outline-secondary" id="resetDarkColor" title="إعادة ضبط اللون الداكن">
+                                                <i class="bi bi-arrow-counterclockwise me-1"></i>
+                                                إعادة ضبط
+                                            </button>
+                                        </div>
+                                        <div class="input-group">
+                                            <input type="color" name="settings[dark_color]" 
+                                                   class="form-control form-control-color" 
+                                                   id="darkColorInput"
+                                                   value="{{ \App\Models\Setting::get('dark_color', '#3b4863') }}"
+                                                   title="اختر درجة اللون الداكن">
+                                            <input type="text" name="settings[dark_color_hex]" 
+                                                   class="form-control" 
+                                                   id="darkColorHex"
+                                                   value="{{ \App\Models\Setting::get('dark_color', '#3b4863') }}"
+                                                   placeholder="#3b4863"
+                                                   pattern="^#[0-9A-Fa-f]{6}$">
+                                        </div>
+                                        <small class="text-muted d-block mt-2">
+                                            <i class="bi bi-info-circle me-1"></i>
+                                            اختر درجة اللون الداكن المستخدم في القائمة الجانبية (يظهر فقط عند اختيار Dark)
+                                        </small>
+                                    </div>
+                                </div>
+                                </div>
+                            </div>
+
+                            <hr class="my-4">
+
+                            <div class="mb-4 px-3">
                                 <h6 class="fw-bold mb-3">
                                     <i class="bi bi-info-circle text-info me-2"></i>
                                     المعلومات العامة
@@ -126,7 +210,7 @@
 
                             <hr class="my-4">
 
-                            <div class="mb-4">
+                            <div class="mb-4 px-3">
                                 <h6 class="fw-bold mb-3">
                                     <i class="bi bi-share text-primary me-2"></i>
                                     وسائل التواصل الاجتماعي
@@ -219,10 +303,10 @@
                                 </div>
                             </div>
                             @endif
+                        </div>
 
-                            <hr class="my-4">
-
-                            <div class="d-flex justify-content-end align-items-center gap-2">
+                        <div class="card-footer border-top bg-light px-4 py-3">
+                            <div class="d-flex justify-content-between align-items-center gap-2">
                                 <a href="{{ route('admin.dashboard') }}" class="btn btn-outline-secondary">
                                     <i class="bi bi-x-circle me-2"></i>
                                     إلغاء
@@ -252,7 +336,7 @@
                     <div class="modal-body">
                         <div class="mb-3">
                             <label class="form-label fw-semibold">المفتاح (Key) <span class="text-danger">*</span></label>
-                            <input type="text" name="key" class="form-control" required placeholder="custom_setting_key">
+                            <input type="text" name="key" class="form-control" placeholder="custom_setting_key">
                             <small class="text-muted">استخدم أحرف إنجليزية وأرقام وشرطة سفلية فقط</small>
                         </div>
                         <div class="mb-3">
@@ -261,7 +345,7 @@
                         </div>
                         <div class="mb-3">
                             <label class="form-label fw-semibold">النوع <span class="text-danger">*</span></label>
-                            <select name="type" class="form-select" required>
+                            <select name="type" class="form-select">
                                 <option value="text">نص</option>
                                 <option value="textarea">نص طويل</option>
                                 <option value="number">رقم</option>
@@ -271,7 +355,7 @@
                         </div>
                         <div class="mb-3">
                             <label class="form-label fw-semibold">المجموعة <span class="text-danger">*</span></label>
-                            <input type="text" name="group" class="form-control" required value="custom" placeholder="custom">
+                            <input type="text" name="group" class="form-control" value="custom" placeholder="custom">
                         </div>
                         <div class="mb-3">
                             <label class="form-label fw-semibold">التسمية</label>
@@ -295,7 +379,6 @@
 @endsection
 
 @push('scripts')
-<script src="{{ asset('assets/admin/libs/jquery/jquery.min.js') }}"></script>
 <script>
     (function($) {
         $(document).ready(function() {
@@ -329,6 +412,179 @@
                         };
                         reader.readAsDataURL(file);
                     }
+                });
+            }
+
+            // Primary Color Picker Sync & Dynamic Preview
+            const primaryColorInput = $('#primaryColorInput');
+            const primaryColorHex = $('#primaryColorHex');
+            const resetPrimaryColorBtn = $('#resetPrimaryColor');
+            const DEFAULT_PRIMARY_COLOR = '#19228f';
+            
+            /**
+             * Convert hex color to RGB values (format: "25, 34, 143")
+             */
+            function hexToRgb(hex) {
+                // Remove # if present
+                hex = hex.replace('#', '');
+                
+                // Handle 3-digit hex colors (e.g., #fff -> #ffffff)
+                if (hex.length === 3) {
+                    hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
+                }
+                
+                // Convert to RGB
+                const r = parseInt(hex.substring(0, 2), 16);
+                const g = parseInt(hex.substring(2, 4), 16);
+                const b = parseInt(hex.substring(4, 6), 16);
+                
+                return `${r}, ${g}, ${b}`;
+            }
+            
+            /**
+             * Update CSS variable --primary-rgb dynamically
+             */
+            function updatePrimaryColor(hexColor) {
+                if (!hexColor || !/^#[0-9A-Fa-f]{3,6}$/i.test(hexColor)) {
+                    return;
+                }
+                
+                const rgb = hexToRgb(hexColor);
+                document.documentElement.style.setProperty('--primary-rgb', rgb);
+            }
+            
+            if (primaryColorInput.length && primaryColorHex.length) {
+                // Sync color picker with text input
+                primaryColorInput.on('change', function() {
+                    const colorValue = $(this).val();
+                    primaryColorHex.val(colorValue);
+                    updatePrimaryColor(colorValue);
+                });
+                
+                primaryColorHex.on('input', function() {
+                    const value = $(this).val();
+                    if (/^#[0-9A-Fa-f]{6}$/i.test(value)) {
+                        primaryColorInput.val(value);
+                        updatePrimaryColor(value);
+                    }
+                });
+                
+                // Initialize with current color (only if not overridden by localStorage)
+                // Don't auto-apply on page load to avoid changing header/sidebar unexpectedly
+                // The color will be applied from layouts/admin.blade.php on initial load
+            }
+            
+            // Reset Primary Color Button
+            if (resetPrimaryColorBtn.length) {
+                resetPrimaryColorBtn.on('click', function() {
+                    primaryColorInput.val(DEFAULT_PRIMARY_COLOR);
+                    primaryColorHex.val(DEFAULT_PRIMARY_COLOR);
+                    updatePrimaryColor(DEFAULT_PRIMARY_COLOR);
+                });
+            }
+
+            // Menu Style Dynamic Preview
+            const menuStyleSelect = $('#menuStylesSelect');
+            const darkColorPickerRow = $('#darkColorPickerRow');
+            const darkColorInput = $('#darkColorInput');
+            const darkColorHex = $('#darkColorHex');
+            
+            /**
+             * Update data-menu-styles attribute dynamically
+             */
+            function updateMenuStyle(style) {
+                if (style && ['light', 'dark', 'color'].includes(style)) {
+                    document.documentElement.setAttribute('data-menu-styles', style);
+                    
+                    // Show/hide dark color picker based on selection
+                    if (style === 'dark') {
+                        darkColorPickerRow.slideDown(200);
+                        // Update --menu-bg with current dark color
+                        const currentDarkColor = darkColorInput.val();
+                        if (currentDarkColor) {
+                            document.documentElement.style.setProperty('--menu-bg', currentDarkColor);
+                        }
+                    } else {
+                        darkColorPickerRow.slideUp(200);
+                        // Remove custom --menu-bg if not dark
+                        document.documentElement.style.removeProperty('--menu-bg');
+                    }
+                }
+            }
+            
+            /**
+             * Convert hex color to RGB values (format: "59, 72, 99")
+             */
+            function hexToRgbForDark(hex) {
+                hex = hex.replace('#', '');
+                if (hex.length === 3) {
+                    hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
+                }
+                const r = parseInt(hex.substring(0, 2), 16);
+                const g = parseInt(hex.substring(2, 4), 16);
+                const b = parseInt(hex.substring(4, 6), 16);
+                return `${r}, ${g}, ${b}`;
+            }
+            
+            /**
+             * Update CSS variable --dark-rgb and --menu-bg dynamically
+             */
+            function updateDarkColor(hexColor) {
+                if (!hexColor || !/^#[0-9A-Fa-f]{3,6}$/i.test(hexColor)) {
+                    return;
+                }
+                const rgb = hexToRgbForDark(hexColor);
+                document.documentElement.style.setProperty('--dark-rgb', rgb);
+                
+                // Update --menu-bg if dark menu style is selected
+                if (menuStyleSelect.val() === 'dark') {
+                    document.documentElement.style.setProperty('--menu-bg', hexColor);
+                }
+            }
+            
+            if (menuStyleSelect.length) {
+                menuStyleSelect.on('change', function() {
+                    const selectedStyle = $(this).val();
+                    updateMenuStyle(selectedStyle);
+                });
+                
+                // Initialize with current style (only if not overridden by localStorage)
+                // Don't auto-apply on page load to avoid changing header/sidebar unexpectedly
+                // The style will be applied from layouts/admin.blade.php on initial load
+                // Only apply when user manually changes the select
+            }
+            
+            // Dark Color Picker Sync & Dynamic Preview
+            const resetDarkColorBtn = $('#resetDarkColor');
+            const DEFAULT_DARK_COLOR = '#3b4863';
+            
+            if (darkColorInput.length && darkColorHex.length) {
+                // Sync color picker with text input
+                darkColorInput.on('change', function() {
+                    const colorValue = $(this).val();
+                    darkColorHex.val(colorValue);
+                    updateDarkColor(colorValue);
+                });
+                
+                darkColorHex.on('input', function() {
+                    const value = $(this).val();
+                    if (/^#[0-9A-Fa-f]{6}$/i.test(value)) {
+                        darkColorInput.val(value);
+                        updateDarkColor(value);
+                    }
+                });
+                
+                // Initialize with current color (only if dark is selected and user manually changes)
+                // Don't auto-apply on page load to avoid changing header/sidebar unexpectedly
+                // The color will be applied from layouts/admin.blade.php on initial load
+            }
+            
+            // Reset Dark Color Button
+            if (resetDarkColorBtn.length) {
+                resetDarkColorBtn.on('click', function() {
+                    darkColorInput.val(DEFAULT_DARK_COLOR);
+                    darkColorHex.val(DEFAULT_DARK_COLOR);
+                    updateDarkColor(DEFAULT_DARK_COLOR);
                 });
             }
 

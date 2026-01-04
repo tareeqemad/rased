@@ -135,9 +135,11 @@ class AdminNotifications {
         this.toastContainer.insertAdjacentHTML('beforeend', toastHtml);
         
         const toastElement = document.getElementById(toastId);
+        // Ensure duration is a number
+        const delayValue = typeof duration === 'string' ? parseInt(duration, 10) : (typeof duration === 'number' ? duration : 5000);
         const toast = new bootstrap.Toast(toastElement, {
             autohide: true,
-            delay: duration
+            delay: delayValue
         });
 
         toast.show();

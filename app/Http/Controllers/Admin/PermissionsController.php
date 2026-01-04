@@ -39,7 +39,8 @@ class PermissionsController extends Controller
                     ->orWhere('name', 'like', 'operation_logs.%')
                     ->orWhere('name', 'like', 'fuel_efficiencies.%')
                     ->orWhere('name', 'like', 'maintenance_records.%')
-                    ->orWhere('name', 'like', 'compliance_safeties.%');
+                    ->orWhere('name', 'like', 'compliance_safeties.%')
+                    ->orWhere('name', 'like', 'electricity_tariff_prices.%');
             })
             ->pluck('id')
             ->toArray();

@@ -24,6 +24,7 @@ return new class extends Migration
             $table->softDeletes();
 
             $table->index(['constant_master_id', 'is_active']);
+            $table->index(['constant_master_id', 'value'], 'idx_constant_details_master_value');
         });
     }
 

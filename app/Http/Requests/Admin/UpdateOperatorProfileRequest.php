@@ -23,13 +23,13 @@ class UpdateOperatorProfileRequest extends FormRequest
     {
         return [
             // بيانات الوحدة
-            'unit_number' => ['required', 'string', 'max:255'],
-            'unit_code' => ['nullable', 'string', 'max:255'],
+            'unit_number' => ['nullable', 'string', 'max:255'], // سيتم توليده تلقائياً
+            'unit_code' => ['nullable', 'string', 'max:255'], // سيتم توليده تلقائياً
             'unit_name' => ['required', 'string', 'max:255'],
 
             // الموقع
-            'governorate' => ['required', 'integer', 'in:10,20,30,40'],
-            'city' => ['required', 'string', 'max:255'],
+            'governorate' => ['required', 'string'],
+            'city_id' => ['required', 'exists:constant_details,id'],
             'detailed_address' => ['required', 'string'],
             'latitude' => ['required', 'numeric', 'between:-90,90'],
             'longitude' => ['required', 'numeric', 'between:-180,180'],
@@ -70,8 +70,8 @@ class UpdateOperatorProfileRequest extends FormRequest
             'unit_number.required' => 'رقم الوحدة مطلوب.',
             'unit_name.required' => 'اسم الوحدة مطلوب.',
             'governorate.required' => 'المحافظة مطلوبة.',
-            'governorate.in' => 'المحافظة المحددة غير صحيحة.',
-            'city.required' => 'المدينة مطلوبة.',
+            'city_id.required' => 'المدينة مطلوبة.',
+            'city_id.exists' => 'المدينة المحددة غير صحيحة.',
             'detailed_address.required' => 'العنوان التفصيلي مطلوب.',
             'latitude.required' => 'خط العرض مطلوب.',
             'latitude.numeric' => 'خط العرض يجب أن يكون رقماً.',

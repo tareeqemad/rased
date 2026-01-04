@@ -26,6 +26,7 @@ class UpdateOperationLogRequest extends FormRequest
             'energy_meter_start' => ['nullable', 'numeric', 'min:0'],
             'energy_meter_end' => ['nullable', 'numeric', 'min:0'],
             'energy_produced' => ['nullable', 'numeric', 'min:0'],
+            'electricity_tariff_price' => ['nullable', 'numeric', 'min:0', 'max:500'],
             'operational_notes' => ['nullable', 'string'],
             'malfunctions' => ['nullable', 'string'],
         ];

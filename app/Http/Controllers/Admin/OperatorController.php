@@ -190,6 +190,48 @@ class OperatorController extends Controller
     }
 
     /**
+     * Toggle operator status (active/inactive)
+     */
+    public function toggleStatus(Request $request, Operator $operator): RedirectResponse|JsonResponse
+    {
+        $this->authorize('update', $operator);
+
+        // فقط السوبر أدمن يمكنه تغيير الحالة
+        if (!auth()->user()->isSuperAdmin()) {
+            abort(403, 'لا تملك صلاحية لتغيير حالة المشغل');
+        }
+
+        $oldStatus = $operator->status;
+        $operator->status = $operator->status === 'active' ? 'inactive' : 'active';
+        $operator->save();
+
+        // إذا تم إيقاف المشغل، إيقاف كل الموظفين التابعين له
+        if ($operator->status === 'inactive' && $oldStatus === 'active') {
+            $operator->users()->update(['status' => 'inactive']);
+        }
+
+        $statusLabel = $operator->status === 'active' ? 'تفعيل' : 'إيقاف';
+        $message = "تم {$statusLabel} المشغل بنجاح";
+        
+        if ($operator->status === 'inactive') {
+            $message .= " (تم إيقاف جميع الموظفين التابعين له)";
+        }
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => $message,
+                'operator' => [
+                    'id' => $operator->id,
+                    'status' => $operator->status,
+                ],
+            ]);
+        }
+
+        return redirect()->back()->with('success', $message);
+    }
+
+    /**
      * Display detailed information about the specified operator.
      */
     public function show(Operator $operator): View
@@ -312,6 +354,28 @@ class OperatorController extends Controller
     }
 
     /**
+     * توليد رقم المولد التالي للمشغل
+     */
+    public function generateGeneratorNumber(Request $request, Operator $operator): JsonResponse
+    {
+        $this->authorize('view', $operator);
+
+        $generatorNumber = \App\Models\Generator::getNextGeneratorNumber($operator->id);
+
+        if (!$generatorNumber) {
+            return response()->json([
+                'success' => false,
+                'message' => 'تعذر توليد رقم المولد. تأكد من أن المشغل لديه unit_code وأن عدد المولدات لم يتجاوز 99.',
+            ], 400);
+        }
+
+        return response()->json([
+            'success' => true,
+            'generator_number' => $generatorNumber,
+        ]);
+    }
+
+    /**
      * الحصول على المشغلين حسب المحافظة
      */
     public function getByGovernorate(Request $request, int $governorate): JsonResponse
@@ -326,7 +390,7 @@ class OperatorController extends Controller
                 return [
                     'id' => $operator->id,
                     'name' => $operator->name,
-                    'city' => $operator->city,
+                    'city' => $operator->getCityName(),
                     'unit_number' => $operator->unit_number,
                     'status' => $operator->status,
                 ];

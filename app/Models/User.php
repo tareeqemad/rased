@@ -24,6 +24,7 @@ class User extends Authenticatable
         'password',
         'role',
         'role_id',
+        'status',
     ];
 
     protected $hidden = [
@@ -39,6 +40,10 @@ class User extends Authenticatable
             'role' => Role::class,
         ];
     }
+
+    protected $attributes = [
+        'status' => 'active',
+    ];
 
     public function ownedOperators(): HasMany
     {
@@ -141,7 +146,18 @@ class User extends Authenticatable
             return true;
         }
 
-        if ($this->isAdmin()) {
+        // إذا كان لديه role_id، استخدم صلاحيات الدور أولاً
+        if ($this->roleModel) {
+            if ($this->roleModel->hasPermission($permissionName)) {
+                // تحقق من أن الصلاحية لم يتم إلغاؤها
+                if (!$this->revokedPermissions()->where('name', $permissionName)->exists()) {
+                    return true;
+                }
+            }
+        }
+
+        // Fallback للـ Admin (إذا لم يكن لديه role_id)
+        if ($this->isAdmin() && !$this->roleModel) {
             return in_array($permissionName, [
                 'operators.view',
                 'generators.view',
@@ -149,6 +165,7 @@ class User extends Authenticatable
                 'fuel_efficiencies.view',
                 'maintenance_records.view',
                 'compliance_safeties.view',
+                'electricity_tariff_prices.view', // الأدمن يمكنهم الاستعلام فقط
             ]);
         }
 
@@ -160,10 +177,6 @@ class User extends Authenticatable
             return true;
         }
 
-        if ($this->roleModel) {
-            return $this->roleModel->hasPermission($permissionName);
-        }
-
         return false;
     }
 
@@ -173,7 +186,19 @@ class User extends Authenticatable
             return true;
         }
 
-        if ($this->isAdmin()) {
+        // إذا كان لديه role_id، استخدم صلاحيات الدور أولاً
+        if ($this->roleModel) {
+            foreach ($permissionNames as $permissionName) {
+                if ($this->roleModel->hasPermission($permissionName)) {
+                    if (!$this->revokedPermissions()->where('name', $permissionName)->exists()) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        // Fallback للـ Admin (إذا لم يكن لديه role_id)
+        if ($this->isAdmin() && !$this->roleModel) {
             $adminPermissions = [
                 'operators.view',
                 'generators.view',
@@ -181,6 +206,7 @@ class User extends Authenticatable
                 'fuel_efficiencies.view',
                 'maintenance_records.view',
                 'compliance_safeties.view',
+                'electricity_tariff_prices.view', // الأدمن يمكنهم الاستعلام فقط
             ];
 
             return !empty(array_intersect($permissionNames, $adminPermissions));
@@ -218,7 +244,21 @@ class User extends Authenticatable
             return true;
         }
 
-        if ($this->isAdmin()) {
+        // إذا كان لديه role_id، استخدم صلاحيات الدور أولاً
+        if ($this->roleModel) {
+            $rolePermissions = [];
+            foreach ($permissionNames as $permissionName) {
+                if ($this->roleModel->hasPermission($permissionName)) {
+                    if (!$this->revokedPermissions()->where('name', $permissionName)->exists()) {
+                        $rolePermissions[] = $permissionName;
+                    }
+                }
+            }
+            return count($permissionNames) === count($rolePermissions);
+        }
+
+        // Fallback للـ Admin (إذا لم يكن لديه role_id)
+        if ($this->isAdmin() && !$this->roleModel) {
             $adminPermissions = [
                 'operators.view',
                 'generators.view',
@@ -226,6 +266,7 @@ class User extends Authenticatable
                 'fuel_efficiencies.view',
                 'maintenance_records.view',
                 'compliance_safeties.view',
+                'electricity_tariff_prices.view',
             ];
 
             return count($permissionNames) === count(array_intersect($permissionNames, $adminPermissions));

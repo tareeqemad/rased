@@ -83,6 +83,17 @@
                                 </a>
                             @endcan
 
+                            @if(auth()->user()->isSuperAdmin())
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-{{ $operator->status === 'active' ? 'warning' : 'success' }}"
+                                        title="{{ $operator->status === 'active' ? 'إيقاف' : 'تفعيل' }}"
+                                        data-action="toggle-status-operator"
+                                        data-status="{{ $operator->status }}"
+                                        data-url="{{ route('admin.operators.toggle-status', $operator) }}">
+                                    <i class="bi bi-{{ $operator->status === 'active' ? 'pause' : 'play' }}-fill"></i>
+                                </button>
+                            @endif
+
                             @can('delete', $operator)
                                 <button type="button"
                                         class="btn btn-sm btn-outline-danger"

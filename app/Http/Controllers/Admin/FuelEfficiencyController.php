@@ -71,33 +71,27 @@ class FuelEfficiencyController extends Controller
             $query->whereDate('consumption_date', '<=', $request->input('date_to'));
         }
 
-        // Group by generator if requested
-        $groupByGenerator = $request->boolean('group_by_generator', false);
-        $groupedLogs = null;
-        
-        if ($groupByGenerator) {
-            // Paginate first, then group the current page's logs
-            $fuelEfficiencies = $query->latest('consumption_date')->paginate(15);
-            // Group the current page's logs by generator
-            $groupedLogs = $fuelEfficiencies->groupBy('generator_id');
-        } else {
-            $fuelEfficiencies = $query->latest('consumption_date')->paginate(15);
-        }
+        // Paginate - 100 items per page
+        $fuelEfficiencies = $query->latest('consumption_date')->paginate(100);
 
         if ($request->ajax() || $request->wantsJson()) {
-            if ($groupByGenerator && $groupedLogs) {
-                $html = view('admin.fuel-efficiencies.partials.grouped-list', [
-                    'groupedLogs' => $groupedLogs,
-                    'fuelEfficiencies' => $fuelEfficiencies
-                ])->render();
-            } else {
-                $html = view('admin.fuel-efficiencies.partials.list', compact('fuelEfficiencies'))->render();
-            }
+            // Return tbody rows only
+            $html = view('admin.fuel-efficiencies.partials.tbody-rows', compact('fuelEfficiencies'))->render();
+            $pagination = view('admin.fuel-efficiencies.partials.pagination', compact('fuelEfficiencies'))->render();
+            
             return response()->json([
                 'success' => true,
                 'html' => $html,
+                'pagination' => $pagination,
                 'count' => $fuelEfficiencies->total(),
             ]);
+        }
+
+        // For normal page load, check if group_by_generator is requested
+        $groupByGenerator = $request->boolean('group_by_generator', false);
+        $groupedLogs = null;
+        if ($groupByGenerator) {
+            $groupedLogs = $fuelEfficiencies->groupBy('generator_id');
         }
 
         $operators = collect();

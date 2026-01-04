@@ -13,6 +13,10 @@
     <link rel="stylesheet" href="{{ asset('assets/admin/css/roles-forms.css') }}">
 @endpush
 
+@php
+    $isCompanyOwner = auth()->user()->isCompanyOwner();
+@endphp
+
 @section('content')
 <div class="roles-page">
     <div class="row g-3">
@@ -25,7 +29,11 @@
                             إضافة دور جديد
                         </h5>
                         <div class="roles-subtitle">
-                            قم بإدخال بيانات الدور واختر الصلاحيات المناسبة
+                            @if($isCompanyOwner)
+                                قم بإنشاء دور مخصص لمستخدمي مشغلك وحدد الصلاحيات المناسبة
+                            @else
+                                قم بإدخال بيانات الدور واختر الصلاحيات المناسبة
+                            @endif
                         </div>
                     </div>
                     <a href="{{ route('admin.roles.index') }}" class="btn btn-outline-secondary">
@@ -50,7 +58,6 @@
                                     <input type="text" name="name" id="roleName" 
                                            class="form-control @error('name') is-invalid @enderror" 
                                            value="{{ old('name') }}" 
-                                           required 
                                            pattern="[a-z_]+" 
                                            placeholder="مثال: custom_role">
                                     @error('name')
@@ -64,7 +71,7 @@
                                     <input type="text" name="label" 
                                            class="form-control @error('label') is-invalid @enderror" 
                                            value="{{ old('label') }}" 
-                                           required>
+                                           >
                                     @error('label')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
@@ -92,6 +99,31 @@
                                     @enderror
                                     <small class="form-text text-muted">رقم الترتيب (الأصغر يظهر أولاً)</small>
                                 </div>
+                                
+                                @if(auth()->user()->isSuperAdmin())
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">المشغل (اختياري)</label>
+                                        <select name="operator_id" 
+                                                class="form-select @error('operator_id') is-invalid @enderror">
+                                            <option value="">دور عام (غير معرف لمشغل)</option>
+                                            @foreach($operators as $operator)
+                                                <option value="{{ $operator->id }}" {{ old('operator_id') == $operator->id ? 'selected' : '' }}>
+                                                    {{ $operator->name }}
+                                                    @if($operator->unit_number)
+                                                        - {{ $operator->unit_number }}
+                                                    @endif
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                        @error('operator_id')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                        <small class="form-text text-muted">
+                                            إذا تركت فارغاً، سيكون الدور عاماً (المشغلين لا يشوفونه). 
+                                            إذا اخترت مشغل، سيكون الدور خاص بهذا المشغل فقط.
+                                        </small>
+                                    </div>
+                                @endif
                             </div>
                         </div>
 
@@ -105,7 +137,16 @@
 
                             <div class="alert alert-info mb-4">
                                 <i class="bi bi-info-circle me-2"></i>
-                                اختر الصلاحيات التي سيحصل عليها المستخدمون بهذا الدور. يمكنك اختيار مجموعة كاملة أو اختيار صلاحيات محددة.
+                                <div>
+                                    <strong>اختيار الصلاحيات:</strong>
+                                    <ul class="mb-0 mt-2">
+                                        <li>يمكنك اختيار مجموعة كاملة من الصلاحيات أو اختيار صلاحيات محددة</li>
+                                        <li>الصلاحيات المحددة هي التي سيحصل عليها المستخدمون المرتبطون بهذا الدور</li>
+                                        @if($isCompanyOwner)
+                                            <li class="text-warning"><strong>ملاحظة:</strong> الصلاحيات النظامية (إدارة المستخدمين والمشغلين) غير متاحة للمشغلين</li>
+                                        @endif
+                                    </ul>
+                                </div>
                             </div>
 
                             <div class="permissions-container">
@@ -168,7 +209,6 @@
 @endsection
 
 @push('scripts')
-<script src="{{ asset('assets/admin/libs/jquery/jquery.min.js') }}"></script>
 <script>
     (function($) {
         $(document).ready(function() {

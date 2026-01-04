@@ -60,33 +60,27 @@ class ComplianceSafetyController extends Controller
             $query->whereDate('last_inspection_date', '<=', $request->input('date_to'));
         }
 
-        // Group by operator if requested
-        $groupByOperator = $request->boolean('group_by_operator', false);
-        $groupedLogs = null;
-        
-        if ($groupByOperator) {
-            // Paginate first, then group the current page's logs
-            $complianceSafeties = $query->latest('last_inspection_date')->paginate(15);
-            // Group the current page's logs by operator
-            $groupedLogs = $complianceSafeties->groupBy('operator_id');
-        } else {
-            $complianceSafeties = $query->latest('last_inspection_date')->paginate(15);
-        }
+        // Paginate - 100 items per page
+        $complianceSafeties = $query->latest('last_inspection_date')->paginate(100);
 
         if ($request->ajax() || $request->wantsJson()) {
-            if ($groupByOperator && $groupedLogs) {
-                $html = view('admin.compliance-safeties.partials.grouped-list', [
-                    'groupedLogs' => $groupedLogs,
-                    'complianceSafeties' => $complianceSafeties
-                ])->render();
-            } else {
-                $html = view('admin.compliance-safeties.partials.list', compact('complianceSafeties'))->render();
-            }
+            // Return tbody rows only (for normal table view)
+            $html = view('admin.compliance-safeties.partials.tbody-rows', compact('complianceSafeties'))->render();
+            $pagination = view('admin.compliance-safeties.partials.pagination', compact('complianceSafeties'))->render();
+            
             return response()->json([
                 'success' => true,
                 'html' => $html,
+                'pagination' => $pagination,
                 'count' => $complianceSafeties->total(),
             ]);
+        }
+
+        // For normal page load, check if group_by_operator is requested
+        $groupByOperator = $request->boolean('group_by_operator', false);
+        $groupedLogs = null;
+        if ($groupByOperator) {
+            $groupedLogs = $complianceSafeties->groupBy('operator_id');
         }
 
         $operators = collect();

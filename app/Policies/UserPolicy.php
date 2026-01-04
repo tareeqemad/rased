@@ -68,10 +68,7 @@ class UserPolicy
         }
 
         if ($user->isCompanyOwner()) {
-            if (! $model->isEmployee() && ! $model->isTechnician()) {
-                return false;
-            }
-
+            // المشغل يمكنه تحديث أي مستخدم تابع له (بما في ذلك الأدوار المخصصة التي أنشأها)
             $operator = $user->ownedOperators()->first();
             if (! $operator) {
                 return false;

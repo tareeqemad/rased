@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Governorate;
+use App\Models\ConstantDetail;
 use App\Role;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -28,6 +29,7 @@ class Operator extends Model
         'unit_name',
         'governorate',
         'city',
+        'city_id',
         'detailed_address',
         'latitude',
         'longitude',
@@ -93,13 +95,28 @@ class Operator extends Model
         return $this->hasMany(ComplianceSafety::class);
     }
 
+    public function electricityTariffPrices(): HasMany
+    {
+        return $this->hasMany(ElectricityTariffPrice::class);
+    }
+
+    public function cityDetail(): BelongsTo
+    {
+        return $this->belongsTo(ConstantDetail::class, 'city_id');
+    }
+
+    public function roles(): HasMany
+    {
+        return $this->hasMany(Role::class);
+    }
+
     public function isProfileComplete(): bool
     {
         return $this->profile_completed &&
             !empty($this->unit_number) &&
             !empty($this->unit_name) &&
             !is_null($this->governorate) &&
-            !empty($this->city) &&
+            !is_null($this->city_id) &&
             !empty($this->detailed_address) &&
             !is_null($this->latitude) &&
             !is_null($this->longitude) &&
@@ -124,29 +141,63 @@ class Operator extends Model
         return $this->governorate?->code();
     }
 
-    public static function getNextUnitNumber(?Governorate $governorate): string
+    /**
+     * توليد رقم الوحدة التالي (001, 002, إلخ) حسب المحافظة والمدينة
+     */
+    public static function getNextUnitNumber(?Governorate $governorate, ?int $cityId = null): string
     {
-        if (!$governorate) {
-            return 'OP-001';
+        if (!$governorate || !$cityId) {
+            return '001';
         }
 
-        $code = $governorate->code();
-
+        // البحث عن آخر رقم وحدة في نفس المحافظة والمدينة
         $lastUnit = static::where('governorate', $governorate)
+            ->where('city_id', $cityId)
             ->whereNotNull('unit_number')
-            ->where('unit_number', 'like', $code.'-%')
-            ->orderByRaw('CAST(SUBSTRING_INDEX(unit_number, "-", -1) AS UNSIGNED) DESC')
+            ->orderByRaw('CAST(unit_number AS UNSIGNED) DESC')
             ->first();
 
         if ($lastUnit && $lastUnit->unit_number) {
-            $parts = explode('-', $lastUnit->unit_number);
-            $lastNumber = (int) end($parts);
+            $lastNumber = (int) $lastUnit->unit_number;
             $nextNumber = $lastNumber + 1;
         } else {
             $nextNumber = 1;
         }
 
-        return $code.'-'.str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
+        return str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
+    }
+
+    /**
+     * توليد كود الوحدة بالصيغة GU-PP-CC-NNN
+     * حيث:
+     * GU: ثابت (GENERATION UNIT)
+     * PP: ترميز المحافظة
+     * CC: ترميز المدينة
+     * NNN: رقم الوحدة (001, 002, إلخ)
+     */
+    public static function generateUnitCode(?Governorate $governorate, ?int $cityId, ?string $unitNumber = null): ?string
+    {
+        if (!$governorate || !$cityId) {
+            return null;
+        }
+
+        // الحصول على ترميز المحافظة
+        $governorateCode = $governorate->code();
+        
+        // الحصول على ترميز المدينة من الثوابت
+        $cityDetail = ConstantDetail::find($cityId);
+        if (!$cityDetail || !$cityDetail->code) {
+            return null;
+        }
+        
+        $cityCode = $cityDetail->code;
+        
+        // استخدام رقم الوحدة الموجود أو توليد واحد جديد
+        if (!$unitNumber) {
+            $unitNumber = self::getNextUnitNumber($governorate, $cityId);
+        }
+
+        return "GU-{$governorateCode}-{$cityCode}-{$unitNumber}";
     }
 
     public function getMissingFields(): array
@@ -156,7 +207,7 @@ class Operator extends Model
         if (empty($this->unit_number)) $missing[] = 'رقم الوحدة';
         if (empty($this->unit_name)) $missing[] = 'اسم الوحدة';
         if (is_null($this->governorate)) $missing[] = 'المحافظة';
-        if (empty($this->city)) $missing[] = 'المدينة';
+        if (is_null($this->city_id)) $missing[] = 'المدينة';
         if (empty($this->detailed_address)) $missing[] = 'العنوان التفصيلي';
         if (is_null($this->latitude) || is_null($this->longitude)) $missing[] = 'إحداثيات الموقع';
         if (empty($this->owner_name)) $missing[] = 'اسم المالك';
@@ -165,5 +216,13 @@ class Operator extends Model
         if (is_null($this->status)) $missing[] = 'حالة الوحدة';
 
         return $missing;
+    }
+
+    /**
+     * الحصول على اسم المدينة من الثوابت
+     */
+    public function getCityName(): ?string
+    {
+        return $this->cityDetail?->label ?? $this->city;
     }
 }

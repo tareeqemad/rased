@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('fuel_efficiencies', function (Blueprint $table) {
             $table->id();
             $table->foreignId('generator_id')->constrained('generators')->cascadeOnDelete();
+            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
 
             // تاريخ الاستهلاك
             $table->date('consumption_date');
@@ -37,6 +38,9 @@ return new class extends Migration
 
             $table->timestamps();
             $table->softDeletes();
+            
+            // فهارس للبحث السريع
+            $table->index(['generator_id', 'consumption_date'], 'idx_fuel_efficiencies_generator_date');
         });
     }
 

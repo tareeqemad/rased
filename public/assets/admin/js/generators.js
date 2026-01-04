@@ -9,6 +9,7 @@
     const $clearSearchBtn = $('#clearSearchBtn');
     const $countSpan = $('#generatorsCount');
     const $operatorFilter = $('#operatorFilter');
+    const $statusFilter = $('#statusFilter');
 
     function csrfToken() {
         return $('meta[name="csrf-token"]').attr('content') || $('#csrfToken').val();
@@ -86,12 +87,12 @@
     // Search functionality
     const runSearch = debounce(function () {
         const term = ($searchInput.val() || '').trim();
-        const status = $('.gen-filter.active').data('filter');
+        const status = $statusFilter.length ? $statusFilter.val() : '';
         const operatorId = $operatorFilter.length ? $operatorFilter.val() : '';
 
         const params = {};
         if (term) params.q = term;
-        if (status && status !== 'all') params.status = status;
+        if (status) params.status = status;
         if (operatorId) params.operator_id = operatorId;
 
         loadGenerators(params);
@@ -109,19 +110,38 @@
 
     $clearSearchBtn.on('click', function () {
         $searchInput.val('');
+        if ($statusFilter.length) $statusFilter.val('');
+        if ($operatorFilter.length) $operatorFilter.val('');
+        // Update clear button visibility
+        $clearSearchBtn.addClass('d-none');
         runSearch();
     });
 
-    // Filters
-    $(document).on('click', '.gen-filter', function () {
-        $('.gen-filter').removeClass('active');
-        $(this).addClass('active');
-        runSearch();
-    });
+    // Update clear button visibility based on filters
+    function updateClearButtonVisibility() {
+        const hasFilters = ($searchInput.val() || '').trim() || 
+                          ($statusFilter.length && $statusFilter.val()) || 
+                          ($operatorFilter.length && $operatorFilter.val());
+        $clearSearchBtn.toggleClass('d-none', !hasFilters);
+    }
+
+    // Watch for changes in filters
+    $searchInput.on('input', updateClearButtonVisibility);
+    
+    // Status filter change
+    if ($statusFilter.length) {
+        $statusFilter.on('change', function() {
+            updateClearButtonVisibility();
+            runSearch();
+        });
+    }
 
     // Operator filter change
     if ($operatorFilter.length) {
-        $operatorFilter.on('change', runSearch);
+        $operatorFilter.on('change', function() {
+            updateClearButtonVisibility();
+            runSearch();
+        });
     }
 
     // Delete generator
@@ -148,12 +168,12 @@
                 
                 // Reload the list
                 const term = ($searchInput.val() || '').trim();
-                const status = $('.gen-filter.active').data('filter');
+                const status = $statusFilter.length ? $statusFilter.val() : '';
                 const operatorId = $operatorFilter.length ? $operatorFilter.val() : '';
 
                 const params = {};
                 if (term) params.q = term;
-                if (status && status !== 'all') params.status = status;
+                if (status) params.status = status;
                 if (operatorId) params.operator_id = operatorId;
 
                 loadGenerators(params);

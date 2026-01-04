@@ -1,6 +1,9 @@
 @extends('layouts.front')
 
-@section('title', 'الإحصائيات - راصد')
+@php
+    $siteName = $siteName ?? \App\Models\Setting::get('site_name', 'راصد');
+@endphp
+@section('title', 'الإحصائيات - ' . $siteName)
 @section('description', 'إحصائيات شاملة عن المشغلين والمولدات في محافظات غزة')
 
 @push('styles')

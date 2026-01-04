@@ -9,6 +9,7 @@ use App\Models\Generator;
 use App\Models\Notification;
 use App\Models\OperationLog;
 use App\Models\Operator;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -71,33 +72,27 @@ class OperationLogController extends Controller
             $query->whereDate('operation_date', '<=', $request->input('date_to'));
         }
 
-        // Group by generator if requested
-        $groupByGenerator = $request->boolean('group_by_generator', false);
-        $groupedLogs = null;
-        
-        if ($groupByGenerator) {
-            // Paginate first, then group the current page's logs
-            $operationLogs = $query->latest('operation_date')->latest('start_time')->paginate(15);
-            // Group the current page's logs by generator
-            $groupedLogs = $operationLogs->groupBy('generator_id');
-        } else {
-            $operationLogs = $query->latest('operation_date')->latest('start_time')->paginate(15);
-        }
+        // Paginate - 100 items per page
+        $operationLogs = $query->latest('operation_date')->latest('start_time')->paginate(100);
 
         if ($request->ajax() || $request->wantsJson()) {
-            if ($groupByGenerator && $groupedLogs) {
-                $html = view('admin.operation-logs.partials.grouped-list', [
-                    'groupedLogs' => $groupedLogs,
-                    'operationLogs' => $operationLogs
-                ])->render();
-            } else {
-                $html = view('admin.operation-logs.partials.list', compact('operationLogs'))->render();
-            }
+            // Return tbody rows only
+            $html = view('admin.operation-logs.partials.tbody-rows', compact('operationLogs'))->render();
+            $pagination = view('admin.operation-logs.partials.pagination', compact('operationLogs'))->render();
+            
             return response()->json([
                 'success' => true,
                 'html' => $html,
+                'pagination' => $pagination,
                 'count' => $operationLogs->total(),
             ]);
+        }
+
+        // For normal page load, check if group_by_generator is requested
+        $groupByGenerator = $request->boolean('group_by_generator', false);
+        $groupedLogs = null;
+        if ($groupByGenerator) {
+            $groupedLogs = $operationLogs->groupBy('generator_id');
         }
 
         $operators = collect();
@@ -204,6 +199,19 @@ class OperationLogController extends Controller
             $data['energy_produced'] = null;
         }
 
+        // Auto-fill electricity tariff price if not provided
+        if (!isset($data['electricity_tariff_price']) || empty($data['electricity_tariff_price'])) {
+            $operationDate = Carbon::parse($data['operation_date']);
+            $tariffPrice = \App\Models\ElectricityTariffPrice::getActivePriceForDate(
+                $data['operator_id'],
+                $operationDate
+            );
+            
+            if ($tariffPrice) {
+                $data['electricity_tariff_price'] = $tariffPrice->price_per_kwh;
+            }
+        }
+
         $operationLog = OperationLog::create($data);
 
         $generator = Generator::with('operator')->find($data['generator_id']);
@@ -300,6 +308,19 @@ class OperationLogController extends Controller
             $data['energy_produced'] = round($data['energy_meter_end'] - $data['energy_meter_start'], 2);
         } else {
             $data['energy_produced'] = null;
+        }
+
+        // Auto-fill electricity tariff price if not provided
+        if (!isset($data['electricity_tariff_price']) || empty($data['electricity_tariff_price'])) {
+            $operationDate = Carbon::parse($data['operation_date']);
+            $tariffPrice = \App\Models\ElectricityTariffPrice::getActivePriceForDate(
+                $data['operator_id'],
+                $operationDate
+            );
+            
+            if ($tariffPrice) {
+                $data['electricity_tariff_price'] = $tariffPrice->price_per_kwh;
+            }
         }
 
         $operationLog->update($data);

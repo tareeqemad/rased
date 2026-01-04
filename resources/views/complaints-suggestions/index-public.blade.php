@@ -1,6 +1,9 @@
 @extends('layouts.public')
 
-@section('title', 'المقترحات والشكاوى - راصد')
+@php
+    $siteName = $siteName ?? \App\Models\Setting::get('site_name', 'راصد');
+@endphp
+@section('title', 'المقترحات والشكاوى - ' . $siteName)
 
 @push('styles')
 <link rel="stylesheet" href="{{ asset('assets/front/css/complaints.css') }}">

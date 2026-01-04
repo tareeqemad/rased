@@ -155,22 +155,23 @@ private function ajaxIndex(Request $request, User $actor): JsonResponse
             $operatorName = $u->operators->first()?->name;
         }
 
-        return [
-            'id' => $u->id,
-            'name' => $u->name,
-            'username' => $u->username,
-            'email' => $u->email,
-            'role' => $u->role?->value ?? (string)$u->getRawOriginal('role'),
-            'operator' => $operatorName,
-            'employees_count' => $employeesCount,
-            'created_at' => optional($u->created_at)->format('Y-m-d'),
-            'can_edit' => $actor->can('update', $u),
-            'can_delete' => $actor->can('delete', $u),
-            'urls' => [
-                'edit' => route('admin.users.edit', $u),
-                'permissions' => route('admin.permissions.index', ['user_id' => $u->id]),
-            ],
-        ];
+            return [
+                'id' => $u->id,
+                'name' => $u->name,
+                'username' => $u->username,
+                'email' => $u->email,
+                'role' => $u->role?->value ?? (string)$u->getRawOriginal('role'),
+                'status' => $u->status ?? 'active',
+                'operator' => $operatorName,
+                'employees_count' => $employeesCount,
+                'created_at' => optional($u->created_at)->format('Y-m-d'),
+                'can_edit' => $actor->can('update', $u),
+                'can_delete' => $actor->can('delete', $u),
+                'urls' => [
+                    'edit' => route('admin.users.edit', $u),
+                    'permissions' => route('admin.permissions.index', ['user_id' => $u->id]),
+                ],
+            ];
     })->values();
 
         return response()->json([
@@ -278,12 +279,16 @@ private function ajaxIndex(Request $request, User $actor): JsonResponse
             return $this->jsonOrRedirect($request, false, 'يمكنك إنشاء موظفين وفنيين فقط.');
         }
 
+        // الحصول على role_id من جدول roles
+        $roleModel = \App\Models\Role::findByName($role->value);
+        
         $user = User::create([
             'name' => $request->validated('name'),
             'username' => $request->validated('username'),
             'email' => $request->validated('email'),
             'password' => Hash::make($request->validated('password')),
             'role' => $role,
+            'role_id' => $roleModel?->id,
         ]);
 
         // ربط الموظف/الفني بمشغل واحد فقط
@@ -321,11 +326,16 @@ private function ajaxIndex(Request $request, User $actor): JsonResponse
     {
         $authUser = auth()->user();
 
+        // الحصول على role_id من جدول roles
+        $newRole = Role::from($request->validated('role'));
+        $roleModel = \App\Models\Role::findByName($newRole->value);
+
         $data = [
             'name' => $request->validated('name'),
             'username' => $request->validated('username'),
             'email' => $request->validated('email'),
-            'role' => Role::from($request->validated('role')),
+            'role' => $newRole,
+            'role_id' => $roleModel?->id,
         ];
 
         if ($request->filled('password')) {
@@ -366,6 +376,36 @@ private function ajaxIndex(Request $request, User $actor): JsonResponse
         $user->delete();
 
         return $this->jsonOrRedirect($request, true, 'تم حذف المستخدم بنجاح.');
+    }
+
+    /**
+     * Toggle user status (active/inactive)
+     */
+    public function toggleStatus(Request $request, User $user): RedirectResponse|JsonResponse
+    {
+        $authUser = auth()->user();
+        
+        // التحقق من الصلاحية (update policy)
+        $this->authorize('update', $user);
+
+        // السوبر أدمن أو المشغل يمكنهما تغيير الحالة
+        // (Policy يتحقق من العلاقة للمشغل)
+        if (!$authUser->isSuperAdmin() && !$authUser->isCompanyOwner()) {
+            abort(403, 'لا تملك صلاحية لتغيير حالة المستخدم');
+        }
+
+        // منع إيقاف نفسه
+        if ($user->id === $authUser->id) {
+            return $this->jsonOrRedirect($request, false, 'لا يمكنك إيقاف حسابك الخاص.');
+        }
+
+        $user->status = $user->status === 'active' ? 'inactive' : 'active';
+        $user->save();
+
+        $statusLabel = $user->status === 'active' ? 'تفعيل' : 'إيقاف';
+        $message = "تم {$statusLabel} المستخدم بنجاح";
+
+        return $this->jsonOrRedirect($request, true, $message);
     }
 
     /**

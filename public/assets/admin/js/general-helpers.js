@@ -11,6 +11,135 @@
      */
     const GeneralHelpers = {
         /**
+         * الحصول على المدن حسب المحافظة
+         * 
+         * @param {number|string} governorateId - ID المحافظة
+         * @param {string} governorateCode - كود المحافظة (بديل)
+         * @param {object} options - خيارات إضافية
+         * @param {function} options.onSuccess - callback عند النجاح
+         * @param {function} options.onError - callback عند الخطأ
+         * @returns {Promise} Promise يحتوي على بيانات المدن
+         */
+        getCitiesByGovernorate: function(governorateId, governorateCode, options = {}) {
+            const {
+                onSuccess = null,
+                onError = null
+            } = options;
+
+            // بناء URL
+            const url = '/admin/constant-details/cities-by-governorate';
+            const params = new URLSearchParams();
+            if (governorateId) {
+                params.append('governorate_id', governorateId);
+            } else if (governorateCode) {
+                params.append('governorate_code', governorateCode);
+            } else {
+                const error = new Error('يجب تحديد المحافظة (ID أو Code)');
+                if (onError) {
+                    onError(error);
+                }
+                return Promise.reject(error);
+            }
+            const fullUrl = `${url}?${params.toString()}`;
+
+            // إرسال الطلب
+            return fetch(fullUrl, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                },
+                credentials: 'same-origin'
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(data => {
+                        throw new Error(data.message || 'حدث خطأ أثناء جلب المدن');
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success && data.data) {
+                    if (onSuccess) {
+                        onSuccess(data.data);
+                    }
+                    return data.data;
+                } else {
+                    throw new Error(data.message || 'لم يتم العثور على مدن');
+                }
+            })
+            .catch(error => {
+                if (onError) {
+                    onError(error);
+                }
+                throw error;
+            });
+        },
+
+        /**
+         * تحديث select المدن بناءً على المحافظة المختارة
+         * 
+         * @param {string|HTMLElement} governorateSelect - select المحافظة (selector أو element)
+         * @param {string|HTMLElement} citySelect - select المدينة (selector أو element)
+         * @param {object} options - خيارات إضافية
+         * @param {string} options.placeholder - النص الافتراضي (افتراضي: 'اختر المدينة')
+         * @param {string|number} options.selectedValue - قيمة محددة مسبقاً
+         */
+        updateCitiesSelect: function(governorateSelect, citySelect, options = {}) {
+            const {
+                placeholder = 'اختر المدينة',
+                selectedValue = null
+            } = options;
+
+            const governorateEl = typeof governorateSelect === 'string' 
+                ? document.querySelector(governorateSelect) 
+                : governorateSelect;
+            const cityEl = typeof citySelect === 'string' 
+                ? document.querySelector(citySelect) 
+                : citySelect;
+
+            if (!governorateEl || !cityEl) {
+                console.error('GeneralHelpers.updateCitiesSelect: عناصر select غير موجودة');
+                return;
+            }
+
+            // إعادة تعيين select المدينة
+            cityEl.innerHTML = `<option value="">${placeholder}</option>`;
+            cityEl.disabled = true;
+
+            const governorateValue = governorateEl.value;
+            if (!governorateValue) {
+                return;
+            }
+
+            // الحصول على ID المحافظة من option المختار
+            const selectedOption = governorateEl.options[governorateEl.selectedIndex];
+            const governorateId = selectedOption ? selectedOption.dataset.governorateId || governorateValue : governorateValue;
+
+            // جلب المدن
+            GeneralHelpers.getCitiesByGovernorate(governorateId, null, {
+                onSuccess: function(cities) {
+                    cityEl.innerHTML = `<option value="">${placeholder}</option>`;
+                    cities.forEach(function(city) {
+                        const option = document.createElement('option');
+                        option.value = city.id || city.code || city.value;
+                        option.textContent = city.label;
+                        if (selectedValue && (option.value == selectedValue || city.code == selectedValue || city.value == selectedValue)) {
+                            option.selected = true;
+                        }
+                        cityEl.appendChild(option);
+                    });
+                    cityEl.disabled = false;
+                },
+                onError: function(error) {
+                    console.error('خطأ في جلب المدن:', error);
+                    cityEl.innerHTML = `<option value="">${placeholder}</option>`;
+                }
+            });
+        },
+        /**
          * الحصول على المشغلين التابعين لمحافظة معينة
          * 
          * @param {number} governorateValue - رقم المحافظة (10, 20, 30, 40)

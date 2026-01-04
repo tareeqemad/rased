@@ -34,7 +34,8 @@ class GeneralHelper
      */
     public static function getOperatorsByGovernorateSimple(int $governorateValue, bool $activeOnly = true): Collection
     {
-        $query = Operator::select('id', 'name', 'governorate', 'city', 'unit_number', 'status')
+        $query = Operator::select('id', 'name', 'governorate', 'city', 'city_id', 'unit_number', 'status')
+            ->with('cityDetail')
             ->where('governorate', $governorateValue);
 
         if ($activeOnly) {

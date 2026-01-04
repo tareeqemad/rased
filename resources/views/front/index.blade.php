@@ -1,12 +1,18 @@
 @extends('layouts.front')
 
-@section('title', 'راصد - منصة رقمية لإدارة سوق الطاقة')
+@php
+    $siteName = $siteName ?? \App\Models\Setting::get('site_name', 'راصد');
+@endphp
+@section('title', $siteName . ' - منصة رقمية لإدارة سوق الطاقة')
 @section('description', 'منصة رقمية متكاملة لتنظيم وإدارة سوق الطاقة في محافظات غزة')
 
 @push('meta')
-    <meta name="keywords" content="راصد, منصة الطاقة, مولدات كهرباء, غزة, محافظات غزة, مشغلين, إدارة الطاقة">
-    <meta name="author" content="راصد">
-    <meta property="og:title" content="راصد - منصة رقمية لإدارة سوق الطاقة">
+    @php
+        $siteName = $siteName ?? \App\Models\Setting::get('site_name', 'راصد');
+    @endphp
+    <meta name="keywords" content="{{ $siteName }}, منصة الطاقة, مولدات كهرباء, غزة, محافظات غزة, مشغلين, إدارة الطاقة">
+    <meta name="author" content="{{ $siteName }}">
+    <meta property="og:title" content="{{ $siteName }} - منصة رقمية لإدارة سوق الطاقة">
     <meta property="og:description" content="منصة رقمية متكاملة لتنظيم وإدارة سوق الطاقة في محافظات غزة">
     <meta property="og:type" content="website">
     <link rel="canonical" href="{{ url('/') }}">
@@ -372,7 +378,7 @@
     <section class="hero-section">
         <div class="hero-content">
             <div class="hero-text">
-                <h1 class="hero-title">منصة راصد</h1>
+                <h1 class="hero-title">منصة {{ $siteName ?? 'راصد' }}</h1>
                 <p class="hero-subtitle">
                     منصة رقمية متكاملة لتنظيم وإدارة سوق الطاقة في محافظات غزة
                     <br>

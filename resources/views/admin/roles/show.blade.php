@@ -8,24 +8,34 @@
     $breadcrumbParentUrl = route('admin.roles.index');
 @endphp
 
+@push('styles')
+    <link rel="stylesheet" href="{{ asset('assets/admin/css/roles.css') }}">
+@endpush
+
 @section('content')
-    <div class="row">
+<div class="roles-page">
+    <div class="row g-3">
         <div class="col-12">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0 fw-bold">
-                        <i class="bi bi-shield-check me-2"></i>
-                        تفاصيل الدور
-                    </h5>
+            <div class="roles-card">
+                <div class="roles-card-header">
+                    <div>
+                        <h5 class="roles-title">
+                            <i class="bi bi-shield-check me-2"></i>
+                            تفاصيل الدور
+                        </h5>
+                        <div class="roles-subtitle">
+                            عرض تفاصيل الدور: {{ $role->label }}
+                        </div>
+                    </div>
                     <div class="d-flex gap-2">
                         @can('update', $role)
-                            <a href="{{ route('admin.roles.edit', $role) }}" class="btn btn-sm">
+                            <a href="{{ route('admin.roles.edit', $role) }}" class="btn btn-primary">
                                 <i class="bi bi-pencil me-1"></i>
                                 تعديل
                             </a>
                         @endcan
-                        <a href="{{ route('admin.roles.index') }}" class="btn btn-sm">
-                            <i class="bi bi-arrow-right me-1"></i>
+                        <a href="{{ route('admin.roles.index') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-right me-2"></i>
                             رجوع
                         </a>
                     </div>
@@ -152,4 +162,5 @@
             </div>
         </div>
     </div>
+</div>
 @endsection

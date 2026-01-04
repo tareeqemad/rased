@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>متابعة الطلب - راصد</title>
+    @php
+        $siteName = \App\Models\Setting::get('site_name', 'راصد');
+    @endphp
+    <title>متابعة الطلب - {{ $siteName }}</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap');
 

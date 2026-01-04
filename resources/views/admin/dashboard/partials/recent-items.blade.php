@@ -1,0 +1,334 @@
+<!-- Recent Items & Alerts - Unified with Tabs -->
+<div class="row g-3">
+    <div class="col-12">
+        <div class="dashboard-card">
+            <div class="dashboard-card-header">
+                <div>
+                    <h5 class="dashboard-card-title">
+                        <i class="bi bi-clock-history me-2"></i>
+                        العناصر الأخيرة
+                    </h5>
+                    <p class="dashboard-card-subtitle">نظرة سريعة على آخر الأنشطة والعناصر</p>
+                </div>
+            </div>
+            <div class="dashboard-card-body">
+                <!-- Tabs Navigation -->
+                <ul class="nav nav-tabs nav-tabs-custom mb-3" id="recentItemsTab" role="tablist">
+                    @if(isset($generatorsNeedingMaintenance) && $generatorsNeedingMaintenance->count() > 0)
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="maintenance-tab" data-bs-toggle="tab" data-bs-target="#maintenance-content" type="button" role="tab">
+                            <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                            مولدات تحتاج صيانة
+                            @if($generatorsNeedingMaintenance->count() > 0)
+                                <span class="badge bg-warning ms-1">{{ $generatorsNeedingMaintenance->count() }}</span>
+                            @endif
+                        </button>
+                    </li>
+                    @endif
+                    @if(isset($recentOperationLogs) && $recentOperationLogs->count() > 0)
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link {{ (!isset($generatorsNeedingMaintenance) || $generatorsNeedingMaintenance->count() == 0) ? 'active' : '' }}" id="operation-logs-tab" data-bs-toggle="tab" data-bs-target="#operation-logs-content" type="button" role="tab">
+                            <i class="bi bi-journal-text me-1"></i>
+                            آخر سجلات التشغيل
+                        </button>
+                    </li>
+                    @endif
+                    @if(isset($recentGenerators) && $recentGenerators->count() > 0)
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link {{ ((!isset($generatorsNeedingMaintenance) || $generatorsNeedingMaintenance->count() == 0) && (!isset($recentOperationLogs) || $recentOperationLogs->count() == 0)) ? 'active' : '' }}" id="recent-generators-tab" data-bs-toggle="tab" data-bs-target="#recent-generators-content" type="button" role="tab">
+                            <i class="bi bi-lightning-charge-fill me-1"></i>
+                            آخر المولدات
+                        </button>
+                    </li>
+                    @endif
+                    @if((auth()->user()->isSuperAdmin() || auth()->user()->isAdmin()) && isset($recentOperators) && $recentOperators->count() > 0)
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link {{ ((!isset($generatorsNeedingMaintenance) || $generatorsNeedingMaintenance->count() == 0) && (!isset($recentOperationLogs) || $recentOperationLogs->count() == 0) && (!isset($recentGenerators) || $recentGenerators->count() == 0)) ? 'active' : '' }}" id="recent-operators-tab" data-bs-toggle="tab" data-bs-target="#recent-operators-content" type="button" role="tab">
+                            <i class="bi bi-building me-1"></i>
+                            آخر المشغلين
+                        </button>
+                    </li>
+                    @endif
+                    @if(isset($unansweredComplaints) && $unansweredComplaints->count() > 0)
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link {{ ((!isset($generatorsNeedingMaintenance) || $generatorsNeedingMaintenance->count() == 0) && (!isset($recentOperationLogs) || $recentOperationLogs->count() == 0) && (!isset($recentGenerators) || $recentGenerators->count() == 0) && (!(auth()->user()->isSuperAdmin() || auth()->user()->isAdmin()) || !isset($recentOperators) || $recentOperators->count() == 0)) ? 'active' : '' }}" id="unanswered-complaints-tab" data-bs-toggle="tab" data-bs-target="#unanswered-complaints-content" type="button" role="tab">
+                            <i class="bi bi-chat-left-text me-1"></i>
+                            شكاوى ومقترحات غير م responded عليها
+                            <span class="badge bg-warning ms-1">{{ $unansweredComplaints->count() }}</span>
+                        </button>
+                    </li>
+                    @endif
+                </ul>
+
+                <!-- Tabs Content -->
+                <div class="tab-content" id="recentItemsTabContent">
+                    @if(isset($generatorsNeedingMaintenance) && $generatorsNeedingMaintenance->count() > 0)
+                    <!-- Maintenance Tab -->
+                    <div class="tab-pane fade show active" id="maintenance-content" role="tabpanel">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <p class="text-muted mb-0">مولدات تحتاج إلى صيانة فورية</p>
+                            <a href="{{ route('admin.maintenance-records.index') }}" class="btn btn-outline-warning btn-sm">
+                                عرض الكل <i class="bi bi-arrow-left ms-1"></i>
+                            </a>
+                        </div>
+                        <div class="dashboard-list-container">
+                            @foreach($generatorsNeedingMaintenance as $generator)
+                                <div class="dashboard-list-item">
+                                    <div class="dashboard-list-item-icon">
+                                        <i class="bi bi-exclamation-circle text-danger"></i>
+                                    </div>
+                                    <div class="dashboard-list-item-content">
+                                        <h6 class="dashboard-list-item-title">{{ $generator->name }}</h6>
+                                        <div class="dashboard-list-item-meta">
+                                            @if($generator->operator)
+                                                <span class="dashboard-list-item-text">
+                                                    <i class="bi bi-building me-1"></i>
+                                                    {{ $generator->operator->name }}
+                                                </span>
+                                            @endif
+                                        </div>
+                                        <small class="dashboard-list-item-time">
+                                            @if($generator->last_major_maintenance_date)
+                                                <i class="bi bi-calendar-x me-1"></i>
+                                                آخر صيانة: {{ $generator->last_major_maintenance_date->diffForHumans() }}
+                                            @else
+                                                <span class="text-danger">
+                                                    <i class="bi bi-exclamation-circle me-1"></i>
+                                                    لم يتم تسجيل صيانة
+                                                </span>
+                                            @endif
+                                        </small>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                    @endif
+
+                    @if(isset($recentOperationLogs) && $recentOperationLogs->count() > 0)
+                    <!-- Operation Logs Tab -->
+                    <div class="tab-pane fade {{ (!isset($generatorsNeedingMaintenance) || $generatorsNeedingMaintenance->count() == 0) ? 'show active' : '' }}" id="operation-logs-content" role="tabpanel">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <p class="text-muted mb-0">آخر السجلات المسجلة</p>
+                            <a href="{{ route('admin.operation-logs.index') }}" class="btn btn-outline-primary btn-sm">
+                                عرض الكل <i class="bi bi-arrow-left ms-1"></i>
+                            </a>
+                        </div>
+                        <div class="dashboard-list-container">
+                            @foreach($recentOperationLogs as $log)
+                                <div class="dashboard-list-item">
+                                    <div class="dashboard-list-item-icon">
+                                        <i class="bi bi-lightning-charge text-success"></i>
+                                    </div>
+                                    <div class="dashboard-list-item-content">
+                                        <h6 class="dashboard-list-item-title">{{ $log->generator->name }}</h6>
+                                        <div class="dashboard-list-item-meta">
+                                            @if($log->energy_produced)
+                                                <span class="badge badge-success">{{ number_format($log->energy_produced, 2) }} kWh</span>
+                                            @endif
+                                            @if($log->operator)
+                                                <span class="dashboard-list-item-text">
+                                                    <i class="bi bi-building me-1"></i>
+                                                    {{ $log->operator->name }}
+                                                </span>
+                                            @endif
+                                        </div>
+                                        <small class="dashboard-list-item-time">
+                                            <i class="bi bi-calendar me-1"></i>
+                                            {{ $log->operation_date->format('Y-m-d') }}
+                                            <span class="mx-2">|</span>
+                                            <i class="bi bi-clock me-1"></i>
+                                            {{ $log->created_at->diffForHumans() }}
+                                        </small>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                    @endif
+
+                    @if(isset($recentGenerators) && $recentGenerators->count() > 0)
+                    <!-- Recent Generators Tab -->
+                    <div class="tab-pane fade {{ ((!isset($generatorsNeedingMaintenance) || $generatorsNeedingMaintenance->count() == 0) && (!isset($recentOperationLogs) || $recentOperationLogs->count() == 0)) ? 'show active' : '' }}" id="recent-generators-content" role="tabpanel">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <p class="text-muted mb-0">آخر المولدات المضافة للنظام</p>
+                            <a href="{{ route('admin.generators.index') }}" class="btn btn-outline-primary btn-sm">
+                                عرض الكل <i class="bi bi-arrow-left ms-1"></i>
+                            </a>
+                        </div>
+                        <div class="dashboard-list-container">
+                            @forelse($recentGenerators as $generator)
+                                <div class="dashboard-list-item">
+                                    <div class="dashboard-list-item-icon">
+                                        <i class="bi bi-lightning-charge-fill text-success"></i>
+                                    </div>
+                                    <div class="dashboard-list-item-content">
+                                        <h6 class="dashboard-list-item-title">{{ $generator->name }}</h6>
+                                        <div class="dashboard-list-item-meta">
+                                            <span class="badge badge-{{ $generator->status === 'active' ? 'success' : 'secondary' }}">
+                                                {{ $generator->status === 'active' ? 'نشط' : 'غير نشط' }}
+                                            </span>
+                                            <span class="dashboard-list-item-text">
+                                                <i class="bi bi-building me-1"></i>
+                                                {{ $generator->operator->name }}
+                                            </span>
+                                        </div>
+                                        <small class="dashboard-list-item-time">
+                                            <i class="bi bi-clock me-1"></i>
+                                            {{ $generator->created_at->diffForHumans() }}
+                                        </small>
+                                    </div>
+                                </div>
+                            @empty
+                                <div class="dashboard-empty-state">
+                                    <i class="bi bi-inbox fs-1"></i>
+                                    <p>لا توجد مولدات</p>
+                                </div>
+                            @endforelse
+                        </div>
+                    </div>
+                    @endif
+
+                    @if((auth()->user()->isSuperAdmin() || auth()->user()->isAdmin()) && isset($recentOperators) && $recentOperators->count() > 0)
+                    <!-- Recent Operators Tab -->
+                    <div class="tab-pane fade {{ ((!isset($generatorsNeedingMaintenance) || $generatorsNeedingMaintenance->count() == 0) && (!isset($recentOperationLogs) || $recentOperationLogs->count() == 0) && (!isset($recentGenerators) || $recentGenerators->count() == 0)) ? 'show active' : '' }}" id="recent-operators-content" role="tabpanel">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <p class="text-muted mb-0">آخر المشغلين المسجلين</p>
+                            <a href="{{ route('admin.operators.index') }}" class="btn btn-outline-primary btn-sm">
+                                عرض الكل <i class="bi bi-arrow-left ms-1"></i>
+                            </a>
+                        </div>
+                        <div class="dashboard-list-container">
+                            @forelse($recentOperators as $operator)
+                                <div class="dashboard-list-item">
+                                    <div class="dashboard-list-item-icon">
+                                        <i class="bi bi-building text-info"></i>
+                                    </div>
+                                    <div class="dashboard-list-item-content">
+                                        <h6 class="dashboard-list-item-title">{{ $operator->name }}</h6>
+                                        <div class="dashboard-list-item-meta">
+                                            <span class="dashboard-list-item-text">
+                                                <i class="bi bi-person me-1"></i>
+                                                {{ $operator->owner->name }}
+                                            </span>
+                                        </div>
+                                        <small class="dashboard-list-item-time">
+                                            <i class="bi bi-clock me-1"></i>
+                                            {{ $operator->created_at->diffForHumans() }}
+                                        </small>
+                                    </div>
+                                </div>
+                            @empty
+                                <div class="dashboard-empty-state">
+                                    <i class="bi bi-inbox fs-1"></i>
+                                    <p>لا توجد مشغلين</p>
+                                </div>
+                            @endforelse
+                        </div>
+                    </div>
+                    @endif
+
+                    @if(isset($unansweredComplaints) && $unansweredComplaints->count() > 0)
+                    <!-- Unanswered Complaints Tab -->
+                    <div class="tab-pane fade {{ ((!isset($generatorsNeedingMaintenance) || $generatorsNeedingMaintenance->count() == 0) && (!isset($recentOperationLogs) || $recentOperationLogs->count() == 0) && (!isset($recentGenerators) || $recentGenerators->count() == 0) && (!(auth()->user()->isSuperAdmin() || auth()->user()->isAdmin()) || !isset($recentOperators) || $recentOperators->count() == 0)) ? 'show active' : '' }}" id="unanswered-complaints-content" role="tabpanel">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <p class="text-muted mb-0">طلبات تحتاج إلى متابعة</p>
+                            <a href="{{ route('admin.complaints-suggestions.index') }}" class="btn btn-outline-info btn-sm">
+                                عرض الكل <i class="bi bi-arrow-left ms-1"></i>
+                            </a>
+                        </div>
+                        <div class="dashboard-list-container">
+                            @foreach($unansweredComplaints as $complaint)
+                                <div class="dashboard-list-item">
+                                    <div class="dashboard-list-item-icon">
+                                        <i class="bi bi-chat-left-text text-info"></i>
+                                    </div>
+                                    <div class="dashboard-list-item-content">
+                                        <h6 class="dashboard-list-item-title">
+                                            {{ $complaint->type === 'complaint' ? 'شكوى' : 'مقترح' }}: {{ $complaint->name }}
+                                        </h6>
+                                        <div class="dashboard-list-item-meta">
+                                            @if($complaint->generator)
+                                                <span class="dashboard-list-item-text">
+                                                    <i class="bi bi-lightning-charge me-1"></i>
+                                                    {{ $complaint->generator->name }}
+                                                </span>
+                                            @endif
+                                            <span class="badge badge-{{ $complaint->status === 'pending' ? 'warning' : 'info' }}">
+                                                {{ $complaint->status_label }}
+                                            </span>
+                                        </div>
+                                        <small class="dashboard-list-item-time">
+                                            <i class="bi bi-clock me-1"></i>
+                                            {{ $complaint->created_at->diffForHumans() }}
+                                        </small>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Additional Recent Items -->
+<div class="row g-3 mt-3">
+    @if(isset($expiringCompliance) && $expiringCompliance->count() > 0)
+        <!-- Expiring Compliance -->
+        <div class="col-12 col-lg-6">
+            <div class="dashboard-card dashboard-card-danger">
+                <div class="dashboard-card-header">
+                    <div>
+                        <h5 class="dashboard-card-title text-danger">
+                            <i class="bi bi-shield-exclamation me-2"></i>
+                            شهادات منتهية أو قريبة من الانتهاء
+                        </h5>
+                        <p class="dashboard-card-subtitle">شهادات تحتاج إلى متابعة</p>
+                    </div>
+                    <a href="{{ route('admin.compliance-safeties.index') }}" class="btn btn-outline-danger btn-sm">
+                        عرض الكل <i class="bi bi-arrow-left ms-1"></i>
+                    </a>
+                </div>
+                <div class="dashboard-card-body p-0">
+                    <div class="dashboard-list-container">
+                        @foreach($expiringCompliance as $compliance)
+                            <div class="dashboard-list-item">
+                                <div class="dashboard-list-item-icon">
+                                    <i class="bi bi-shield-exclamation text-danger"></i>
+                                </div>
+                                <div class="dashboard-list-item-content">
+                                    <h6 class="dashboard-list-item-title">{{ $compliance->operator->name }}</h6>
+                                    <div class="dashboard-list-item-meta">
+                                        <span class="badge badge-{{ $compliance->safety_certificate_status === 'expired' ? 'danger' : 'warning' }}">
+                                            {{ $compliance->safety_certificate_status === 'expired' ? 'منتهية' : 'قريبة من الانتهاء' }}
+                                        </span>
+                                    </div>
+                                    <small class="dashboard-list-item-time">
+                                        @if($compliance->last_inspection_date)
+                                            <i class="bi bi-calendar-x me-1"></i>
+                                            آخر فحص: {{ $compliance->last_inspection_date->format('Y-m-d') }}
+                                            @if($compliance->last_inspection_date->lt(Carbon::now()->subMonths(6)))
+                                                <span class="text-danger ms-2">(منذ {{ $compliance->last_inspection_date->diffForHumans() }})</span>
+                                            @endif
+                                        @else
+                                            <span class="text-danger">
+                                                <i class="bi bi-exclamation-circle me-1"></i>
+                                                لم يتم تسجيل فحص
+                                            </span>
+                                        @endif
+                                    </small>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+</div>
+
+
+

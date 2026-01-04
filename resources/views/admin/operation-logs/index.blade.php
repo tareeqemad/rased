@@ -39,92 +39,111 @@
                             @endcan
                         </div>
 
-                        {{-- Row 1: الفلاتر --}}
-                        <div class="row g-3 mb-3">
-                            {{-- البحث --}}
-                            <div class="{{ (auth()->user()->isSuperAdmin() && isset($operators) && $operators->count() > 0) || (isset($generators) && $generators->count() > 0) ? 'col-md-3' : 'col-md-4' }}">
-                                <label class="form-label small text-muted">البحث</label>
-                                <div class="log-searchfield">
-                                    <i class="bi bi-search log-search-icon"></i>
-                                    <input
-                                        type="text"
-                                        id="searchInput"
-                                        class="form-control log-search-input"
-                                        placeholder="ابحث عن سجل بالاسم/الرقم/المشغل..."
-                                        value="{{ request('q', '') }}"
-                                    >
-                                </div>
+                        {{-- كارد واحد للفلاتر --}}
+                        <div class="card border mb-3">
+                            <div class="card-header bg-light">
+                                <h6 class="card-title mb-0">
+                                    <i class="bi bi-funnel me-2"></i>
+                                    فلاتر البحث
+                                </h6>
                             </div>
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    {{-- البحث --}}
+                                    <div class="{{ (auth()->user()->isSuperAdmin() && isset($operators) && $operators->count() > 0) || (isset($generators) && $generators->count() > 0) ? 'col-md-3' : 'col-md-4' }}">
+                                        <label class="form-label fw-semibold">
+                                            <i class="bi bi-search me-1"></i>
+                                            البحث
+                                        </label>
+                                        <input
+                                            type="text"
+                                            id="searchInput"
+                                            class="form-control"
+                                            placeholder="ابحث عن سجل بالاسم/الرقم/المشغل..."
+                                            value="{{ request('q', '') }}"
+                                        >
+                                    </div>
 
-                            {{-- المشغل (SuperAdmin فقط) --}}
-                            @if(auth()->user()->isSuperAdmin() && isset($operators) && $operators->count() > 0)
-                                <div class="col-md-3">
-                                    <label class="form-label small text-muted">المشغل</label>
-                                    <select id="operatorFilter" class="form-select">
-                                        <option value="">كل المشغلين</option>
-                                        @foreach($operators as $op)
-                                            <option value="{{ $op->id }}" {{ request('operator_id') == $op->id ? 'selected' : '' }}>
-                                                {{ $op->unit_number ? $op->unit_number . ' - ' : '' }}{{ $op->name }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                            @endif
+                                    {{-- المشغل (SuperAdmin فقط) --}}
+                                    @if(auth()->user()->isSuperAdmin() && isset($operators) && $operators->count() > 0)
+                                        <div class="col-md-3">
+                                            <label class="form-label fw-semibold">
+                                                <i class="bi bi-building me-1"></i>
+                                                المشغل
+                                            </label>
+                                            <select id="operatorFilter" class="form-select">
+                                                <option value="">كل المشغلين</option>
+                                                @foreach($operators as $op)
+                                                    <option value="{{ $op->id }}" {{ request('operator_id') == $op->id ? 'selected' : '' }}>
+                                                        {{ $op->unit_number ? $op->unit_number . ' - ' : '' }}{{ $op->name }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                    @endif
 
-                            {{-- المولد --}}
-                            @if(isset($generators) && $generators->count() > 0)
-                                <div class="col-md-3">
-                                    <label class="form-label small text-muted">
-                                        <i class="bi bi-lightning-charge me-1"></i>
-                                        المولد
-                                    </label>
-                                    <select id="generatorFilter" class="form-select">
-                                        <option value="">كل المولدات</option>
-                                        @foreach($generators as $gen)
-                                            <option value="{{ $gen->id }}" {{ request('generator_id') == $gen->id ? 'selected' : '' }}>
-                                                {{ $gen->generator_number }} - {{ $gen->name }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                            @endif
+                                    {{-- المولد --}}
+                                    @if(isset($generators) && $generators->count() > 0)
+                                        <div class="col-md-3">
+                                            <label class="form-label fw-semibold">
+                                                <i class="bi bi-lightning-charge me-1"></i>
+                                                المولد
+                                            </label>
+                                            <select id="generatorFilter" class="form-select">
+                                                <option value="">كل المولدات</option>
+                                                @foreach($generators as $gen)
+                                                    <option value="{{ $gen->id }}" {{ request('generator_id') == $gen->id ? 'selected' : '' }}>
+                                                        {{ $gen->generator_number }} - {{ $gen->name }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                    @endif
 
-                            {{-- تاريخ من --}}
-                            <div class="{{ ((auth()->user()->isSuperAdmin() && isset($operators) && $operators->count() > 0) || (isset($generators) && $generators->count() > 0)) ? 'col-md-3' : 'col-md-4' }}">
-                                <label class="form-label small text-muted">من تاريخ</label>
-                                <input type="date" id="dateFromFilter" class="form-control" 
-                                       value="{{ request('date_from', '') }}">
-                            </div>
+                                    {{-- تاريخ من --}}
+                                    <div class="{{ ((auth()->user()->isSuperAdmin() && isset($operators) && $operators->count() > 0) || (isset($generators) && $generators->count() > 0)) ? 'col-md-3' : 'col-md-4' }}">
+                                        <label class="form-label fw-semibold">
+                                            <i class="bi bi-calendar-event me-1"></i>
+                                            من تاريخ
+                                        </label>
+                                        <input type="date" id="dateFromFilter" class="form-control" 
+                                               value="{{ request('date_from', '') }}">
+                                    </div>
 
-                            {{-- تاريخ إلى --}}
-                            <div class="{{ ((auth()->user()->isSuperAdmin() && isset($operators) && $operators->count() > 0) || (isset($generators) && $generators->count() > 0)) ? 'col-md-3' : 'col-md-4' }}">
-                                <label class="form-label small text-muted">إلى تاريخ</label>
-                                <input type="date" id="dateToFilter" class="form-control" 
-                                       value="{{ request('date_to', '') }}">
-                            </div>
-                        </div>
+                                    {{-- تاريخ إلى --}}
+                                    <div class="{{ ((auth()->user()->isSuperAdmin() && isset($operators) && $operators->count() > 0) || (isset($generators) && $generators->count() > 0)) ? 'col-md-3' : 'col-md-4' }}">
+                                        <label class="form-label fw-semibold">
+                                            <i class="bi bi-calendar-check me-1"></i>
+                                            إلى تاريخ
+                                        </label>
+                                        <input type="date" id="dateToFilter" class="form-control" 
+                                               value="{{ request('date_to', '') }}">
+                                    </div>
 
-                        {{-- Row 2: زر البحث وخيارات العرض --}}
-                        <div class="row mb-3">
-                            <div class="col-12 d-flex gap-2 align-items-center flex-wrap">
-                                <button class="btn btn-primary" type="button" id="searchBtn">
-                                    <i class="bi bi-search me-2"></i>
-                                    بحث
-                                </button>
-                                <button
-                                    class="btn btn-outline-secondary {{ request('q') || request('operator_id') || request('generator_id') || request('date_from') || request('date_to') ? '' : 'd-none' }}"
-                                    type="button"
-                                    id="clearSearchBtn"
-                                >
-                                    <i class="bi bi-x me-2"></i>
-                                    إلغاء الفلاتر
-                                </button>
-                                <div class="form-check form-switch ms-auto">
-                                    <input class="form-check-input" type="checkbox" id="groupByGeneratorToggle" {{ request('group_by_generator') ? 'checked' : '' }}>
-                                    <label class="form-check-label" for="groupByGeneratorToggle">
-                                        <i class="bi bi-grid-3x3-gap me-1"></i>
-                                        تجميع حسب المولد
-                                    </label>
+                                    {{-- أزرار البحث والتجميع --}}
+                                    <div class="col-md-12">
+                                        <div class="d-flex gap-2 align-items-center flex-wrap">
+                                            <button class="btn btn-primary" type="button" id="searchBtn">
+                                                <i class="bi bi-search me-2"></i>
+                                                بحث
+                                            </button>
+                                            <button
+                                                class="btn btn-outline-secondary {{ request('q') || request('operator_id') || request('generator_id') || request('date_from') || request('date_to') ? '' : 'd-none' }}"
+                                                type="button"
+                                                id="clearSearchBtn"
+                                            >
+                                                <i class="bi bi-x me-2"></i>
+                                                إلغاء الفلاتر
+                                            </button>
+                                            <div class="form-check form-switch ms-auto">
+                                                <input class="form-check-input" type="checkbox" id="groupByGeneratorToggle" {{ request('group_by_generator') ? 'checked' : '' }}>
+                                                <label class="form-check-label" for="groupByGeneratorToggle">
+                                                    <i class="bi bi-grid-3x3-gap me-1"></i>
+                                                    تجميع حسب المولد
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -146,7 +165,6 @@
 @endsection
 
 @push('scripts')
-    <script src="{{ asset('assets/admin/libs/jquery/jquery.min.js') }}"></script>
     <script src="{{ asset('assets/admin/js/data-table-loading.js') }}"></script>
     <script>
         window.OPLOG = {

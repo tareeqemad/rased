@@ -131,10 +131,17 @@ class DashboardController extends Controller
         ));
     }
 
+    /**
+     * تحديد نطاق المشغلين حسب نوع المستخدم
+     * 
+     * للسوبر أدمن والأدمن: يرجع null = جميع المشغلين
+     * للمشغلين: يرجع المشغلين المملوكين
+     * للموظفين: يرجع المشغلين المرتبطين
+     */
     private function getOperatorIds($user): ?array
     {
         if ($user->isSuperAdmin() || $user->isAdmin()) {
-            return null; // جميع المشغلين
+            return null; // جميع المشغلين (لا فلترة)
         } elseif ($user->isCompanyOwner()) {
             return $user->ownedOperators->pluck('id')->toArray();
         } elseif ($user->isEmployee() || $user->isTechnician()) {
@@ -143,10 +150,16 @@ class DashboardController extends Controller
         return [];
     }
 
+    /**
+     * تحديد نطاق المولدات حسب نوع المستخدم
+     * 
+     * للسوبر أدمن والأدمن: يرجع null = جميع المولدات
+     * للمشغلين والموظفين: يرجع المولدات التابعة للمشغلين المحددين
+     */
     private function getGeneratorIds($user, ?array $operatorIds): ?array
     {
         if ($user->isSuperAdmin() || $user->isAdmin()) {
-            return null; // جميع المولدات
+            return null; // جميع المولدات (لا فلترة)
         }
 
         if ($operatorIds) {
@@ -266,13 +279,23 @@ class DashboardController extends Controller
         ];
     }
 
+    /**
+     * الحصول على بيانات المخططات (آخر 30 يوم)
+     * 
+     * للسوبر أدمن والأدمن: $operatorIds و $generatorIds يكونان null
+     * مما يعني جلب الإجمالي لجميع المشغلين والمولدات
+     * 
+     * للمشغلين والموظفين: يتم فلترة البيانات حسب المشغلين/المولدات المحددة
+     */
     private function getChartData(?array $operatorIds, ?array $generatorIds): array
     {
         $baseQuery = function() use ($operatorIds, $generatorIds) {
             $query = OperationLog::query();
+            // إذا كان $operatorIds null (سوبر أدمن/أدمن)، لا يتم تطبيق فلتر = جميع المشغلين
             if ($operatorIds) {
                 $query->whereIn('operator_id', $operatorIds);
             }
+            // إذا كان $generatorIds null (سوبر أدمن/أدمن)، لا يتم تطبيق فلتر = جميع المولدات
             if ($generatorIds) {
                 $query->whereIn('generator_id', $generatorIds);
             }
@@ -283,12 +306,13 @@ class DashboardController extends Controller
         $startDate = Carbon::now()->subDays(30);
         $endDate = Carbon::now();
 
+        // تجميع البيانات حسب التاريخ (SUM لكل المشغلين/المولدات)
         $query = (clone $baseQuery())
             ->whereBetween('operation_date', [$startDate, $endDate])
             ->select(
                 DB::raw('DATE(operation_date) as date'),
-                DB::raw('SUM(energy_produced) as total_energy'),
-                DB::raw('SUM(fuel_consumed) as total_fuel'),
+                DB::raw('SUM(energy_produced) as total_energy'), // الإجمالي لكل المشغلين
+                DB::raw('SUM(fuel_consumed) as total_fuel'), // الإجمالي لكل المشغلين
                 DB::raw('COUNT(*) as records_count'),
                 DB::raw('AVG(load_percentage) as avg_load')
             )
@@ -321,12 +345,48 @@ class DashboardController extends Controller
             $loadData[] = $dayData ? round((float)$dayData->avg_load, 2) : 0;
         }
 
+        // حساب الفاقد في الوقود (Fuel Loss/Waste)
+        // الفاقد = الوقود المستهلك - (الطاقة المنتجة / كفاءة الوقود المثالية)
+        // استخدام كفاءة الوقود المثالية من المولدات (أو القيمة الافتراضية 0.5)
+        $fuelLossData = [];
+        
+        // الحصول على متوسط كفاءة الوقود المثالية من المولدات المستخدمة
+        $generatorsQuery = Generator::query();
+        if ($generatorIds) {
+            $generatorsQuery->whereIn('id', $generatorIds);
+        } elseif ($operatorIds) {
+            $generatorsQuery->whereIn('operator_id', $operatorIds);
+        }
+        
+        $avgIdealEfficiency = $generatorsQuery->avg('ideal_fuel_efficiency') ?? 0.5;
+        // إذا لم تكن هناك قيمة محددة، نستخدم القيمة الافتراضية
+        if ($avgIdealEfficiency <= 0) {
+            $avgIdealEfficiency = 0.5;
+        }
+        
+        foreach ($energyData as $index => $energy) {
+            $fuelConsumed = $fuelData[$index];
+            if ($energy > 0 && $avgIdealEfficiency > 0) {
+                $expectedFuel = $energy / $avgIdealEfficiency;
+                $fuelLoss = max(0, $fuelConsumed - $expectedFuel); // الفاقد لا يمكن أن يكون سالب
+            } else {
+                $fuelLoss = 0;
+            }
+            $fuelLossData[] = round($fuelLoss, 2);
+        }
+
         return [
             'labels' => $dates,
             'energy' => $energyData,
             'fuel' => $fuelData,
             'records' => $recordsData,
             'load' => $loadData,
+            'advanced_chart' => [
+                'labels' => $dates,
+                'energy' => $energyData,
+                'fuel_consumed' => $fuelData,
+                'fuel_loss' => $fuelLossData,
+            ],
         ];
     }
 
@@ -352,7 +412,9 @@ class DashboardController extends Controller
                 'generators.name',
                 DB::raw('SUM(operation_logs.energy_produced) as total_energy'),
                 DB::raw('SUM(operation_logs.fuel_consumed) as total_fuel_consumed'),
-                DB::raw('COALESCE(SUM(fuel_tanks.capacity), 0) as total_tank_capacity')
+                DB::raw('COALESCE(SUM(fuel_tanks.capacity), 0) as total_tank_capacity'),
+                DB::raw('AVG(operation_logs.load_percentage) as avg_load'),
+                DB::raw('COUNT(*) as records_count')
             )
             ->whereNotNull('operation_logs.energy_produced')
             ->groupBy('generators.id', 'generators.name')
@@ -362,19 +424,24 @@ class DashboardController extends Controller
             ->map(function($item) {
                 $totalCapacity = (float)$item->total_tank_capacity;
                 $consumed = (float)$item->total_fuel_consumed;
-                $fuelSurplus = max(0, $totalCapacity - $consumed);
+                $energy = (float)$item->total_energy;
+                
+                // حساب كفاءة الوقود (kWh/لتر)
+                $fuel_efficiency = $consumed > 0 ? round($energy / $consumed, 2) : 0;
                 
                 return [
                     'id' => $item->id,
                     'name' => $item->name,
-                    'energy' => round((float)$item->total_energy, 2),
+                    'energy' => round($energy, 2),
                     'fuel_consumed' => round($consumed, 2),
                     'fuel_capacity' => round($totalCapacity, 2),
-                    'fuel_surplus' => round($fuelSurplus, 2),
+                    'fuel_efficiency' => $fuel_efficiency, // كفاءة الوقود (kWh/لتر)
+                    'avg_load' => round((float)$item->avg_load, 2), // متوسط نسبة التحميل
+                    'records_count' => (int)$item->records_count, // عدد السجلات
                 ];
             });
 
-        // بيانات المشغلين مع الطاقة المنتجة والوقود المستهلك والفائض
+        // بيانات المشغلين مع الطاقة المنتجة والوقود المستهلك
         $operatorsData = (clone $baseQuery())
             ->join('operators', 'operation_logs.operator_id', '=', 'operators.id')
             ->join('generators', 'operation_logs.generator_id', '=', 'generators.id')
@@ -384,7 +451,9 @@ class DashboardController extends Controller
                 'operators.name',
                 DB::raw('SUM(operation_logs.energy_produced) as total_energy'),
                 DB::raw('SUM(operation_logs.fuel_consumed) as total_fuel_consumed'),
-                DB::raw('COALESCE(SUM(fuel_tanks.capacity), 0) as total_tank_capacity')
+                DB::raw('COALESCE(SUM(fuel_tanks.capacity), 0) as total_tank_capacity'),
+                DB::raw('AVG(operation_logs.load_percentage) as avg_load'),
+                DB::raw('COUNT(*) as records_count')
             )
             ->whereNotNull('operation_logs.energy_produced')
             ->groupBy('operators.id', 'operators.name')
@@ -394,19 +463,24 @@ class DashboardController extends Controller
             ->map(function($item) {
                 $totalCapacity = (float)$item->total_tank_capacity;
                 $consumed = (float)$item->total_fuel_consumed;
-                $fuelSurplus = max(0, $totalCapacity - $consumed);
+                $energy = (float)$item->total_energy;
+                
+                // حساب كفاءة الوقود (kWh/لتر)
+                $fuel_efficiency = $consumed > 0 ? round($energy / $consumed, 2) : 0;
                 
                 return [
                     'id' => $item->id,
                     'name' => $item->name,
-                    'energy' => round((float)$item->total_energy, 2),
+                    'energy' => round($energy, 2),
                     'fuel_consumed' => round($consumed, 2),
                     'fuel_capacity' => round($totalCapacity, 2),
-                    'fuel_surplus' => round($fuelSurplus, 2),
+                    'fuel_efficiency' => $fuel_efficiency, // كفاءة الوقود (kWh/لتر)
+                    'avg_load' => round((float)$item->avg_load, 2), // متوسط نسبة التحميل
+                    'records_count' => (int)$item->records_count, // عدد السجلات
                 ];
             });
 
-        // بيانات المحافظات مع الطاقة المنتجة والوقود المستهلك والفائض
+        // بيانات المحافظات مع الطاقة المنتجة والوقود المستهلك
         $governoratesData = (clone $baseQuery())
             ->join('operators', 'operation_logs.operator_id', '=', 'operators.id')
             ->join('generators', 'operation_logs.generator_id', '=', 'generators.id')
@@ -415,7 +489,9 @@ class DashboardController extends Controller
                 'operators.governorate',
                 DB::raw('SUM(operation_logs.energy_produced) as total_energy'),
                 DB::raw('SUM(operation_logs.fuel_consumed) as total_fuel_consumed'),
-                DB::raw('COALESCE(SUM(fuel_tanks.capacity), 0) as total_tank_capacity')
+                DB::raw('COALESCE(SUM(fuel_tanks.capacity), 0) as total_tank_capacity'),
+                DB::raw('AVG(operation_logs.load_percentage) as avg_load'),
+                DB::raw('COUNT(*) as records_count')
             )
             ->whereNotNull('operation_logs.energy_produced')
             ->whereNotNull('operators.governorate')
@@ -426,18 +502,32 @@ class DashboardController extends Controller
                 $governorate = \App\Governorate::fromValue((int)$item->governorate);
                 $totalCapacity = (float)$item->total_tank_capacity;
                 $consumed = (float)$item->total_fuel_consumed;
-                $fuelSurplus = max(0, $totalCapacity - $consumed);
+                $energy = (float)$item->total_energy;
+                
+                // حساب كفاءة الوقود (kWh/لتر)
+                $fuel_efficiency = $consumed > 0 ? round($energy / $consumed, 2) : 0;
                 
                 return [
                     'id' => $item->governorate,
                     'name' => $governorate ? $governorate->label() : 'غير محدد',
                     'code' => $governorate ? $governorate->code() : '',
-                    'energy' => round((float)$item->total_energy, 2),
+                    'energy' => round($energy, 2),
                     'fuel_consumed' => round($consumed, 2),
                     'fuel_capacity' => round($totalCapacity, 2),
-                    'fuel_surplus' => round($fuelSurplus, 2),
+                    'fuel_efficiency' => $fuel_efficiency, // كفاءة الوقود (kWh/لتر)
+                    'avg_load' => round((float)$item->avg_load, 2), // متوسط نسبة التحميل
+                    'records_count' => (int)$item->records_count, // عدد السجلات
                 ];
             });
+
+        // حساب الإحصائيات الإجمالية من جميع البيانات (بدون limit)
+        $totalStatsQuery = (clone $baseQuery())
+            ->whereNotNull('operation_logs.energy_produced');
+        
+        $totalEnergy = (float)($totalStatsQuery->sum('energy_produced') ?? 0);
+        $totalFuel = (float)($totalStatsQuery->sum('fuel_consumed') ?? 0);
+        $totalRecords = (int)($totalStatsQuery->count() ?? 0);
+        $avgEfficiency = $totalFuel > 0 ? round($totalEnergy / $totalFuel, 2) : 0;
 
         return [
             'generators' => [
@@ -454,6 +544,12 @@ class DashboardController extends Controller
                 'labels' => $governoratesData->pluck('name')->toArray(),
                 'data' => $governoratesData->pluck('energy')->toArray(),
                 'details' => $governoratesData->toArray(),
+            ],
+            'total_stats' => [
+                'total_energy' => round($totalEnergy, 2),
+                'total_fuel' => round($totalFuel, 2),
+                'total_records' => $totalRecords,
+                'avg_efficiency' => $avgEfficiency,
             ],
         ];
     }

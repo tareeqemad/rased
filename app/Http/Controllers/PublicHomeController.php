@@ -21,7 +21,7 @@ class PublicHomeController extends Controller
             'total_operators' => Operator::where('status', 'active')->count(),
             'total_generators' => \App\Models\Generator::count(),
             'total_capacity' => Operator::where('status', 'active')->sum('total_capacity') ?? 0,
-            'governorates' => ConstantsHelper::getByName('المحافظة'),
+            'governorates' => ConstantsHelper::get(1), // رقم ثابت المحافظات
         ];
 
         return view('front.index', compact('stats'));
@@ -39,7 +39,8 @@ class PublicHomeController extends Controller
         $governorateParam = $request->input('governorate');
 
         // جلب المشغلين النشطين فقط مع الإحداثيات
-        $query = Operator::where('status', 'active')
+        $query = Operator::with('cityDetail')
+            ->where('status', 'active')
             ->whereNotNull('latitude')
             ->whereNotNull('longitude');
 
@@ -62,6 +63,7 @@ class PublicHomeController extends Controller
                 'id', 
                 'name', 
                 'city', 
+                'city_id',
                 'unit_number', 
                 'unit_name',
                 'latitude', 
@@ -86,7 +88,7 @@ class PublicHomeController extends Controller
                 return [
                     'id' => $operator->id,
                     'name' => $operator->name,
-                    'city' => $operator->city,
+                    'city' => $operator->getCityName(),
                     'unit_number' => $operator->unit_number,
                     'unit_name' => $operator->unit_name,
                     'latitude' => (float) $operator->latitude,
@@ -110,7 +112,7 @@ class PublicHomeController extends Controller
      */
     public function map(): View
     {
-        $governorates = ConstantsHelper::getByName('المحافظة');
+        $governorates = ConstantsHelper::get(1); // رقم ثابت المحافظات
         return view('front.map', compact('governorates'));
     }
 

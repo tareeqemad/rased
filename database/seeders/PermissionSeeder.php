@@ -55,14 +55,23 @@ class PermissionSeeder extends Seeder
             ['name' => 'compliance_safeties.update', 'label' => 'تحديث سجل امتثال', 'group' => 'compliance_safeties', 'group_label' => 'الامتثال والسلامة', 'description' => 'القدرة على تحديث سجل الامتثال', 'order' => 27],
             ['name' => 'compliance_safeties.delete', 'label' => 'حذف سجل امتثال', 'group' => 'compliance_safeties', 'group_label' => 'الامتثال والسلامة', 'description' => 'القدرة على حذف سجل الامتثال', 'order' => 28],
 
+            // أسعار التعرفة الكهربائية
+            ['name' => 'electricity_tariff_prices.view', 'label' => 'عرض أسعار التعرفة', 'group' => 'electricity_tariff_prices', 'group_label' => 'أسعار التعرفة الكهربائية', 'description' => 'القدرة على عرض أسعار التعرفة الكهربائية', 'order' => 29],
+            ['name' => 'electricity_tariff_prices.create', 'label' => 'إنشاء سعر تعرفة', 'group' => 'electricity_tariff_prices', 'group_label' => 'أسعار التعرفة الكهربائية', 'description' => 'القدرة على إنشاء سعر تعرفة جديد', 'order' => 30],
+            ['name' => 'electricity_tariff_prices.update', 'label' => 'تحديث سعر تعرفة', 'group' => 'electricity_tariff_prices', 'group_label' => 'أسعار التعرفة الكهربائية', 'description' => 'القدرة على تحديث سعر التعرفة', 'order' => 31],
+            ['name' => 'electricity_tariff_prices.delete', 'label' => 'حذف سعر تعرفة', 'group' => 'electricity_tariff_prices', 'group_label' => 'أسعار التعرفة الكهربائية', 'description' => 'القدرة على حذف سعر التعرفة', 'order' => 32],
+
             // إدارة الصلاحيات
-            ['name' => 'permissions.manage', 'label' => 'إدارة الصلاحيات', 'group' => 'permissions', 'group_label' => 'الصلاحيات', 'description' => 'القدرة على إدارة صلاحيات المستخدمين', 'order' => 29],
+            ['name' => 'permissions.manage', 'label' => 'إدارة الصلاحيات', 'group' => 'permissions', 'group_label' => 'الصلاحيات', 'description' => 'القدرة على إدارة صلاحيات المستخدمين', 'order' => 33],
         ];
 
         foreach ($permissions as $permission) {
-            Permission::create($permission);
+            Permission::updateOrCreate(
+                ['name' => $permission['name']],
+                $permission
+            );
         }
 
-        $this->command->info('تم إنشاء الصلاحيات بنجاح!');
+        $this->command->info('تم إنشاء/تحديث الصلاحيات بنجاح!');
     }
 }

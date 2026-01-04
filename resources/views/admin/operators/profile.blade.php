@@ -13,64 +13,7 @@
 @section('content')
 <div class="operators-page operator-profile-page">
     <div class="row g-3">
-        <div class="col-12 col-lg-4">
-            <div class="card op-card">
-                <div class="op-card-header">
-                    <div class="op-title">
-                        <i class="bi bi-person-badge me-2"></i>
-                        ملخص المشغل
-                    </div>
-                    <div class="op-subtitle">الهدف: ملف مكتمل + بيانات دقيقة.</div>
-                </div>
-
-                <div class="card-body">
-                    <div class="op-kv">
-                        <div class="k">اسم الوحدة</div>
-                        <div class="v">{{ $operator->unit_name ?? '—' }}</div>
-                    </div>
-                    <div class="op-kv">
-                        <div class="k">رقم الوحدة</div>
-                        <div class="v">{{ $operator->unit_number ?? '—' }}</div>
-                    </div>
-                    <div class="op-kv">
-                        <div class="k">المحافظة</div>
-                        <div class="v">{{ $operator->getGovernorateLabel() ?? '—' }}</div>
-                    </div>
-
-                    <div class="mt-3">
-                        @if(empty($missing))
-                            <div class="alert alert-success mb-0">
-                                <i class="bi bi-check-circle me-1"></i>
-                                الملف مكتمل ✅
-                            </div>
-                        @else
-                            <div class="alert alert-warning mb-0">
-                                <div class="fw-bold mb-1">حقول ناقصة:</div>
-                                <ul class="mb-0 ps-3">
-                                    @foreach($missing as $m)
-                                        <li>{{ $m }}</li>
-                                    @endforeach
-                                </ul>
-                            </div>
-                        @endif
-                    </div>
-
-                    <div class="d-grid gap-2 mt-3">
-                        <a href="{{ route('admin.users.index') }}" class="btn btn-outline-secondary">
-                            <i class="bi bi-people me-1"></i>
-                            إدارة الموظفين
-                        </a>
-                        <a href="{{ route('admin.permissions.index') }}" class="btn btn-outline-secondary">
-                            <i class="bi bi-diagram-3 me-1"></i>
-                            شجرة الصلاحيات
-                        </a>
-                    </div>
-
-                </div>
-            </div>
-        </div>
-
-        <div class="col-12 col-lg-8">
+        <div class="col-12">
             <div class="card op-card position-relative" id="profileCard">
                 <div class="op-card-header d-flex align-items-center justify-content-between gap-2 flex-wrap">
                     <div>
@@ -78,7 +21,7 @@
                             <i class="bi bi-ui-checks-grid me-2"></i>
                             بيانات المشغل
                         </div>
-                        <div class="op-subtitle">قسّمناها Tabs عشان ما تحس إنك داخل حرب 😄</div>
+                        <div class="op-subtitle">ملف المشغل</div>
                     </div>
 
                     <button class="btn btn-primary" id="saveProfileBtn" type="button">
@@ -132,21 +75,22 @@
                                     <div class="col-md-6">
                                         <label class="form-label fw-semibold">رقم الوحدة <span class="text-danger">*</span></label>
                                         <input type="text" name="unit_number" id="unit_number" class="form-control"
-                                               value="{{ old('unit_number', $operator->unit_number) }}" readonly required>
-                                        <div class="form-text">يتولد تلقائيًا حسب المحافظة.</div>
+                                               value="{{ old('unit_number', $operator->unit_number) }}" readonly>
+                                        <div class="form-text">يتولد تلقائيًا حسب المحافظة والمدينة (001, 002, إلخ).</div>
                                     </div>
 
                                     <div class="col-md-6">
                                         <label class="form-label fw-semibold">كود الوحدة</label>
-                                        <input type="text" name="unit_code" class="form-control"
+                                        <input type="text" name="unit_code" id="unit_code" class="form-control"
                                                value="{{ old('unit_code', $operator->unit_code) }}" readonly>
+                                        <div class="form-text">يتولد تلقائيًا بالصيغة GU-PP-CC-NNN (مثال: GU-MD-DB-001).</div>
                                     </div>
 
-                                    <div class="col-12">
+                                    <div class="col-md-6">
                                         <label class="form-label fw-semibold">اسم الوحدة <span class="text-danger">*</span></label>
-                                        <input type="text" name="unit_name" class="form-control"
+                                        <input type="text" name="unit_name" id="unit_name" class="form-control"
                                                value="{{ old('unit_name', $operator->unit_name) }}"
-                                               placeholder="مثال: مولدات البابا" required>
+                                               placeholder="مثال: مولدات البابا">
                                     </div>
                                 </div>
                             </div>
@@ -157,7 +101,7 @@
                                     <div class="col-md-6">
                                         <label class="form-label fw-semibold">اسم المالك <span class="text-danger">*</span></label>
                                         <input type="text" name="owner_name" class="form-control"
-                                               value="{{ old('owner_name', $operator->owner_name) }}" required>
+                                               value="{{ old('owner_name', $operator->owner_name) }}">
                                     </div>
 
                                     <div class="col-md-6">
@@ -168,7 +112,7 @@
 
                                     <div class="col-md-6">
                                         <label class="form-label fw-semibold">جهة التشغيل <span class="text-danger">*</span></label>
-                                        <select name="operation_entity" class="form-select" required>
+                                        <select name="operation_entity" class="form-select">
                                             <option value="">اختر</option>
                                             <option value="same_owner" {{ old('operation_entity', $operator->operation_entity) === 'same_owner' ? 'selected' : '' }}>نفس المالك</option>
                                             <option value="other_party" {{ old('operation_entity', $operator->operation_entity) === 'other_party' ? 'selected' : '' }}>طرف آخر</option>
@@ -178,7 +122,7 @@
                                     <div class="col-md-6">
                                         <label class="form-label fw-semibold">رقم هوية المشغل <span class="text-danger">*</span></label>
                                         <input type="text" name="operator_id_number" class="form-control"
-                                               value="{{ old('operator_id_number', $operator->operator_id_number) }}" required>
+                                               value="{{ old('operator_id_number', $operator->operator_id_number) }}">
                                     </div>
 
                                     <div class="col-md-6">
@@ -204,29 +148,45 @@
                             {{-- TAB: LOCATION --}}
                             <div class="tab-pane fade" id="tab-location" role="tabpanel">
                                 <div class="row g-3">
-                                    <div class="col-md-4">
+                                    <div class="col-md-6">
                                         <label class="form-label fw-semibold">المحافظة <span class="text-danger">*</span></label>
-                                        <select name="governorate" id="governorate" class="form-select" required>
+                                        <select name="governorate" id="governorate" class="form-select">
                                             <option value="">اختر</option>
-                                            @foreach(App\Governorate::all() as $gov)
-                                                <option value="{{ $gov->value }}"
-                                                    {{ old('governorate', $operator->governorate?->value) == $gov->value ? 'selected' : '' }}>
-                                                    {{ $gov->label() }} ({{ $gov->code() }})
+                                            @forelse($governorates as $gov)
+                                                <option value="{{ $gov->code }}"
+                                                    data-governorate-id="{{ $gov->id }}"
+                                                    {{ old('governorate', $selectedGovernorateCode ?? $operator->governorate?->code()) == $gov->code ? 'selected' : '' }}>
+                                                    {{ $gov->label }} ({{ $gov->code }})
+                                                </option>
+                                            @empty
+                                                <option value="" disabled>لا توجد محافظات متاحة</option>
+                                            @endforelse
+                                        </select>
+                                        @if($governorates->isEmpty())
+                                            <div class="form-text text-danger">تحذير: لا توجد محافظات في الثوابت. يرجى تشغيل ConstantSeeder.</div>
+                                        @endif
+                                        @if($operator->governorate && !$selectedGovernorateCode)
+                                            <div class="form-text text-warning">تحذير: المحافظة المحفوظة ({{ $operator->governorate->code() }}) غير موجودة في الثوابت.</div>
+                                        @endif
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">المدينة <span class="text-danger">*</span></label>
+                                        <select name="city_id" id="city_id" class="form-select" {{ empty($cities) ? 'disabled' : '' }}>
+                                            <option value="">اختر المدينة</option>
+                                            @foreach($cities as $city)
+                                                <option value="{{ $city->id }}"
+                                                    {{ old('city_id', $operator->city_id) == $city->id ? 'selected' : '' }}>
+                                                    {{ $city->label }}
                                                 </option>
                                             @endforeach
                                         </select>
                                     </div>
 
-                                    <div class="col-md-4">
-                                        <label class="form-label fw-semibold">المدينة <span class="text-danger">*</span></label>
-                                        <input type="text" name="city" class="form-control"
-                                               value="{{ old('city', $operator->city) }}" required>
-                                    </div>
-
-                                    <div class="col-md-4">
+                                    <div class="col-md-6">
                                         <label class="form-label fw-semibold">العنوان التفصيلي <span class="text-danger">*</span></label>
                                         <input type="text" name="detailed_address" class="form-control"
-                                               value="{{ old('detailed_address', $operator->detailed_address) }}" required>
+                                               value="{{ old('detailed_address', $operator->detailed_address) }}">
                                     </div>
 
                                     <div class="col-12">
@@ -238,13 +198,13 @@
                                     <div class="col-md-6">
                                         <label class="form-label fw-semibold">Latitude <span class="text-danger">*</span></label>
                                         <input type="number" step="0.00000001" name="latitude" id="latitude" class="form-control"
-                                               value="{{ old('latitude', $operator->latitude) }}" readonly required>
+                                               value="{{ old('latitude', $operator->latitude) }}" readonly>
                                     </div>
 
                                     <div class="col-md-6">
                                         <label class="form-label fw-semibold">Longitude <span class="text-danger">*</span></label>
                                         <input type="number" step="0.00000001" name="longitude" id="longitude" class="form-control"
-                                               value="{{ old('longitude', $operator->longitude) }}" readonly required>
+                                               value="{{ old('longitude', $operator->longitude) }}" readonly>
                                     </div>
                                 </div>
                             </div>
@@ -312,7 +272,7 @@
                                 <div class="row g-3">
                                     <div class="col-md-6">
                                         <label class="form-label fw-semibold">حالة الوحدة <span class="text-danger">*</span></label>
-                                        <select name="status" class="form-select" required>
+                                        <select name="status" class="form-select">
                                             <option value="active" {{ old('status', $operator->status ?? 'active') === 'active' ? 'selected':'' }}>فعّالة</option>
                                             <option value="inactive" {{ old('status', $operator->status ?? 'active') === 'inactive' ? 'selected':'' }}>غير فعّالة</option>
                                         </select>
@@ -340,6 +300,7 @@
 
 @push('scripts')
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="{{ asset('assets/admin/js/general-helpers.js') }}"></script>
 <script>
 (function () {
     function notify(type, msg, title) {
@@ -400,35 +361,86 @@
         });
     }
 
-    // ====== Unit Number generation ======
+    // ====== Unit Number and Code generation ======
     const governorateSelect = document.getElementById('governorate');
+    const citySelect = document.getElementById('city_id');
     const unitNumberInput = document.getElementById('unit_number');
     const unitCodeInput = document.querySelector('input[name="unit_code"]');
 
-    async function generateUnitNumber() {
+    async function generateUnitNumberAndCode() {
         const gov = governorateSelect.value;
-        if (!gov) return;
+        const cityId = citySelect.value;
+        
+        if (!gov || !cityId) {
+            unitNumberInput.value = '';
+            if (unitCodeInput) unitCodeInput.value = '';
+            return;
+        }
 
         try {
-            const res = await fetch(`{{ url('/admin/operators/next-unit-number') }}/${gov}`, {
+            const res = await fetch(`{{ url('/admin/operators/generate-unit-code') }}`, {
+                method: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                    'Accept': 'application/json'
-                }
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    governorate_code: gov,
+                    city_id: cityId
+                })
             });
             const data = await res.json();
             if (data && data.success) {
                 unitNumberInput.value = data.unit_number;
-                if (unitCodeInput) unitCodeInput.value = data.unit_number;
+                if (unitCodeInput) unitCodeInput.value = data.unit_code;
             } else {
-                notify('warning', data.message || 'تعذر توليد رقم الوحدة');
+                notify('warning', data.message || 'تعذر توليد رقم الوحدة وكود الوحدة');
             }
         } catch (e) {
-            notify('error', 'حدث خطأ أثناء توليد رقم الوحدة');
+            notify('error', 'حدث خطأ أثناء توليد رقم الوحدة وكود الوحدة');
         }
     }
 
-    governorateSelect?.addEventListener('change', generateUnitNumber);
+    governorateSelect?.addEventListener('change', function() {
+        // تحديث المدن أولاً
+        if (typeof GeneralHelpers !== 'undefined' && GeneralHelpers.updateCitiesSelect) {
+            const selectedOption = governorateSelect.options[governorateSelect.selectedIndex];
+            const governorateId = selectedOption.getAttribute('data-governorate-id');
+            if (governorateId) {
+                GeneralHelpers.updateCitiesSelect('#governorate', '#city_id', {
+                    onSuccess: function() {
+                        // بعد تحديث المدن، توليد رقم الوحدة وكود الوحدة
+                        generateUnitNumberAndCode();
+                    }
+                });
+            }
+        } else {
+            generateUnitNumberAndCode();
+        }
+    });
+    
+    citySelect?.addEventListener('change', generateUnitNumberAndCode);
+
+    // تحميل المدن تلقائياً عند تحميل الصفحة إذا كانت المحافظة محددة
+    document.addEventListener('DOMContentLoaded', function() {
+        if (governorateSelect && governorateSelect.value) {
+            const selectedOption = governorateSelect.options[governorateSelect.selectedIndex];
+            const governorateId = selectedOption.getAttribute('data-governorate-id');
+            if (governorateId && typeof GeneralHelpers !== 'undefined' && GeneralHelpers.updateCitiesSelect) {
+                const cityId = citySelect ? citySelect.value : null;
+                GeneralHelpers.updateCitiesSelect('#governorate', '#city_id', {
+                    selectedValue: cityId,
+                    onSuccess: function() {
+                        // بعد تحميل المدن، توليد رقم الوحدة وكود الوحدة إذا كانت المدينة محددة
+                        if (cityId) {
+                            generateUnitNumberAndCode();
+                        }
+                    }
+                });
+            }
+        }
+    });
 
     // ====== Map (lazy init when tab opens) ======
     let mapInited = false;
@@ -510,6 +522,9 @@
 
             if (data && data.success) {
                 notify('success', data.message || 'تم الحفظ');
+                
+                // تحديث البيانات في جميع التبويبات بعد الحفظ
+                updateTabsData(data.operator || {});
             } else {
                 notify('error', (data && data.message) ? data.message : 'فشل الحفظ');
             }
@@ -528,6 +543,78 @@
         submitProfile();
     });
 
+    // ====== تحديث البيانات في جميع التبويبات بعد الحفظ ======
+    function updateTabsData(operatorData) {
+        // تحديث اسم الوحدة في جميع الأماكن
+        if (operatorData.unit_name) {
+            const unitNameInput = document.getElementById('unit_name');
+            if (unitNameInput) {
+                unitNameInput.value = operatorData.unit_name;
+            }
+        }
+        
+        // تحديث رقم الوحدة
+        if (operatorData.unit_number) {
+            const unitNumberInput = document.getElementById('unit_number');
+            if (unitNumberInput) {
+                unitNumberInput.value = operatorData.unit_number;
+            }
+        }
+        
+        // تحديث كود الوحدة
+        if (operatorData.unit_code) {
+            const unitCodeInput = document.getElementById('unit_code');
+            if (unitCodeInput) {
+                unitCodeInput.value = operatorData.unit_code;
+            }
+        }
+        
+        // تحديث اسم المالك
+        if (operatorData.owner_name) {
+            const ownerNameInput = form.querySelector('input[name="owner_name"]');
+            if (ownerNameInput) {
+                ownerNameInput.value = operatorData.owner_name;
+            }
+        }
+        
+        // تحديث المحافظة والمدينة
+        if (operatorData.governorate_code) {
+            const governorateSelect = document.getElementById('governorate');
+            if (governorateSelect) {
+                governorateSelect.value = operatorData.governorate_code;
+                // تحديث المدن
+                if (typeof GeneralHelpers !== 'undefined' && GeneralHelpers.updateCitiesSelect) {
+                    const selectedOption = governorateSelect.options[governorateSelect.selectedIndex];
+                    const governorateId = selectedOption.getAttribute('data-governorate-id');
+                    if (governorateId && operatorData.city_id) {
+                        GeneralHelpers.updateCitiesSelect('#governorate', '#city_id', {
+                            selectedValue: operatorData.city_id,
+                            onSuccess: function() {
+                                const citySelect = document.getElementById('city_id');
+                                if (citySelect) {
+                                    citySelect.value = operatorData.city_id;
+                                }
+                            }
+                        });
+                    }
+                }
+            }
+        }
+        
+        // تحديث باقي الحقول
+        Object.keys(operatorData).forEach(key => {
+            const input = form.querySelector(`[name="${key}"]`);
+            if (input && input.type !== 'file' && input.type !== 'submit' && input.type !== 'button') {
+                if (input.type === 'checkbox' || input.type === 'radio') {
+                    input.checked = operatorData[key] == input.value;
+                } else {
+                    input.value = operatorData[key] || '';
+                }
+            }
+        });
+    }
+
 })();
 </script>
 @endpush
+

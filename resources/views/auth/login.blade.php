@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تسجيل الدخول - راصد</title>
+    @php
+        $siteName = \App\Models\Setting::get('site_name', 'راصد');
+    @endphp
+    <title>تسجيل الدخول - {{ $siteName }}</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800&display=swap');
 
@@ -630,11 +633,11 @@
                             <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path>
                         </svg>
                     </div>
-                    <div class="logo-mini-text">راصد</div>
+                    <div class="logo-mini-text">{{ \App\Models\Setting::get('site_name', 'راصد') }}</div>
                 </div>
 
                 <h1 class="welcome-text">مرحباً بك</h1>
-                <p class="welcome-subtitle">سجل دخولك للوصول إلى منصة راصد</p>
+                <p class="welcome-subtitle">سجل دخولك للوصول إلى منصة {{ \App\Models\Setting::get('site_name', 'راصد') }}</p>
 
                 @if ($errors->any())
                     <div class="error-message">
@@ -717,7 +720,7 @@
 
         <div class="login-image-section">
             <div class="brand-content">
-                <div class="brand-logo">راصد</div>
+                <div class="brand-logo">{{ \App\Models\Setting::get('site_name', 'راصد') }}</div>
                 <div class="brand-subtitle">منصة رقمية لإدارة سوق الطاقة</div>
 
                 <div class="products-grid">

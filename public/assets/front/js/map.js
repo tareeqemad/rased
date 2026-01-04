@@ -268,11 +268,13 @@
         function createOperatorListItem(operator) {
             const li = document.createElement('li');
             li.dataset.operatorId = operator.id;
+            const cityHtml = operator.city ? `<span>${operator.city}</span>` : '';
+            const phoneHtml = operator.phone ? `<span>📞 ${operator.phone}</span>` : '';
             li.innerHTML = `
                 <div class="operator-name">${operator.name}</div>
                 <div class="operator-details">
-                    ${operator.city ? operator.city : ''}
-                    ${operator.phone ? '<br>📞 ' + operator.phone : ''}
+                    ${cityHtml}
+                    ${phoneHtml}
                 </div>
             `;
             

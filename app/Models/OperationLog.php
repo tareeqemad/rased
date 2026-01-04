@@ -24,6 +24,7 @@ class OperationLog extends Model
         'energy_meter_start',
         'energy_meter_end',
         'energy_produced',
+        'electricity_tariff_price',
         'operational_notes',
         'malfunctions',
     ];
@@ -41,6 +42,7 @@ class OperationLog extends Model
             'energy_meter_start' => 'decimal:2',
             'energy_meter_end' => 'decimal:2',
             'energy_produced' => 'decimal:2',
+            'electricity_tariff_price' => 'decimal:4',
         ];
     }
 

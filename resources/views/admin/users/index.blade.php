@@ -78,78 +78,70 @@
                         </div>
                     @endif
 
-                    <div class="users-stats mb-3">
-                        <div class="users-stat">
-                            <div class="label">الإجمالي</div>
-                            <div class="value" id="statTotal">—</div>
-                        </div>
 
-                        @if($isSuperAdmin)
-                            <div class="users-stat">
-                                <div class="label">المشغلين</div>
-                                <div class="value" id="statOwners">—</div>
-                            </div>
-                            <div class="users-stat">
-                                <div class="label">سلطة الطاقة</div>
-                                <div class="value" id="statAdmins">—</div>
-                            </div>
-                        @endif
-
-                        <div class="users-stat">
-                            <div class="label">الموظفين</div>
-                            <div class="value" id="statEmployees">—</div>
+                    {{-- كارد واحد للفلاتر --}}
+                    <div class="card border mb-3">
+                        <div class="card-header bg-light">
+                            <h6 class="card-title mb-0">
+                                <i class="bi bi-funnel me-2"></i>
+                                فلاتر البحث
+                            </h6>
                         </div>
-                        <div class="users-stat">
-                            <div class="label">الفنيين</div>
-                            <div class="value" id="statTechnicians">—</div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-lg-4">
+                                    <label class="form-label fw-semibold">
+                                        <i class="bi bi-search me-1"></i>
+                                        بحث
+                                    </label>
+                                    <div class="users-search">
+                                        <i class="bi bi-search"></i>
+                                        <input type="text" class="form-control" id="usersSearch" placeholder="اسم / اسم المستخدم / البريد..." autocomplete="off">
+                                        <button type="button" class="users-clear d-none" id="btnClearSearch" title="إلغاء البحث">
+                                            <i class="bi bi-x-circle"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-3">
+                                    <label class="form-label fw-semibold">
+                                        <i class="bi bi-shield-check me-1"></i>
+                                        الدور
+                                    </label>
+                                    <select class="form-select" id="roleFilter">
+                                        <option value="">الكل</option>
+                                        @foreach($filterRoleKeys as $rk)
+                                            <option value="{{ $rk }}">{{ $roleMeta[$rk]['label'] ?? $rk }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+
+                                @if($isSuperAdmin)
+                                    <div class="col-lg-3" id="operatorFilterWrap">
+                                        <label class="form-label fw-semibold">
+                                            <i class="bi bi-building me-1"></i>
+                                            المشغل
+                                        </label>
+                                        <select class="form-select" id="operatorFilter"></select>
+                                        <div class="form-text small">فلترة الموظفين/الفنيين حسب مشغل معيّن.</div>
+                                    </div>
+                                @endif
+
+                                <div class="col-lg-2 d-flex align-items-end">
+                                    <div class="d-flex gap-2 w-100">
+                                        <button class="btn btn-primary flex-fill" id="btnSearch">
+                                            <i class="bi bi-search me-1"></i>
+                                            بحث
+                                        </button>
+                                        <button class="btn btn-outline-primary" id="btnRefresh" title="تحديث">
+                                            <i class="bi bi-arrow-repeat"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="row g-2 align-items-end">
-                        <div class="col-lg-4">
-                            <label class="form-label fw-semibold">بحث</label>
-                            <div class="users-search">
-                                <i class="bi bi-search"></i>
-                                <input type="text" class="form-control" id="usersSearch" placeholder="اسم / اسم المستخدم / البريد..." autocomplete="off">
-                                <button type="button" class="users-clear d-none" id="btnClearSearch" title="إلغاء البحث">
-                                    <i class="bi bi-x-circle"></i>
-                                </button>
-                            </div>
-                        </div>
-
-                        <div class="col-lg-3">
-                            <label class="form-label fw-semibold">الدور</label>
-                            <select class="form-select" id="roleFilter">
-                                <option value="">الكل</option>
-                                @foreach($filterRoleKeys as $rk)
-                                    <option value="{{ $rk }}">{{ $roleMeta[$rk]['label'] ?? $rk }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-
-                        @if($isSuperAdmin)
-                            <div class="col-lg-3" id="operatorFilterWrap">
-                                <label class="form-label fw-semibold">المشغل</label>
-                                <select class="form-select" id="operatorFilter"></select>
-                                <div class="form-text">فلترة الموظفين/الفنيين حسب مشغل معيّن.</div>
-                            </div>
-                        @endif
-
-                        <div class="col-lg-2">
-                            <button class="btn btn-primary w-100" id="btnSearch">
-                                <i class="bi bi-search me-1"></i>
-                                بحث
-                            </button>
-                        </div>
-                        <div class="col-lg-2">
-                            <button class="btn btn-outline-primary w-100" id="btnRefresh">
-                                <i class="bi bi-arrow-repeat me-1"></i>
-                                تحديث
-                            </button>
-                        </div>
-                    </div>
-
-                    <hr class="my-3">
 
                     <div class="table-responsive" id="usersTableContainer">
                         <table class="table table-hover align-middle mb-0 users-table">
@@ -206,25 +198,25 @@
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">الاسم <span class="text-danger">*</span></label>
-                                <input type="text" name="name" class="form-control" required>
+                                <input type="text" name="name" class="form-control">
                                 <div class="invalid-feedback"></div>
                             </div>
 
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">اسم المستخدم <span class="text-danger">*</span></label>
-                                <input type="text" name="username" class="form-control" required>
+                                <input type="text" name="username" class="form-control">
                                 <div class="invalid-feedback"></div>
                             </div>
 
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">البريد الإلكتروني <span class="text-danger">*</span></label>
-                                <input type="email" name="email" class="form-control" required>
+                                <input type="email" name="email" class="form-control">
                                 <div class="invalid-feedback"></div>
                             </div>
 
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">الدور <span class="text-danger">*</span></label>
-                                <select name="role" class="form-select" id="createRole" required>
+                                <select name="role" class="form-select" id="createRole">
                                     <option value="">اختر الدور</option>
                                     @foreach($createRoleKeys as $rk)
                                         <option value="{{ $rk }}">{{ $roleMeta[$rk]['label'] ?? $rk }}</option>
@@ -244,14 +236,14 @@
 
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">كلمة المرور <span class="text-danger">*</span></label>
-                                <input type="password" name="password" class="form-control" minlength="8" required>
+                                <input type="password" name="password" class="form-control" minlength="8">
                                 <div class="form-text">8 أحرف على الأقل.</div>
                                 <div class="invalid-feedback"></div>
                             </div>
 
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">تأكيد كلمة المرور <span class="text-danger">*</span></label>
-                                <input type="password" name="password_confirmation" class="form-control" minlength="8" required>
+                                <input type="password" name="password_confirmation" class="form-control" minlength="8">
                                 <div class="invalid-feedback"></div>
                             </div>
                         </div>
@@ -301,8 +293,7 @@
 @endsection
 
 @push('scripts')
-    {{-- jQuery + Select2 (نفس صفحة الصلاحيات) --}}
-    <script src="{{ asset('assets/admin/libs/jquery/jquery.min.js') }}"></script>
+    {{-- Select2 --}}
     <script src="{{ asset('assets/admin/js/data-table-loading.js') }}"></script>
     <script src="{{ asset('assets/admin/libs/select2/select2.min.js') }}"></script>
     @if(file_exists(public_path('assets/admin/libs/select2/i18n/ar.js')))
@@ -453,6 +444,20 @@
                         </form>
                     ` : '';
 
+                    // زر toggle status (للسوبر أدمن والمشغل - وليس لنفسه)
+                    const userStatus = (u.status || 'active');
+                    const isCompanyOwner = {{ $isCompanyOwner ? 'true' : 'false' }};
+                    const canToggleStatus = (isSuperAdmin || isCompanyOwner) && targetUserId !== currentUserId;
+                    const toggleStatusBtn = canToggleStatus ? `
+                        <button type="button" class="btn btn-light btn-icon text-${userStatus === 'active' ? 'warning' : 'success'} btn-toggle-status"
+                                data-id="${escapeHtml(u.id)}"
+                                data-status="${escapeHtml(userStatus)}"
+                                data-name="${escapeHtml(name)}"
+                                title="${userStatus === 'active' ? 'إيقاف' : 'تفعيل'}">
+                            <i class="bi bi-${userStatus === 'active' ? 'pause' : 'play'}-fill"></i>
+                        </button>
+                    ` : '';
+
                     return `
                         <tr>
                             <td>
@@ -475,6 +480,7 @@
                                     ${canEdit ? `<a class="btn btn-light btn-icon" href="${escapeHtml(editUrl)}" title="تعديل"><i class="bi bi-pencil"></i></a>` : ``}
                                     <a class="btn btn-light btn-icon" href="${escapeHtml(permsUrl)}" title="الصلاحيات"><i class="bi bi-shield-check"></i></a>
                                     ${impersonateBtn}
+                                    ${toggleStatusBtn}
                                     ${canDelete && (targetUserId !== currentUserId) ? `
                                         <button type="button" class="btn btn-light btn-icon text-danger btn-delete-user"
                                                 data-id="${escapeHtml(u.id)}"
@@ -842,6 +848,43 @@
                 $('#btnConfirmDelete').prop('disabled', on);
                 $deleteSpinner.toggleClass('d-none', !on);
             }
+
+            // Toggle status handler
+            $tbody.on('click', '.btn-toggle-status', function(){
+                const $btn = $(this);
+                const id = $btn.data('id');
+                const currentStatus = $btn.data('status');
+                const name = $btn.data('name');
+                const action = currentStatus === 'active' ? 'إيقاف' : 'تفعيل';
+                
+                if (!confirm(`هل أنت متأكد من ${action} المستخدم "${name}"؟`)) {
+                    return;
+                }
+
+                $.ajax({
+                    url: `${USERS_BASE_URL}/${id}/toggle-status`,
+                    method: 'POST',
+                    dataType: 'json',
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    success: function(resp){
+                        if(resp.ok){
+                            notify('success', resp.message || `تم ${action} المستخدم بنجاح`);
+                            loadUsers(state.page || 1);
+                        } else {
+                            notify('error', resp.message || 'حدث خطأ');
+                        }
+                    },
+                    error: function(xhr){
+                        const msg = (xhr.responseJSON && xhr.responseJSON.message)
+                            ? xhr.responseJSON.message
+                            : 'حدث خطأ أثناء تغيير الحالة';
+                        notify('error', msg);
+                    }
+                });
+            });
 
             $tbody.on('click', '.btn-delete-user', function(){
                 const id = $(this).data('id');
