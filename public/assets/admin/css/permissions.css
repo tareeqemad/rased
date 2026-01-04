@@ -90,35 +90,51 @@
     align-items:center;
     justify-content: space-between;
     gap:.75rem;
-    padding: .25rem 0;
+    padding: .35rem 0;
+    border-bottom: 1px solid var(--perm-border-2);
+    margin-bottom: .5rem;
+}
+.permissions-page .perm-summary-row:last-of-type{
+    border-bottom: none;
+    margin-bottom: 0;
 }
 .permissions-page .perm-stats{
     display:grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: .5rem;
+    gap: .6rem;
     margin-top: .75rem;
 }
 .permissions-page .perm-stat{
     background: var(--perm-surface);
-    border: 1px solid var(--perm-border-2);
+    border: 1.5px solid var(--perm-border-2);
     border-radius: 12px;
-    padding: .65rem .75rem;
+    padding: .75rem .5rem;
     text-align:center;
+    transition: all 0.2s ease;
+}
+.permissions-page .perm-stat:hover{
+    border-color: rgba(var(--primary-rgb), .4);
+    box-shadow: 0 2px 4px rgba(0,0,0,.05);
+    transform: translateY(-1px);
 }
 .permissions-page .perm-stat .label{
     color: var(--perm-muted);
-    font-size: .75rem;
+    font-size: .72rem;
+    font-weight: 600;
+    margin-bottom: .25rem;
 }
 .permissions-page .perm-stat .value{
     font-weight: 800;
-    font-size: 1.05rem;
+    font-size: 1.15rem;
     color: var(--perm-text);
+    line-height: 1.2;
 }
 
 /* Toolbar */
 .permissions-page .perm-toolbar{
     border-top: 1px solid var(--perm-border-2);
-    padding-top: 1rem;
+    padding-top: 1.25rem;
+    padding-bottom: 0.5rem;
     background: var(--perm-surface);
 }
 
@@ -140,50 +156,93 @@
 .permissions-page .perm-searchfield{
     position: relative;
     flex: 1 1 auto;
-    min-width: 240px;
+    min-width: 280px;
 }
 
 .permissions-page .perm-search-icon{
     position:absolute;
     top:50%;
     transform: translateY(-50%);
-    inset-inline-start: 12px;   /* RTL friendly */
+    inset-inline-start: 14px;   /* RTL friendly */
     color:#94a3b8;
     pointer-events:none;
-    font-size: 1rem;
+    font-size: 1.05rem;
+    z-index: 1;
 }
 
 .permissions-page .perm-search-input{
     height: 44px;
     border-radius: 12px;
-    padding-inline-start: 38px; /* مساحة للأيقونة */
-    border: 1px solid var(--perm-border);
+    padding-inline-start: 42px; /* مساحة للأيقونة */
+    padding-inline-end: 42px; /* مساحة لزر المسح */
+    border: 1.5px solid var(--perm-border);
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
 }
 
 .permissions-page .perm-search-input:focus{
-    border-color: rgba(var(--primary-rgb), .65);
-    box-shadow: 0 0 0 .2rem rgba(var(--primary-rgb), .12);
+    border-color: rgba(var(--primary-rgb), .85);
+    box-shadow: 0 0 0 .25rem rgba(var(--primary-rgb), .15);
+    outline: none;
+}
+
+.permissions-page .perm-clear-input{
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    inset-inline-end: 12px;
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    padding: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+    z-index: 2;
+}
+
+.permissions-page .perm-clear-input:hover{
+    background: #f1f5f9;
+    color: #64748b;
+}
+
+.permissions-page .perm-clear-input.d-none{
+    display: none !important;
 }
 
 .permissions-page .perm-search-action{
     height: 44px;
     border-radius: 12px;
     white-space: nowrap;
+    font-weight: 600;
+    padding-inline: 1.25rem;
+    transition: all 0.2s ease;
+}
+
+.permissions-page .perm-search-action:hover{
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,.1);
 }
 
 .permissions-page .perm-clear-btn{
     background:#f8fafc;
-    border:1px solid var(--perm-border);
+    border:1.5px solid var(--perm-border);
     color:#334155;
 }
 
 .permissions-page .perm-clear-btn:hover{
     background:#f1f5f9;
-    border-color: rgba(var(--primary-rgb), .35);
+    border-color: rgba(var(--primary-rgb), .5);
+    color: var(--perm-text);
 }
 
 /* على الموبايل خلّيها ترتّب حالها بدل ما تضغط */
-@media (max-width: 576px){
+@media (max-width: 768px){
     .permissions-page .perm-searchbar{
         flex-wrap: wrap;
     }
@@ -191,7 +250,8 @@
         min-width: 100%;
     }
     .permissions-page .perm-search-action{
-        flex: 1 1 48%;
+        flex: 1 1 auto;
+        min-width: 120px;
     }
 }
 
@@ -200,26 +260,38 @@
 .permissions-page .perm-filters{
     display:flex;
     flex-wrap:wrap;
-    gap:.35rem;
-    justify-content:flex-end;
+    gap:.4rem;
+    justify-content:flex-start;
 }
 .permissions-page .perm-filter{
-    border: 1px solid var(--perm-border);
+    border: 1.5px solid var(--perm-border);
     background: var(--perm-surface);
     border-radius: 999px;
-    padding: .35rem .65rem;
-    font-size: .8rem;
+    padding: .4rem .75rem;
+    font-size: .82rem;
     cursor:pointer;
-    transition: .15s ease;
+    transition: all 0.2s ease;
     color: var(--perm-text);
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    white-space: nowrap;
 }
 .permissions-page .perm-filter:hover{
     border-color: rgba(var(--primary-rgb), .65);
+    background: rgba(var(--primary-rgb), .05);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,.05);
 }
 .permissions-page .perm-filter.active{
-    background: rgba(var(--primary-rgb), .10);
-    border-color: rgba(var(--primary-rgb), .85);
-    font-weight: 800;
+    background: rgba(var(--primary-rgb), .12);
+    border-color: rgba(var(--primary-rgb), .9);
+    color: rgba(var(--primary-rgb), 1);
+    font-weight: 700;
+    box-shadow: 0 2px 6px rgba(var(--primary-rgb), .2);
+}
+.permissions-page .perm-filter i{
+    font-size: 0.9em;
 }
 
 /* Groups */
@@ -332,21 +404,59 @@
     border-right: 4px solid transparent;
 }
 .permissions-page .perm-row.is-dirty{
-    outline: 2px solid rgba(245, 158, 11, .35);
+    outline: 2px solid rgba(245, 158, 11, .4);
     outline-offset: 2px;
+    animation: permDirtyPulse 2s ease-in-out infinite;
+}
+
+@keyframes permDirtyPulse {
+    0%, 100% {
+        outline-color: rgba(245, 158, 11, .4);
+    }
+    50% {
+        outline-color: rgba(245, 158, 11, .7);
+    }
+}
+
+/* Smooth transitions for state changes */
+.permissions-page .perm-row{
+    transition: all 0.3s ease;
+}
+
+/* Badge animations */
+.permissions-page .perm-badges .badge{
+    transition: all 0.2s ease;
+}
+.permissions-page .perm-badges .badge:hover{
+    transform: scale(1.05);
 }
 
 /* Loading overlay */
 .permissions-page .perm-loading{
     position:absolute;
     inset:0;
-    background: rgba(255,255,255,.92);
-    backdrop-filter: blur(3px);
+    background: rgba(255,255,255,.95);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
     display:flex;
     align-items:center;
     justify-content:center;
-    z-index: 50;
+    z-index: 100;
     border-radius: 14px;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+.permissions-page .perm-loading .spinner-border{
+    width: 3rem;
+    height: 3rem;
+    border-width: 4px;
+    border-color: rgba(var(--primary-rgb), .3);
+    border-right-color: transparent;
+}
+.permissions-page .perm-loading .text-muted{
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--perm-muted);
+    margin-top: 1rem;
 }
 
 /* ===== Select2 (واضح للمستخدم إنه Input) ===== */
@@ -392,4 +502,65 @@
 .permissions-page .select2-results__option--highlighted{
     background: rgba(var(--primary-rgb), .85) !important;
     color:#fff !important;
+}
+
+/* Buttons improvements */
+.permissions-page .btn{
+    font-weight: 600;
+    border-radius: 12px;
+    padding: .6rem 1.25rem;
+    transition: all 0.2s ease;
+}
+.permissions-page .btn:hover{
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,.1);
+}
+.permissions-page .btn:active{
+    transform: translateY(0);
+}
+.permissions-page .btn:disabled{
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+/* Expand/Collapse buttons */
+.permissions-page #expandAllBtn,
+.permissions-page #collapseAllBtn{
+    font-weight: 600;
+    padding: .4rem .75rem;
+    font-size: .85rem;
+}
+
+/* Group actions buttons */
+.permissions-page .perm-group-enable,
+.permissions-page .perm-group-disable{
+    font-weight: 600;
+    font-size: .8rem;
+    padding: .3rem .6rem;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+.permissions-page .perm-group-enable:hover,
+.permissions-page .perm-group-disable:hover{
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,.1);
+}
+
+/* Badge improvements */
+.permissions-page .perm-badges .badge{
+    font-weight: 600;
+    font-size: .75rem;
+    padding: .35rem .6rem;
+    border-radius: 8px;
+}
+
+/* Row improvements */
+.permissions-page .perm-row{
+    transition: all 0.2s ease;
+}
+.permissions-page .perm-row:hover{
+    border-color: rgba(var(--primary-rgb), .4);
+    box-shadow: 0 2px 8px rgba(0,0,0,.06);
+    transform: translateY(-1px);
 }

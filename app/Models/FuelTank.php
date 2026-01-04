@@ -11,7 +11,7 @@ class FuelTank extends Model
     use SoftDeletes;
 
     protected $fillable = [
-        'generator_id',
+        'generation_unit_id',
         'tank_code',
         'capacity',
         'location',
@@ -30,32 +30,39 @@ class FuelTank extends Model
         ];
     }
 
-    public function generator(): BelongsTo
+    public function generationUnit(): BelongsTo
     {
-        return $this->belongsTo(Generator::class);
+        return $this->belongsTo(GenerationUnit::class);
     }
 
     /**
-     * توليد كود خزان الوقود التالي بناءً على unit_code للمولد
-     * الصيغة: {unit_code}-TXX (حيث XX من 01 إلى 99)
-     * مثال: GU-MD-DB-001-T01, GU-MD-DB-001-T02
+     * توليد كود خزان الوقود التالي بناءً على unit_code لوحدة التوليد
+     * الصيغة الكاملة: GU-PP-CC-NNN-TXX
+     * حيث:
+     * - GU-PP-CC-NNN: كود وحدة التوليد (Generation Unit Code)
+     * - TXX: رقم خزان الوقود داخل الوحدة (T01 - T99)
+     * 
+     * مثال: GU-MD-DR-001-T01, GU-MD-DR-001-T02
+     * 
+     * @param int|null $generationUnitId معرف وحدة التوليد
+     * @return string|null كود خزان الوقود أو null في حالة الفشل
      */
-    public static function getNextTankCode(?int $generatorId = null): ?string
+    public static function getNextTankCode(?int $generationUnitId = null): ?string
     {
-        if (!$generatorId) {
+        if (!$generationUnitId) {
             return null;
         }
 
-        $generator = Generator::with('operator')->find($generatorId);
-        if (!$generator || !$generator->operator || !$generator->operator->unit_code) {
+        $generationUnit = GenerationUnit::find($generationUnitId);
+        if (!$generationUnit || !$generationUnit->unit_code) {
             return null;
         }
 
-        $unitCode = $generator->operator->unit_code;
+        $unitCode = $generationUnit->unit_code;
         $prefix = $unitCode . '-T';
 
-        // البحث عن آخر رقم خزان في نفس المولد
-        $lastTank = static::where('generator_id', $generatorId)
+        // البحث عن آخر رقم خزان في نفس وحدة التوليد
+        $lastTank = static::where('generation_unit_id', $generationUnitId)
             ->whereNotNull('tank_code')
             ->where('tank_code', 'like', $prefix . '%')
             ->get()

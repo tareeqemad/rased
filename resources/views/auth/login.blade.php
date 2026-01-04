@@ -93,21 +93,26 @@
         .logo-mini {
             display: flex;
             align-items: center;
-            gap: 10px;
-            margin-bottom: 24px;
+            justify-content: center;
+            margin-bottom: 32px;
             animation: fadeInDown 0.6s ease;
         }
 
+        .logo-mini img {
+            max-height: 250px;
+            width: auto;
+        }
+
         .logo-mini-icon {
-            width: 42px;
-            height: 42px;
+            width: 80px;
+            height: 80px;
             background: linear-gradient(180deg, #1e40af 0%, #1e3a8a 100%);
             border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
-            font-size: 22px;
+            font-size: 40px;
             font-weight: 800;
             box-shadow:
                 0 10px 25px rgba(30, 64, 175, 0.4),
@@ -151,14 +156,6 @@
                 0 0 0 1px rgba(255, 255, 255, 0.2) inset;
         }
 
-        .logo-mini-text {
-            font-size: 32px;
-            font-weight: 800;
-            background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
 
         .welcome-text {
             font-size: 32px;
@@ -628,12 +625,16 @@
         <div class="login-form-section">
             <div class="form-content">
                 <div class="logo-mini">
-                    <div class="logo-mini-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 24px; height: 24px;">
+                    @php
+                        $logo = \App\Models\Setting::get('site_logo', 'assets/admin/images/brand-logos/rased_logo.png');
+                        $logoUrl = str_starts_with($logo, 'http') ? $logo : asset($logo);
+                    @endphp
+                    <img src="{{ $logoUrl }}" alt="{{ \App\Models\Setting::get('site_name', 'راصد') }}" style="max-height: 250px; width: auto;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <div class="logo-mini-icon" style="display: none;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 60px; height: 60px;">
                             <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path>
                         </svg>
                     </div>
-                    <div class="logo-mini-text">{{ \App\Models\Setting::get('site_name', 'راصد') }}</div>
                 </div>
 
                 <h1 class="welcome-text">مرحباً بك</h1>

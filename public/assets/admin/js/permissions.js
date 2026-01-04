@@ -517,6 +517,7 @@
     // ===== Search tree (server side) =====
     const runSearch = debounce(function () {
         const term = ($('#searchInput').val() || '').trim();
+        $('#clearSearchInput').toggleClass('d-none', term === '');
         
         // إذا كان البحث فارغاً، لا حاجة لـ loading overlay
         if (!term) {
@@ -550,6 +551,7 @@
                 }
 
                 $('#clearSearchBtn').toggleClass('d-none', term === '');
+                $('#clearSearchInput').toggleClass('d-none', term === '');
             })
             .fail(xhr => {
                 const errorMsg = xhr.responseJSON?.message || 'فشل تحميل نتائج البحث';
@@ -567,9 +569,23 @@
             runSearch();
         }
     });
+
+    // Show/hide clear button inside input
+    $('#searchInput').on('input', function() {
+        const val = $(this).val().trim();
+        $('#clearSearchInput').toggleClass('d-none', val === '');
+    });
+
+    // Clear input button
+    $('#clearSearchInput').on('click', function() {
+        $('#searchInput').val('').focus();
+        $(this).addClass('d-none');
+    });
     
     $('#clearSearchBtn').on('click', function () {
         $('#searchInput').val('');
+        $('#clearSearchInput').addClass('d-none');
+        $('#clearSearchBtn').addClass('d-none');
         runSearch();
     });
 

@@ -8,11 +8,11 @@
     <div class="justify-content-center mt-2">
         <ol class="breadcrumb">
             @if(!empty($parent))
-                <li class="breadcrumb-item fs-15">
+                <li class="fs-15">
                     <a href="{{ $parent_url ?? 'javascript:void(0);' }}">{{ $parent }}</a>
                 </li>
             @endif
-            <li class="breadcrumb-item active" aria-current="page">
+            <li aria-current="page">
                 {{ $title ?? '' }}
             </li>
         </ol>

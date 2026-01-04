@@ -7,6 +7,7 @@ use App\Helpers\ConstantsHelper;
 use App\Models\ComplianceSafety;
 use App\Models\FuelEfficiency;
 use App\Models\FuelTank;
+use App\Models\GenerationUnit;
 use App\Models\Generator;
 use App\Models\MaintenanceRecord;
 use App\Models\OperationLog;
@@ -70,18 +71,12 @@ class OperatorsWithDataSeeder extends Seeder
             50 => ['lat' => 31.2969, 'lng' => 34.2436], // رفح
         ];
 
-        // أسماء عربية للمشغلين
+        // أسماء المشغلين
         $operatorNames = [
-            'مشغل الكهرباء المركزي',
-            'مشغل الطاقة النظيفة',
-            'مشغل المولدات الحديثة',
-            'مشغل الكهرباء المتقدمة',
-            'مشغل الطاقة المستدامة',
-            'مشغل المولدات الذكية',
-            'مشغل الكهرباء الموثوقة',
-            'مشغل الطاقة المتكاملة',
-            'مشغل المولدات الاحترافية',
-            'مشغل الكهرباء المتميزة',
+            'gedco1',
+            'gedco2',
+            'gedco3',
+            'gedco4',
         ];
 
         // أسماء للموظفين
@@ -160,32 +155,9 @@ class OperatorsWithDataSeeder extends Seeder
                 if ($gazaGovernorate && $gazaCity) {
                     $governorateEnum = Governorate::fromValue((int) $gazaGovernorate->value);
                     
-                    // توليد رقم الوحدة وكود الوحدة
-                    $unitNumber = Operator::getNextUnitNumber($governorateEnum, $gazaCity->id);
-                    $unitCode = Operator::generateUnitCode($governorateEnum, $gazaCity->id, $unitNumber);
-                    
                     $mmlukOperator = Operator::create([
                         'name' => 'مشغل المملوك',
-                        'email' => 'info@mmluk.ps',
-                        'phone' => '0599123456',
-                        'phone_alt' => '0599123457',
-                        'address' => 'غزة - شارع المملوك',
                         'owner_id' => $mmlukOwner->id,
-                        'unit_number' => $unitNumber,
-                        'unit_code' => $unitCode,
-                        'unit_name' => 'وحدة المملوك',
-                        'governorate' => $governorateEnum,
-                        'city_id' => $gazaCity->id,
-                        'detailed_address' => 'غزة - شارع المملوك - مبنى رقم 5',
-                        'latitude' => 31.3547,
-                        'longitude' => 34.3088,
-                        'total_capacity' => 500,
-                        'generators_count' => 4,
-                        'synchronization_available' => true,
-                        'max_synchronization_capacity' => 400,
-                        'beneficiaries_count' => 150,
-                        'beneficiaries_description' => 'سكان المنطقة والمؤسسات',
-                        'environmental_compliance_status' => 'compliant',
                         'status' => 'active',
                         'profile_completed' => true,
                     ]);
@@ -289,12 +261,50 @@ class OperatorsWithDataSeeder extends Seeder
                     ],
                 ];
 
+                // إنشاء وحدة توليد واحدة لمشغل المملوك
+                $governorateCode = $governorateEnum->code();
+                $cityCode = $gazaCity->code;
+                $unitNumber = GenerationUnit::getNextUnitNumberByLocation($governorateCode, $cityCode);
+                $unitCode = "GU-{$governorateCode}-{$cityCode}-{$unitNumber}";
+                
+                $generationUnit = GenerationUnit::create([
+                    'operator_id' => $mmlukOperator->id,
+                    'unit_code' => $unitCode,
+                    'unit_number' => $unitNumber,
+                    'name' => 'وحدة التوليد الرئيسية',
+                    'generators_count' => 4,
+                    'status' => 'active',
+                    // الملكية والتشغيل
+                    'owner_name' => $mmlukOwner->name,
+                    'owner_id_number' => str_pad(rand(100000000, 999999999), 9, '0', STR_PAD_LEFT),
+                    'operation_entity' => 'same_owner',
+                    'operator_id_number' => str_pad(rand(100000, 999999), 6, '0', STR_PAD_LEFT),
+                    'phone' => '0599123456',
+                    'phone_alt' => '0599123457',
+                    'email' => 'info@mmluk.ps',
+                    // الموقع
+                    'governorate' => $governorateEnum->code(),
+                    'city_id' => $gazaCity->id,
+                    'detailed_address' => 'غزة - شارع المملوك - مبنى رقم 5',
+                    'latitude' => 31.3547,
+                    'longitude' => 34.3088,
+                    // القدرات الفنية
+                    'total_capacity' => 500,
+                    'synchronization_available' => true,
+                    'max_synchronization_capacity' => 400,
+                    // المستفيدون والبيئة
+                    'beneficiaries_count' => 150,
+                    'beneficiaries_description' => 'سكان المنطقة والمؤسسات',
+                    'environmental_compliance_status' => 'compliant',
+                ]);
+
                 foreach ($mmlukGeneratorsData as $genData) {
-                    // توليد رقم المولد تلقائياً بناءً على unit_code
-                    $genData['generator_number'] = Generator::getNextGeneratorNumber($mmlukOperator->id);
+                    // توليد رقم المولد تلقائياً بناءً على unit_code لوحدة التوليد
+                    $genData['generator_number'] = Generator::getNextGeneratorNumber($generationUnit->id);
                     
                     $generator = Generator::create([
                         'operator_id' => $mmlukOperator->id,
+                        'generation_unit_id' => $generationUnit->id,
                         ...$genData,
                     ]);
 
@@ -302,13 +312,13 @@ class OperatorsWithDataSeeder extends Seeder
                     $mmlukGenerators->push($generator); // إضافة لمولدات المملوك
 
                     // إنشاء خزانات الوقود إذا كان المولد يحتوي على خزانات
-                    if (isset($genData['fuel_tanks_count']) && $genData['fuel_tanks_count'] > 0) {
+                    if (isset($genData['fuel_tanks_count']) && $genData['fuel_tanks_count'] > 0 && $generator->generation_unit_id) {
                         for ($t = 0; $t < $genData['fuel_tanks_count']; $t++) {
                             // توليد كود الخزان تلقائياً
-                            $tankCode = FuelTank::getNextTankCode($generator->id);
+                            $tankCode = FuelTank::getNextTankCode($generator->generation_unit_id);
                             
                             FuelTank::create([
-                                'generator_id' => $generator->id,
+                                'generation_unit_id' => $generator->generation_unit_id,
                                 'tank_code' => $tankCode,
                                 'capacity' => rand(100, 500),
                                 'location' => ['داخلي', 'خارجي', 'أرضي', 'علوي'][rand(0, 3)],
@@ -350,8 +360,8 @@ class OperatorsWithDataSeeder extends Seeder
             $this->command->warn('لم يتم العثور على المستخدم mmluk، سيتم تخطي مشغل المملوك');
         }
 
-        // إنشاء 10 مشغلين
-        for ($i = 0; $i < 10; $i++) {
+        // إنشاء 4 مشغلين
+        for ($i = 0; $i < 4; $i++) {
             // اختيار محافظة عشوائية
             $governorateData = $governoratesData[$i % count($governoratesData)];
             
@@ -366,11 +376,6 @@ class OperatorsWithDataSeeder extends Seeder
 
             // تحويل المحافظة إلى enum
             $governorateEnum = Governorate::fromValue($governorateData['value']);
-            
-            // توليد رقم الوحدة وكود الوحدة بناءً على المحافظة والمدينة المختارة
-            // ملاحظة: يجب استخدام نفس القيم (governorateEnum و cityData['id']) في Operator::create()
-            $unitNumber = Operator::getNextUnitNumber($governorateEnum, $cityData['id']);
-            $unitCode = Operator::generateUnitCode($governorateEnum, $cityData['id'], $unitNumber);
 
             // إنشاء CompanyOwner
             $owner = User::firstOrCreate(
@@ -384,112 +389,145 @@ class OperatorsWithDataSeeder extends Seeder
                 ]
             );
 
-            // إنشاء Operator
-            // ملاحظة: governorate و city_id يجب أن تكون نفس القيم المستخدمة في توليد unit_number و unit_code
+            // إنشاء Operator (فقط الاسم)
             $operator = Operator::create([
                 'name' => $operatorNames[$i],
-                'email' => 'operator' . ($i + 1) . '@example.com',
-                'phone' => '059' . str_pad(rand(1000000, 9999999), 7, '0', STR_PAD_LEFT),
-                'phone_alt' => '056' . str_pad(rand(1000000, 9999999), 7, '0', STR_PAD_LEFT),
-                'address' => 'شارع ' . ($i + 1) . '، ' . $cityData['label'],
                 'owner_id' => $owner->id,
-                'unit_number' => $unitNumber, // تم توليده بناءً على governorateEnum و cityData['id']
-                'unit_code' => $unitCode, // تم توليده بناءً على governorateEnum و cityData['id']
-                'unit_name' => 'وحدة ' . $operatorNames[$i],
-                'governorate' => $governorateEnum, // نفس القيمة المستخدمة في توليد unit_code
-                'city_id' => $cityData['id'], // نفس القيمة المستخدمة في توليد unit_code
-                'detailed_address' => 'مبنى رقم ' . ($i + 1) . '، ' . $cityData['label'] . '، ' . $governorateData['name'],
-                'latitude' => $latitude,
-                'longitude' => $longitude,
-                'total_capacity' => rand(500, 2000),
-                'generators_count' => 5,
-                'synchronization_available' => rand(0, 1) === 1,
-                'max_synchronization_capacity' => rand(300, 1500),
-                'owner_name' => $owner->name,
-                'owner_id_number' => str_pad(rand(100000000, 999999999), 9, '0', STR_PAD_LEFT),
-                'operation_entity' => rand(0, 1) === 1 ? 'same_owner' : 'other_party',
-                'operator_id_number' => str_pad(rand(100000, 999999), 6, '0', STR_PAD_LEFT),
-                'beneficiaries_count' => rand(50, 500),
-                'beneficiaries_description' => 'مستفيدون من خدمات الكهرباء في منطقة ' . $cityData['label'],
-                'environmental_compliance_status' => rand(0, 1) === 1 ? 'compliant' : 'non_compliant',
                 'status' => 'active',
                 'profile_completed' => true,
             ]);
 
             $allOperators->push($operator);
 
-            // إنشاء حوالي 5 مولدات لكل مشغل
-            $generatorsCount = rand(4, 6);
-            for ($j = 0; $j < $generatorsCount; $j++) {
-                // توليد رقم المولد تلقائياً بناءً على unit_code
-                $generatorNumber = Generator::getNextGeneratorNumber($operator->id);
-                if (!$generatorNumber) {
-                    $this->command->warn("تم الوصول إلى الحد الأقصى لعدد المولدات للمشغل {$operator->id}");
-                    break;
-                }
-                
-                // اختيار قيم عشوائية من الثوابت
-                $statusValue = $getConstantValue($statusConstants, 'active');
-                $engineTypeValue = $getConstantValue($engineTypeConstants, 'diesel');
-                $injectionSystemValue = $getConstantValue($injectionSystemConstants, 'mechanical');
-                $measurementIndicatorValue = $getConstantValue($measurementIndicatorConstants, 'mechanical');
-                $technicalConditionValue = $getConstantValue($technicalConditionConstants, 'good');
-                $controlPanelTypeValue = $getConstantValue($controlPanelTypeConstants, 'manual');
-                $controlPanelStatusValue = $getConstantValue($controlPanelStatusConstants, 'active');
+            // إعادة تحميل المشغل من قاعدة البيانات لضمان تحديث جميع العلاقات
+            $operator = $operator->fresh();
 
-                $generator = Generator::create([
-                    'name' => $generatorNames[$j % count($generatorNames)],
-                    'generator_number' => $generatorNumber,
+            // التحقق من أن المشغل لديه governorate و city_id (يجب أن يكون موجوداً من البيانات المحملة)
+            // لكن في الواقع، هذه البيانات يجب أن تأتي من المشغل نفسه وليس من الـ form
+            // لذلك سنجعل governorate و city_id من المشغل نفسه
+            // لكن بما أن المشغل لا يحتوي على هذه البيانات الآن، سنستخدم البيانات من المتغيرات
+            $cityDetail = \App\Models\ConstantDetail::find($cityData['id']);
+            if (!$cityDetail || !$cityDetail->code) {
+                $this->command->warn("فشل الحصول على city code للمشغل {$operator->id}");
+                continue;
+            }
+            $cityCode = $cityDetail->code;
+            $governorateCode = $governorateEnum->code();
+
+            // إنشاء 2-3 وحدات توليد لكل مشغل
+            $unitsCount = rand(2, 3);
+            $operatorTotalGenerators = 0;
+            
+            for ($unitIndex = 0; $unitIndex < $unitsCount; $unitIndex++) {
+                // توليد رقم الوحدة وكودها
+                $unitNumber = GenerationUnit::getNextUnitNumberByLocation($governorateCode, $cityCode);
+                $unitCode = "GU-{$governorateCode}-{$cityCode}-{$unitNumber}";
+                
+                // عدد المولدات في هذه الوحدة (لا يقل عن 2)
+                $generatorsCount = rand(2, 4);
+                $operatorTotalGenerators += $generatorsCount;
+                
+                $generationUnit = GenerationUnit::create([
                     'operator_id' => $operator->id,
-                    'description' => 'مولد كهربائي بقدرة ' . rand(50, 500) . ' KVA',
-                    'status' => $statusValue,
-                    'capacity_kva' => rand(50, 500),
-                    'power_factor' => round(rand(80, 95) / 100, 2),
-                    'voltage' => rand(220, 380),
-                    'frequency' => 50,
-                    'engine_type' => $engineTypeValue,
-                    'manufacturing_year' => rand(2015, 2024),
-                    'injection_system' => $injectionSystemValue,
-                    'fuel_consumption_rate' => round(rand(10, 50) + (rand(0, 99) / 100), 2),
-                    'ideal_fuel_efficiency' => round(0.4 + (rand(0, 20) / 100), 3), // قيمة عشوائية بين 0.4 و 0.6
-                    'internal_tank_capacity' => rand(100, 500),
-                    'measurement_indicator' => $measurementIndicatorValue,
-                    'technical_condition' => $technicalConditionValue,
-                    'last_major_maintenance_date' => now()->subDays(rand(30, 365)),
-                    'control_panel_available' => rand(0, 1) === 1,
-                    'control_panel_type' => $controlPanelTypeValue,
-                    'control_panel_status' => $controlPanelStatusValue,
-                    'operating_hours' => rand(1000, 10000),
-                    'external_fuel_tank' => rand(0, 1) === 1,
-                    'fuel_tanks_count' => rand(0, 3),
+                    'unit_code' => $unitCode,
+                    'unit_number' => $unitNumber,
+                    'name' => 'وحدة التوليد ' . ($unitIndex + 1) . ' - ' . $operatorNames[$i],
+                    'generators_count' => $generatorsCount,
+                    'status' => 'active',
+                    // الملكية والتشغيل
+                    'owner_name' => $owner->name,
+                    'owner_id_number' => str_pad(rand(100000000, 999999999), 9, '0', STR_PAD_LEFT),
+                    'operation_entity' => rand(0, 1) === 1 ? 'same_owner' : 'other_party',
+                    'operator_id_number' => str_pad(rand(100000, 999999), 6, '0', STR_PAD_LEFT),
+                    'phone' => '059' . str_pad(rand(1000000, 9999999), 7, '0', STR_PAD_LEFT),
+                    'phone_alt' => '056' . str_pad(rand(1000000, 9999999), 7, '0', STR_PAD_LEFT),
+                    'email' => 'operator' . ($i + 1) . '_unit' . ($unitIndex + 1) . '@example.com',
+                    // الموقع
+                    'governorate' => $governorateEnum->code(),
+                    'city_id' => $cityData['id'],
+                    'detailed_address' => 'مبنى رقم ' . ($i + 1) . '-' . ($unitIndex + 1) . '، ' . $cityData['label'] . '، ' . $governorateData['name'],
+                    'latitude' => $latitude + (rand(-10, 10) / 1000),
+                    'longitude' => $longitude + (rand(-10, 10) / 1000),
+                    // القدرات الفنية
+                    'total_capacity' => rand(500, 2000),
+                    'synchronization_available' => rand(0, 1) === 1,
+                    'max_synchronization_capacity' => rand(300, 1500),
+                    // المستفيدون والبيئة
+                    'beneficiaries_count' => rand(50, 500),
+                    'beneficiaries_description' => 'مستفيدون من خدمات الكهرباء في منطقة ' . $cityData['label'],
+                    'environmental_compliance_status' => rand(0, 1) === 1 ? 'compliant' : 'non_compliant',
                 ]);
 
-                $allGenerators->push($generator);
+                // إنشاء المولدات تابعة لوحدة التوليد (لا يقل عن 2)
+                for ($j = 0; $j < $generatorsCount; $j++) {
+                    // توليد رقم المولد تلقائياً بناءً على unit_code لوحدة التوليد
+                    $generatorNumber = Generator::getNextGeneratorNumber($generationUnit->id);
+                    if (!$generatorNumber) {
+                        $this->command->warn("تم الوصول إلى الحد الأقصى لعدد المولدات لوحدة التوليد {$generationUnit->id}");
+                        break;
+                    }
+                    
+                    // اختيار قيم عشوائية من الثوابت
+                    $statusValue = $getConstantValue($statusConstants, 'active');
+                    $engineTypeValue = $getConstantValue($engineTypeConstants, 'diesel');
+                    $injectionSystemValue = $getConstantValue($injectionSystemConstants, 'mechanical');
+                    $measurementIndicatorValue = $getConstantValue($measurementIndicatorConstants, 'mechanical');
+                    $technicalConditionValue = $getConstantValue($technicalConditionConstants, 'good');
+                    $controlPanelTypeValue = $getConstantValue($controlPanelTypeConstants, 'manual');
+                    $controlPanelStatusValue = $getConstantValue($controlPanelStatusConstants, 'active');
 
-                // إنشاء خزانات وقود للمولد (إذا كان لديه خزانات)
-                if ($generator->fuel_tanks_count > 0) {
-                    for ($t = 0; $t < $generator->fuel_tanks_count; $t++) {
-                        // توليد كود الخزان تلقائياً
-                        $tankCode = FuelTank::getNextTankCode($generator->id);
-                        
-                        FuelTank::create([
-                            'generator_id' => $generator->id,
-                            'tank_code' => $tankCode,
-                            'capacity' => rand(100, 500),
-                            'location' => ['داخلي', 'خارجي', 'أرضي', 'علوي'][rand(0, 3)],
-                            'filtration_system_available' => rand(0, 1) === 1,
-                            'condition' => ['جيد', 'ممتاز', 'مقبول'][rand(0, 2)],
-                            'material' => ['حديد', 'بلاستيك', 'فولاذ'][rand(0, 2)],
-                            'usage' => ['رئيسي', 'احتياطي', 'إضافي'][rand(0, 2)],
-                            'measurement_method' => ['ميكانيكي', 'إلكتروني', 'يدوي'][rand(0, 2)],
-                            'order' => $t + 1,
-                        ]);
+                    $generator = Generator::create([
+                        'name' => $generatorNames[$j % count($generatorNames)] . ' - وحدة ' . ($unitIndex + 1),
+                        'generator_number' => $generatorNumber,
+                        'operator_id' => $operator->id,
+                        'generation_unit_id' => $generationUnit->id,
+                        'description' => 'مولد كهربائي بقدرة ' . rand(50, 500) . ' KVA',
+                        'status' => $statusValue,
+                        'capacity_kva' => rand(50, 500),
+                        'power_factor' => round(rand(80, 95) / 100, 2),
+                        'voltage' => rand(220, 380),
+                        'frequency' => 50,
+                        'engine_type' => $engineTypeValue,
+                        'manufacturing_year' => rand(2015, 2024),
+                        'injection_system' => $injectionSystemValue,
+                        'fuel_consumption_rate' => round(rand(10, 50) + (rand(0, 99) / 100), 2),
+                        'ideal_fuel_efficiency' => round(0.4 + (rand(0, 20) / 100), 3),
+                        'internal_tank_capacity' => rand(100, 500),
+                        'measurement_indicator' => $measurementIndicatorValue,
+                        'technical_condition' => $technicalConditionValue,
+                        'last_major_maintenance_date' => now()->subDays(rand(30, 365)),
+                        'control_panel_available' => rand(0, 1) === 1,
+                        'control_panel_type' => $controlPanelTypeValue,
+                        'control_panel_status' => $controlPanelStatusValue,
+                        'operating_hours' => rand(1000, 10000),
+                        'external_fuel_tank' => rand(0, 1) === 1,
+                        'fuel_tanks_count' => rand(0, 3),
+                    ]);
+
+                    $allGenerators->push($generator);
+
+                    // إنشاء خزانات وقود لوحدة التوليد (إذا كان المولد لديه خزانات)
+                    if ($generator->fuel_tanks_count > 0 && $generator->generation_unit_id) {
+                        for ($t = 0; $t < $generator->fuel_tanks_count; $t++) {
+                            // توليد كود الخزان تلقائياً
+                            $tankCode = FuelTank::getNextTankCode($generator->generation_unit_id);
+                            
+                            FuelTank::create([
+                                'generation_unit_id' => $generator->generation_unit_id,
+                                'tank_code' => $tankCode,
+                                'capacity' => rand(100, 500),
+                                'location' => ['داخلي', 'خارجي', 'أرضي', 'علوي'][rand(0, 3)],
+                                'filtration_system_available' => rand(0, 1) === 1,
+                                'condition' => ['جيد', 'ممتاز', 'مقبول'][rand(0, 2)],
+                                'material' => ['حديد', 'بلاستيك', 'فولاذ'][rand(0, 2)],
+                                'usage' => ['رئيسي', 'احتياطي', 'إضافي'][rand(0, 2)],
+                                'measurement_method' => ['ميكانيكي', 'إلكتروني', 'يدوي'][rand(0, 2)],
+                                'order' => $t + 1,
+                            ]);
+                        }
                     }
                 }
             }
-
-            // تحديث عدد المولدات في Operator
-            $operator->update(['generators_count' => $generatorsCount]);
 
             // إنشاء 6 موظفين لكل مشغل (3 موظفين + 3 فنيين)
             $roles = [
@@ -518,7 +556,7 @@ class OperatorsWithDataSeeder extends Seeder
             }
         }
 
-        $this->command->info('تم إنشاء 10 مشغلين إضافيين مع مولداتهم وموظفيهم');
+        $this->command->info('تم إنشاء 4 مشغلين مع وحدات التوليد والمولدات وموظفيهم');
 
         // دالة مساعدة لإنشاء سجل تشغيل مع sequence
         $createOperationLog = function($generator, $operationDate, $startTime, $endTime, $loadPercentage, $fuelMeterStart, $fuelMeterEnd, $fuelConsumed, $energyMeterStart, $energyMeterEnd, $energyProduced, $operationalNotes, $malfunctions) {

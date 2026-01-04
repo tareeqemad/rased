@@ -516,9 +516,6 @@
                                         if (detail.records_count > 0) {
                                             lines.push(`عدد السجلات: ${detail.records_count.toLocaleString('ar')}`);
                                         }
-                                        if (detail.fuel_capacity > 0) {
-                                            lines.push(`سعة الخزانات: ${detail.fuel_capacity.toLocaleString('ar')} لتر`);
-                                        }
                                     }
                                     
                                     return lines;

@@ -35,12 +35,22 @@ class OperatorPolicy
         }
 
         // التحقق من الصلاحية الديناميكية
-        if (! $user->hasPermission('operators.view')) {
-            return false;
+        if ($user->hasPermission('operators.view')) {
+            // التحقق من العلاقة مع المشغل
+            return $user->belongsToOperator($operator);
         }
 
-        // التحقق من العلاقة مع المشغل
-        return $user->belongsToOperator($operator);
+        // Fallback للأدوار: CompanyOwner يمكنه رؤية مشغله الخاص
+        if ($user->isCompanyOwner()) {
+            return $user->ownsOperator($operator);
+        }
+
+        // Fallback للأدوار: Employee وTechnician يمكنهم رؤية المشغلين المرتبطين بهم
+        if ($user->isEmployee() || $user->isTechnician()) {
+            return $user->belongsToOperator($operator);
+        }
+
+        return false;
     }
 
     /**

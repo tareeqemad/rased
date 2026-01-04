@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreGeneratorRequest;
 use App\Http\Requests\Admin\UpdateGeneratorRequest;
-use App\Models\FuelTank;
 use App\Models\Generator;
 use App\Models\Notification;
 use App\Models\Operator;
@@ -85,7 +84,7 @@ class GeneratorController extends Controller
     /**
      * Show form for creating a new generator with validation checks.
      */
-    public function create(): View|RedirectResponse
+    public function create(Request $request): View|RedirectResponse
     {
         $this->authorize('create', Generator::class);
 
@@ -111,17 +110,30 @@ class GeneratorController extends Controller
                     ->with('error', 'يجب إكمال بيانات المشغل أولاً قبل إضافة المولدات.');
             }
 
-            $currentCount = $operator->generators()->count();
-            $maxCount = $operator->generators_count ?? 0;
-
-            if ($maxCount == 0) {
+            // التحقق من وجود وحدات التوليد
+            $generationUnits = $operator->generationUnits;
+            if ($generationUnits->isEmpty()) {
                 return redirect()->route('admin.operators.profile')
-                    ->with('error', 'يجب تحديد عدد المولدات في بيانات المشغل أولاً قبل إضافة المولدات.');
+                    ->with('error', 'يجب إضافة وحدة توليد على الأقل قبل إضافة المولدات.');
             }
 
-            if ($currentCount >= $maxCount) {
-                return redirect()->route('admin.generators.index')
-                    ->with('error', "لقد وصلت إلى الحد الأقصى لعدد المولدات ({$maxCount}). يمكنك إضافة مولدات جديدة بعد تحديث عدد المولدات في بيانات المشغل.");
+            // إذا تم تحديد generation_unit_id في الطلب، التحقق من أن الوحدة موجودة ومتاحة
+            $generationUnitId = $request->input('generation_unit_id');
+            if ($generationUnitId) {
+                $generationUnit = $generationUnits->find($generationUnitId);
+                if (!$generationUnit) {
+                    return redirect()->route('admin.operators.profile')
+                        ->with('error', 'وحدة التوليد المحددة غير موجودة أو غير متاحة.');
+                }
+
+                // التحقق من أن عدد المولدات لم يتجاوز العدد المطلوب
+                $currentCount = $generationUnit->generators()->count();
+                $maxCount = $generationUnit->generators_count;
+
+                if ($currentCount >= $maxCount) {
+                    return redirect()->route('admin.operators.profile')
+                        ->with('error', "لقد وصلت إلى الحد الأقصى لعدد المولدات في هذه الوحدة ({$maxCount}). يمكنك إضافة مولدات جديدة بعد تحديث عدد المولدات في وحدة التوليد.");
+                }
             }
         }
 
@@ -136,7 +148,6 @@ class GeneratorController extends Controller
             'material' => ConstantsHelper::get(10), // مادة التصنيع
             'usage' => ConstantsHelper::get(11), // الاستخدام
             'measurement_method' => ConstantsHelper::get(19), // طريقة القياس
-            'location' => ConstantsHelper::get(18), // موقع الخزان
         ];
 
         return view('admin.generators.create', compact('operators', 'constants'));
@@ -150,20 +161,6 @@ class GeneratorController extends Controller
         $this->authorize('create', Generator::class);
 
         $user = auth()->user();
-
-        if ($user->isCompanyOwner()) {
-            $operator = $user->ownedOperators()->first();
-            if ($operator) {
-                $currentCount = $operator->generators()->count();
-                $maxCount = $operator->generators_count ?? 0;
-
-                if ($currentCount >= $maxCount) {
-                    return redirect()->back()
-                        ->withInput()
-                        ->with('error', "لقد وصلت إلى الحد الأقصى لعدد المولدات ({$maxCount}).");
-                }
-            }
-        }
 
         $data = $request->validated();
 
@@ -190,50 +187,45 @@ class GeneratorController extends Controller
             }
         }
 
-        $fuelTanksData = $data['fuel_tanks'] ?? [];
-        unset($data['fuel_tanks']);
-
-        if (!isset($data['fuel_tanks_count']) || $data['fuel_tanks_count'] === null || $data['fuel_tanks_count'] === '') {
-            $data['fuel_tanks_count'] = 0;
+        // التحقق من وجود generation_unit_id
+        if (empty($data['generation_unit_id'])) {
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'يجب اختيار وحدة التوليد.');
         }
 
-        if (!isset($data['external_fuel_tank']) || $data['external_fuel_tank'] === null || $data['external_fuel_tank'] === '') {
-            $data['external_fuel_tank'] = false;
-        } else {
-            $data['external_fuel_tank'] = (bool) $data['external_fuel_tank'];
+        // التحقق من أن عدد المولدات لم يتجاوز العدد المطلوب
+        $generationUnit = \App\Models\GenerationUnit::find($data['generation_unit_id']);
+        if (!$generationUnit) {
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'وحدة التوليد المحددة غير موجودة.');
+        }
+
+        $currentCount = $generationUnit->generators()->count();
+        $maxCount = $generationUnit->generators_count;
+        if ($currentCount >= $maxCount) {
+            return redirect()->back()
+                ->withInput()
+                ->with('error', "لقد وصلت إلى الحد الأقصى لعدد المولدات في هذه الوحدة ({$maxCount}).");
+        }
+
+        // تعيين operator_id من generation_unit
+        if (empty($data['operator_id'])) {
+            $data['operator_id'] = $generationUnit->operator_id;
         }
 
         // توليد رقم المولد تلقائياً إذا لم يكن محدداً
-        if (empty($data['generator_number']) && isset($data['operator_id'])) {
-            $data['generator_number'] = Generator::getNextGeneratorNumber($data['operator_id']);
+        if (empty($data['generator_number'])) {
+            $data['generator_number'] = Generator::getNextGeneratorNumber($data['generation_unit_id']);
             if (!$data['generator_number']) {
                 return redirect()->back()
                     ->withInput()
-                    ->with('error', 'تعذر توليد رقم المولد. تأكد من أن المشغل لديه unit_code وأن عدد المولدات لم يتجاوز 99.');
+                    ->with('error', 'تعذر توليد رقم المولد. تأكد من أن وحدة التوليد لديها unit_code وأن عدد المولدات لم يتجاوز 99.');
             }
         }
 
         $generator = Generator::create($data);
-
-        if (! empty($fuelTanksData)) {
-            foreach ($fuelTanksData as $index => $tankData) {
-                // توليد كود الخزان تلقائياً
-                $tankCode = FuelTank::getNextTankCode($generator->id);
-                
-                FuelTank::create([
-                    'generator_id' => $generator->id,
-                    'tank_code' => $tankCode,
-                    'capacity' => $tankData['capacity'] ?? null,
-                    'location' => $tankData['location'] ?? null,
-                    'filtration_system_available' => $tankData['filtration_system_available'] ?? false,
-                    'condition' => $tankData['condition'] ?? null,
-                    'material' => $tankData['material'] ?? null,
-                    'usage' => $tankData['usage'] ?? null,
-                    'measurement_method' => $tankData['measurement_method'] ?? null,
-                    'order' => $index + 1,
-                ]);
-            }
-        }
 
         $generator->load('operator');
         if ($generator->operator) {
@@ -264,7 +256,7 @@ class GeneratorController extends Controller
     {
         $this->authorize('view', $generator);
 
-        $generator->load(['operator', 'fuelTanks']);
+        $generator->load(['operator', 'generationUnit']);
 
         return view('admin.generators.show', compact('generator'));
     }
@@ -276,7 +268,7 @@ class GeneratorController extends Controller
     {
         $this->authorize('update', $generator);
 
-        $generator->load('fuelTanks');
+        $generator->load('generationUnit');
 
         $user = auth()->user();
         $operators = collect();
@@ -300,7 +292,6 @@ class GeneratorController extends Controller
             'material' => ConstantsHelper::get(10), // مادة التصنيع
             'usage' => ConstantsHelper::get(11), // الاستخدام
             'measurement_method' => ConstantsHelper::get(19), // طريقة القياس
-            'location' => ConstantsHelper::get(18), // موقع الخزان
         ];
 
         return view('admin.generators.edit', compact('generator', 'operators', 'constants'));
@@ -334,41 +325,7 @@ class GeneratorController extends Controller
             $data['control_panel_image'] = $request->file('control_panel_image')->store('generators/control-panels', 'public');
         }
 
-        $fuelTanksData = $data['fuel_tanks'] ?? [];
-        unset($data['fuel_tanks']);
-
-        if (!isset($data['fuel_tanks_count']) || $data['fuel_tanks_count'] === null || $data['fuel_tanks_count'] === '') {
-            $data['fuel_tanks_count'] = 0;
-        }
-
-        if (!isset($data['external_fuel_tank']) || $data['external_fuel_tank'] === null || $data['external_fuel_tank'] === '') {
-            $data['external_fuel_tank'] = false;
-        } else {
-            $data['external_fuel_tank'] = (bool) $data['external_fuel_tank'];
-        }
-
         $generator->update($data);
-        $generator->fuelTanks()->delete();
-
-        if (! empty($fuelTanksData)) {
-            foreach ($fuelTanksData as $index => $tankData) {
-                // توليد كود الخزان تلقائياً
-                $tankCode = FuelTank::getNextTankCode($generator->id);
-                
-                FuelTank::create([
-                    'generator_id' => $generator->id,
-                    'tank_code' => $tankCode,
-                    'capacity' => $tankData['capacity'] ?? null,
-                    'location' => $tankData['location'] ?? null,
-                    'filtration_system_available' => $tankData['filtration_system_available'] ?? false,
-                    'condition' => $tankData['condition'] ?? null,
-                    'material' => $tankData['material'] ?? null,
-                    'usage' => $tankData['usage'] ?? null,
-                    'measurement_method' => $tankData['measurement_method'] ?? null,
-                    'order' => $index + 1,
-                ]);
-            }
-        }
 
         $generator->load('operator');
         if ($generator->operator) {
@@ -421,5 +378,68 @@ class GeneratorController extends Controller
 
         return redirect()->route('admin.generators.index')
             ->with('success', 'تم حذف المولد بنجاح.');
+    }
+
+    /**
+     * Get generation units for a specific operator (AJAX).
+     */
+    public function getGenerationUnits(Operator $operator): JsonResponse
+    {
+        $this->authorize('view', $operator);
+
+        $generationUnits = $operator->generationUnits()
+            ->select('id', 'name', 'unit_code', 'generators_count')
+            ->get()
+            ->map(function ($unit) {
+                $currentCount = $unit->generators()->count();
+                $maxCount = $unit->generators_count;
+                return [
+                    'id' => $unit->id,
+                    'name' => $unit->name,
+                    'unit_code' => $unit->unit_code,
+                    'label' => "{$unit->name} ({$unit->unit_code}) - {$currentCount}/{$maxCount} مولد",
+                    'current_count' => $currentCount,
+                    'max_count' => $maxCount,
+                    'available' => $currentCount < $maxCount,
+                ];
+            });
+
+        return response()->json([
+            'success' => true,
+            'generation_units' => $generationUnits,
+        ]);
+    }
+
+    /**
+     * Generate generator number for a specific generation unit (AJAX).
+     */
+    public function generateGeneratorNumber(\App\Models\GenerationUnit $generationUnit): JsonResponse
+    {
+        $this->authorize('view', $generationUnit);
+
+        // التحقق من أن عدد المولدات لم يتجاوز العدد المطلوب
+        $currentCount = $generationUnit->generators()->count();
+        $maxCount = $generationUnit->generators_count;
+        
+        if ($currentCount >= $maxCount) {
+            return response()->json([
+                'success' => false,
+                'message' => "لقد وصلت إلى الحد الأقصى لعدد المولدات في هذه الوحدة ({$maxCount}).",
+            ], 400);
+        }
+
+        $generatorNumber = Generator::getNextGeneratorNumber($generationUnit->id);
+        
+        if (!$generatorNumber) {
+            return response()->json([
+                'success' => false,
+                'message' => 'تعذر توليد رقم المولد. تأكد من أن وحدة التوليد لديها unit_code وأن عدد المولدات لم يتجاوز 99.',
+            ], 400);
+        }
+
+        return response()->json([
+            'success' => true,
+            'generator_number' => $generatorNumber,
+        ]);
     }
 }

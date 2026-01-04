@@ -6,6 +6,8 @@
     --c-subtle: #f8fafc;
     --c-text: #0f172a;
     --c-muted: #64748b;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
 }
 
 .constants-page .constants-card {

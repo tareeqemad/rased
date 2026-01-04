@@ -15,6 +15,7 @@ class Generator extends Model
         'name',
         'generator_number',
         'operator_id',
+        'generation_unit_id',
         'description',
         'status',
         // المواصفات الفنية
@@ -64,10 +65,11 @@ class Generator extends Model
         return $this->belongsTo(Operator::class);
     }
 
-    public function fuelTanks(): HasMany
+    public function generationUnit(): BelongsTo
     {
-        return $this->hasMany(FuelTank::class)->orderBy('order');
+        return $this->belongsTo(GenerationUnit::class);
     }
+
 
     public function operationLogs(): HasMany
     {
@@ -85,26 +87,33 @@ class Generator extends Model
     }
 
     /**
-     * توليد رقم المولد التالي بناءً على unit_code للمشغل
-     * الصيغة: {unit_code}-GXX (حيث XX من 01 إلى 99)
-     * مثال: GU-MD-DB-001-G01, GU-MD-DB-001-G02
+     * توليد كود المولد التالي بناءً على unit_code لوحدة التوليد
+     * الصيغة الكاملة: GU-PP-CC-NNN-GXX
+     * حيث:
+     * - GU-PP-CC-NNN: كود وحدة التوليد (Generation Unit Code)
+     * - GXX: رقم المولد داخل الوحدة (G01 - G99)
+     * 
+     * مثال: GU-MD-DR-001-G01, GU-MD-DR-001-G02
+     * 
+     * @param int|null $generationUnitId معرف وحدة التوليد
+     * @return string|null كود المولد أو null في حالة الفشل
      */
-    public static function getNextGeneratorNumber(?int $operatorId = null): ?string
+    public static function getNextGeneratorNumber(?int $generationUnitId = null): ?string
     {
-        if (!$operatorId) {
+        if (!$generationUnitId) {
             return null;
         }
 
-        $operator = \App\Models\Operator::find($operatorId);
-        if (!$operator || !$operator->unit_code) {
+        $generationUnit = \App\Models\GenerationUnit::find($generationUnitId);
+        if (!$generationUnit || !$generationUnit->unit_code) {
             return null;
         }
 
-        $unitCode = $operator->unit_code;
+        $unitCode = $generationUnit->unit_code;
         $prefix = $unitCode . '-G';
 
-        // البحث عن آخر رقم مولد في نفس المشغل
-        $lastGenerator = static::where('operator_id', $operatorId)
+        // البحث عن آخر رقم مولد في نفس وحدة التوليد
+        $lastGenerator = static::where('generation_unit_id', $generationUnitId)
             ->whereNotNull('generator_number')
             ->where('generator_number', 'like', $prefix . '%')
             ->get()

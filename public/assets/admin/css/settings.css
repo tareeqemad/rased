@@ -68,3 +68,20 @@
     height: auto;
 }
 
+/* Color Picker Input Size */
+.settings-page .form-control-color {
+    width: 50px !important;
+    height: 38px !important;
+    padding: 2px !important;
+    border-radius: 6px !important;
+    cursor: pointer;
+}
+
+.settings-page .input-group .form-control-color {
+    flex-shrink: 0;
+}
+
+.settings-page .input-group .form-control:not(.form-control-color) {
+    flex: 1;
+}
+

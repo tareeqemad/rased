@@ -1,12 +1,22 @@
 (function () {
     'use strict';
     if (localStorage.getItem("nowadarktheme")) {
-        document.querySelector("html").setAttribute("data-theme-mode", "dark")
-        document.querySelector("html").setAttribute("data-header-styles", "dark")
+        const html = document.querySelector("html");
+        html.setAttribute("data-theme-mode", "dark");
+        
+        // Apply header styles: respect saved header style or default to dark
+        const savedHeaderStyle = localStorage.getItem("nowaHeader");
+        if (savedHeaderStyle) {
+            html.setAttribute("data-header-styles", savedHeaderStyle);
+        } else {
+            // Default to dark when dark mode is active
+            html.setAttribute("data-header-styles", "dark");
+        }
+        
         // لا تغيير menu-styles تلقائياً، احتفظ بالقيمة الحالية (من localStorage أو الإعدادات)
         const savedMenuStyle = localStorage.getItem("nowaMenu");
         if (savedMenuStyle) {
-            document.querySelector("html").setAttribute("data-menu-styles", savedMenuStyle)
+            html.setAttribute("data-menu-styles", savedMenuStyle);
         }
     }
     if (localStorage.nowartl) {

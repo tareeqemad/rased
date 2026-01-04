@@ -2,10 +2,10 @@
 
 namespace App\Policies;
 
-use App\Models\Generator;
+use App\Models\GenerationUnit;
 use App\Models\User;
 
-class GeneratorPolicy
+class GenerationUnitPolicy
 {
     /**
      * Determine whether the user can view any models.
@@ -18,7 +18,7 @@ class GeneratorPolicy
         }
 
         // التحقق من الصلاحية الديناميكية
-        if ($user->hasPermission('generators.view')) {
+        if ($user->hasPermission('generation_units.view')) {
             return true;
         }
 
@@ -29,24 +29,19 @@ class GeneratorPolicy
     /**
      * Determine whether the user can view the model.
      */
-    public function view(User $user, Generator $generator): bool
+    public function view(User $user, GenerationUnit $generationUnit): bool
     {
         if ($user->isSuperAdmin() || $user->isAdmin()) {
             return true;
         }
 
         // التحقق من الصلاحية الديناميكية
-        if ($user->hasPermission('generators.view')) {
-            // التحقق من العلاقة مع المشغل
-            return $user->belongsToOperator($generator->operator);
+        if (! $user->hasPermission('generation_units.view')) {
+            return false;
         }
 
-        // Fallback للأدوار: CompanyOwner وEmployee وTechnician يمكنهم رؤية المولدات المرتبطة بهم
-        if ($user->isCompanyOwner() || $user->isEmployee() || $user->isTechnician()) {
-            return $user->belongsToOperator($generator->operator);
-        }
-
-        return false;
+        // التحقق من العلاقة مع المشغل
+        return $user->belongsToOperator($generationUnit->operator);
     }
 
     /**
@@ -64,7 +59,7 @@ class GeneratorPolicy
         }
 
         // التحقق من الصلاحية الديناميكية
-        if ($user->hasPermission('generators.create')) {
+        if ($user->hasPermission('generation_units.create')) {
             return true;
         }
 
@@ -75,7 +70,7 @@ class GeneratorPolicy
     /**
      * Determine whether the user can update the model.
      */
-    public function update(User $user, Generator $generator): bool
+    public function update(User $user, GenerationUnit $generationUnit): bool
     {
         // Admin لا يمكنه التحديث
         if ($user->isAdmin()) {
@@ -87,14 +82,14 @@ class GeneratorPolicy
         }
 
         // التحقق من الصلاحية الديناميكية
-        if ($user->hasPermission('generators.update')) {
+        if ($user->hasPermission('generation_units.update')) {
             // التحقق من العلاقة مع المشغل
-            return $user->belongsToOperator($generator->operator);
+            return $user->belongsToOperator($generationUnit->operator);
         }
 
-        // Fallback للأدوار: CompanyOwner وTechnician يمكنهم التعديل إذا كانت المولد تتبع مشغلهم
+        // Fallback للأدوار: CompanyOwner وTechnician يمكنهم التعديل إذا كانت الوحدة تتبع مشغلهم
         if ($user->isCompanyOwner() || $user->isTechnician()) {
-            return $user->belongsToOperator($generator->operator);
+            return $user->belongsToOperator($generationUnit->operator);
         }
 
         return false;
@@ -103,7 +98,7 @@ class GeneratorPolicy
     /**
      * Determine whether the user can delete the model.
      */
-    public function delete(User $user, Generator $generator): bool
+    public function delete(User $user, GenerationUnit $generationUnit): bool
     {
         // Admin لا يمكنه الحذف
         if ($user->isAdmin()) {
@@ -115,18 +110,18 @@ class GeneratorPolicy
         }
 
         // التحقق من الصلاحية الديناميكية
-        if (! $user->hasPermission('generators.delete')) {
+        if (! $user->hasPermission('generation_units.delete')) {
             return false;
         }
 
         // التحقق من العلاقة مع المشغل (يجب أن يكون صاحب المشغل)
-        return $user->ownsOperator($generator->operator);
+        return $user->ownsOperator($generationUnit->operator);
     }
 
     /**
      * Determine whether the user can restore the model.
      */
-    public function restore(User $user, Generator $generator): bool
+    public function restore(User $user, GenerationUnit $generationUnit): bool
     {
         return $user->isSuperAdmin();
     }
@@ -134,8 +129,9 @@ class GeneratorPolicy
     /**
      * Determine whether the user can permanently delete the model.
      */
-    public function forceDelete(User $user, Generator $generator): bool
+    public function forceDelete(User $user, GenerationUnit $generationUnit): bool
     {
         return $user->isSuperAdmin();
     }
 }
+

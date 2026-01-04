@@ -39,7 +39,9 @@ class UserController extends Controller
 
 private function ajaxIndex(Request $request, User $actor): JsonResponse
 {
-    $q = trim((string) $request->query('q', ''));
+    $name = trim((string) $request->query('name', ''));
+    $username = trim((string) $request->query('username', ''));
+    $email = trim((string) $request->query('email', ''));
     $role = trim((string) $request->query('role', ''));
     $operatorId = (int) $request->query('operator_id', 0);
 
@@ -87,13 +89,17 @@ private function ajaxIndex(Request $request, User $actor): JsonResponse
     // -----------------------------
     // Search
     // -----------------------------
-    if ($q !== '') {
-        $base->where(function (Builder $qb) use ($q) {
-            $qb->where('users.name', 'like', "%{$q}%")
-               ->orWhere('users.username', 'like', "%{$q}%")
-               ->orWhere('users.email', 'like', "%{$q}%")
-               ->orWhereHas('ownedOperators', fn(Builder $op) => $op->where('operators.name', 'like', "%{$q}%"))
-               ->orWhereHas('operators', fn(Builder $op) => $op->where('operators.name', 'like', "%{$q}%"));
+    if ($name !== '' || $username !== '' || $email !== '') {
+        $base->where(function (Builder $qb) use ($name, $username, $email) {
+            if ($name !== '') {
+                $qb->where('users.name', 'like', "%{$name}%");
+            }
+            if ($username !== '') {
+                $qb->where('users.username', 'like', "%{$username}%");
+            }
+            if ($email !== '') {
+                $qb->where('users.email', 'like', "%{$email}%");
+            }
         });
     }
 
@@ -151,7 +157,10 @@ private function ajaxIndex(Request $request, User $actor): JsonResponse
             $op = $u->ownedOperators->first();
             $operatorName = $op?->name;
             $employeesCount = $op ? (int)($op->employees_count ?? 0) : 0;
-        } elseif ($u->isEmployee() || $u->isTechnician()) {
+        }
+        
+        // للموظفين والفنيين: أخذ المشغل من علاقة operators
+        if (($u->isEmployee() || $u->isTechnician()) && !$operatorName) {
             $operatorName = $u->operators->first()?->name;
         }
 
@@ -427,15 +436,18 @@ private function ajaxIndex(Request $request, User $actor): JsonResponse
         if ($term !== '') {
             $query->where(function ($x) use ($term) {
                 $x->where('name', 'like', "%{$term}%")
-                    ->orWhere('unit_number', 'like', "%{$term}%");
+                    ->orWhereHas('owner', function ($q) use ($term) {
+                        $q->where('name', 'like', "%{$term}%")
+                          ->orWhere('username', 'like', "%{$term}%")
+                          ->orWhere('email', 'like', "%{$term}%");
+                    });
             });
         }
 
-        $p = $query->paginate($perPage, ['id', 'name', 'unit_number'], 'page', $page);
+        $p = $query->paginate($perPage, ['id', 'name'], 'page', $page);
 
         $results = $p->getCollection()->map(function ($op) {
-            $suffix = $op->unit_number ? " - {$op->unit_number}" : '';
-            return ['id' => $op->id, 'text' => $op->name . $suffix];
+            return ['id' => $op->id, 'text' => $op->name];
         })->values();
 
         return response()->json([

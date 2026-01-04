@@ -94,7 +94,7 @@ class ConstantSeeder extends Seeder
         // محافظة الوسطى (value: 30xx)
         $middleCities = [
             ['label' => 'دير البلح', 'code' => 'DB', 'value' => '301', 'order' => 1],
-            ['label' => 'النصيرات', 'code' => 'NUS', 'value' => '302', 'order' => 2],
+            ['label' => 'النصيرات', 'code' => 'NS', 'value' => '302', 'order' => 2],
             ['label' => 'البريج', 'code' => 'BR', 'value' => '303', 'order' => 3],
             ['label' => 'المغازي', 'code' => 'MG', 'value' => '304', 'order' => 4],
             ['label' => 'الزوايدة', 'code' => 'ZW', 'value' => '305', 'order' => 5],
@@ -137,7 +137,7 @@ class ConstantSeeder extends Seeder
         $rafahCities = [
             ['label' => 'رفح', 'code' => 'RF', 'value' => '501', 'order' => 1],
             ['label' => 'الشوكة', 'code' => 'SH', 'value' => '502', 'order' => 2],
-            ['label' => 'النصر', 'code' => 'NAS', 'value' => '503', 'order' => 3],
+            ['label' => 'النصر', 'code' => 'NA', 'value' => '503', 'order' => 3],
         ];
 
         foreach ($rafahCities as $city) {
@@ -224,10 +224,16 @@ class ConstantSeeder extends Seeder
         );
 
         $engineTypeDetails = [
-            ['label' => 'ديزل', 'code' => 'DIESEL', 'value' => '401', 'order' => 1],
-            ['label' => 'بنزين', 'code' => 'GASOLINE', 'value' => '402', 'order' => 2],
-            ['label' => 'غاز', 'code' => 'GAS', 'value' => '403', 'order' => 3],
+            ['label' => 'Perkins', 'code' => 'PERKINS', 'value' => '401', 'order' => 1],
+            ['label' => 'Volvo', 'code' => 'VOLVO', 'value' => '402', 'order' => 2],
+            ['label' => 'Caterpillar', 'code' => 'CATERPILLAR', 'value' => '403', 'order' => 3],
+            ['label' => 'DAF', 'code' => 'DAF', 'value' => '404', 'order' => 4],
+            ['label' => 'MAN', 'code' => 'MAN', 'value' => '405', 'order' => 5],
+            ['label' => 'SCAINA', 'code' => 'SCAINA', 'value' => '406', 'order' => 6],
         ];
+
+        // حذف التفاصيل القديمة
+        ConstantDetail::where('constant_master_id', $engineType->id)->forceDelete();
 
         foreach ($engineTypeDetails as $detail) {
             ConstantDetail::create([
@@ -253,7 +259,8 @@ class ConstantSeeder extends Seeder
 
         $injectionSystemDetails = [
             ['label' => 'ميكانيكي', 'code' => 'MECHANICAL', 'value' => '501', 'order' => 1],
-            ['label' => 'إلكتروني', 'code' => 'ELECTRONIC', 'value' => '502', 'order' => 2],
+            ['label' => 'الكتروني', 'code' => 'ELECTRONIC', 'value' => '502', 'order' => 2],
+            ['label' => 'هجين', 'code' => 'HYBRID', 'value' => '503', 'order' => 3],
         ];
 
         // حذف التفاصيل القديمة
@@ -282,8 +289,9 @@ class ConstantSeeder extends Seeder
         );
 
         $measurementIndicatorDetails = [
-            ['label' => 'ميكانيكي', 'code' => 'MECHANICAL', 'value' => '601', 'order' => 1],
-            ['label' => 'رقمي', 'code' => 'DIGITAL', 'value' => '602', 'order' => 2],
+            ['label' => 'غير متوفر', 'code' => 'NOT_AVAILABLE', 'value' => '601', 'order' => 1],
+            ['label' => 'متوفر ويعمل', 'code' => 'AVAILABLE_WORKING', 'value' => '602', 'order' => 2],
+            ['label' => 'متوفر ولا يعمل', 'code' => 'AVAILABLE_NOT_WORKING', 'value' => '603', 'order' => 3],
         ];
 
         // حذف التفاصيل القديمة
@@ -312,10 +320,11 @@ class ConstantSeeder extends Seeder
         );
 
         $technicalConditionDetails = [
-            ['label' => 'ممتاز', 'code' => 'EXCELLENT', 'value' => '701', 'order' => 1],
-            ['label' => 'جيد', 'code' => 'GOOD', 'value' => '702', 'order' => 2],
-            ['label' => 'مقبول', 'code' => 'FAIR', 'value' => '703', 'order' => 3],
-            ['label' => 'يحتاج صيانة', 'code' => 'NEEDS_MAINTENANCE', 'value' => '704', 'order' => 4],
+            ['label' => 'ممتازة', 'code' => 'EXCELLENT', 'value' => '701', 'order' => 1],
+            ['label' => 'جيدة جدا', 'code' => 'VERY_GOOD', 'value' => '702', 'order' => 2],
+            ['label' => 'جيدة', 'code' => 'GOOD', 'value' => '703', 'order' => 3],
+            ['label' => 'متوسطة', 'code' => 'FAIR', 'value' => '704', 'order' => 4],
+            ['label' => 'سيئة', 'code' => 'POOR', 'value' => '705', 'order' => 5],
         ];
 
         // حذف التفاصيل القديمة
@@ -344,9 +353,10 @@ class ConstantSeeder extends Seeder
         );
 
         $controlPanelTypeDetails = [
-            ['label' => 'يدوي', 'code' => 'MANUAL', 'value' => '801', 'order' => 1],
-            ['label' => 'أوتوماتيكي', 'code' => 'AUTOMATIC', 'value' => '802', 'order' => 2],
-            ['label' => 'ذكي', 'code' => 'SMART', 'value' => '803', 'order' => 3],
+            ['label' => 'Deep Sea', 'code' => 'DEEP_SEA', 'value' => '801', 'order' => 1],
+            ['label' => 'ComAp', 'code' => 'COMAP', 'value' => '802', 'order' => 2],
+            ['label' => 'Datakom', 'code' => 'DATAKOM', 'value' => '803', 'order' => 3],
+            ['label' => 'Analog', 'code' => 'ANALOG', 'value' => '804', 'order' => 4],
         ];
 
         // حذف التفاصيل القديمة
@@ -375,9 +385,9 @@ class ConstantSeeder extends Seeder
         );
 
         $controlPanelStatusDetails = [
-            ['label' => 'فعال', 'code' => 'ACTIVE', 'value' => '901', 'order' => 1],
-            ['label' => 'غير فعال', 'code' => 'INACTIVE', 'value' => '902', 'order' => 2],
-            ['label' => 'يحتاج إصلاح', 'code' => 'NEEDS_REPAIR', 'value' => '903', 'order' => 3],
+            ['label' => 'تعمل', 'code' => 'WORKING', 'value' => '901', 'order' => 1],
+            ['label' => 'لا تعمل', 'code' => 'NOT_WORKING', 'value' => '902', 'order' => 2],
+            ['label' => 'تحتاج الى اصلاح', 'code' => 'NEEDS_REPAIR', 'value' => '903', 'order' => 3],
         ];
 
         // حذف التفاصيل القديمة
@@ -407,9 +417,8 @@ class ConstantSeeder extends Seeder
 
         $materialDetails = [
             ['label' => 'حديد', 'code' => 'STEEL', 'value' => '1001', 'order' => 1],
-            ['label' => 'بلاستيك', 'code' => 'PLASTIC', 'value' => '1002', 'order' => 2],
-            ['label' => 'مقوى', 'code' => 'REINFORCED', 'value' => '1003', 'order' => 3],
-            ['label' => 'فايبر', 'code' => 'FIBER', 'value' => '1004', 'order' => 4],
+            ['label' => 'بلاستيك مقوى', 'code' => 'REINFORCED_PLASTIC', 'value' => '1002', 'order' => 2],
+            ['label' => 'فايبر', 'code' => 'FIBER', 'value' => '1003', 'order' => 3],
         ];
 
         // حذف التفاصيل القديمة
@@ -468,9 +477,8 @@ class ConstantSeeder extends Seeder
         );
 
         $maintenanceTypeDetails = [
-            ['label' => 'وقائية', 'code' => 'PREVENTIVE', 'value' => '1201', 'order' => 1],
-            ['label' => 'تصحيحية', 'code' => 'CORRECTIVE', 'value' => '1202', 'order' => 2],
-            ['label' => 'طارئة', 'code' => 'EMERGENCY', 'value' => '1203', 'order' => 3],
+            ['label' => 'صيانة دورية', 'code' => 'PERIODIC', 'value' => '1201', 'order' => 1],
+            ['label' => 'صيانة طارئة', 'code' => 'EMERGENCY', 'value' => '1202', 'order' => 2],
         ];
 
         // حذف التفاصيل القديمة
@@ -592,9 +600,9 @@ class ConstantSeeder extends Seeder
         );
 
         $fuelEfficiencyComparisonDetails = [
-            ['label' => 'أفضل من المتوسط', 'code' => 'BETTER', 'value' => '1601', 'order' => 1],
-            ['label' => 'متوسط', 'code' => 'AVERAGE', 'value' => '1602', 'order' => 2],
-            ['label' => 'أقل من المتوسط', 'code' => 'WORSE', 'value' => '1603', 'order' => 3],
+            ['label' => 'ضمن المعدل', 'code' => 'WITHIN_RANGE', 'value' => '1601', 'order' => 1],
+            ['label' => 'اعلى من المعدل', 'code' => 'ABOVE_RANGE', 'value' => '1602', 'order' => 2],
+            ['label' => 'اقل من المعدل', 'code' => 'BELOW_RANGE', 'value' => '1603', 'order' => 3],
         ];
 
         // حذف التفاصيل القديمة
@@ -623,9 +631,9 @@ class ConstantSeeder extends Seeder
         );
 
         $energyEfficiencyComparisonDetails = [
-            ['label' => 'أفضل من المتوسط', 'code' => 'BETTER', 'value' => '1701', 'order' => 1],
-            ['label' => 'متوسط', 'code' => 'AVERAGE', 'value' => '1702', 'order' => 2],
-            ['label' => 'أقل من المتوسط', 'code' => 'WORSE', 'value' => '1703', 'order' => 3],
+            ['label' => 'ضمن المعدل', 'code' => 'WITHIN_RANGE', 'value' => '1701', 'order' => 1],
+            ['label' => 'اعلى من المعدل', 'code' => 'ABOVE_RANGE', 'value' => '1702', 'order' => 2],
+            ['label' => 'اقل من المعدل', 'code' => 'BELOW_RANGE', 'value' => '1703', 'order' => 3],
         ];
 
         // حذف التفاصيل القديمة
@@ -686,26 +694,24 @@ class ConstantSeeder extends Seeder
         );
 
         $measurementMethodDetails = [
-            ['label' => 'سيخ', 'code' => 'DIPSTICK', 'value' => '1901', 'order' => 1],
-            ['label' => 'مدرج', 'code' => 'GAUGE', 'value' => '1902', 'order' => 2],
-            ['label' => 'ساعة ميكانيكية', 'code' => 'MECHANICAL_METER', 'value' => '1903', 'order' => 3],
-            ['label' => 'حساس إلكتروني', 'code' => 'ELECTRONIC_SENSOR', 'value' => '1904', 'order' => 4],
-            ['label' => 'خرطوم شفاف', 'code' => 'TRANSPARENT_HOSE', 'value' => '1905', 'order' => 5],
+            ['label' => 'سيخ مدرج', 'code' => 'DIPSTICK_GAUGE', 'value' => '1901', 'order' => 1],
+            ['label' => 'ساعة ميكانيكية', 'code' => 'MECHANICAL_METER', 'value' => '1902', 'order' => 2],
+            ['label' => 'حساس الكتروني', 'code' => 'ELECTRONIC_SENSOR', 'value' => '1903', 'order' => 3],
+            ['label' => 'خرطوم شفاف', 'code' => 'TRANSPARENT_HOSE', 'value' => '1904', 'order' => 4],
         ];
 
+        // حذف التفاصيل القديمة
+        ConstantDetail::where('constant_master_id', $measurementMethod->id)->forceDelete();
+
         foreach ($measurementMethodDetails as $detail) {
-            ConstantDetail::firstOrCreate(
-                [
-                    'constant_master_id' => $measurementMethod->id,
-                    'code' => $detail['code'],
-                ],
-                [
-                    'label' => $detail['label'],
-                    'value' => $detail['value'],
-                    'is_active' => true,
-                    'order' => $detail['order'],
-                ]
-            );
+            ConstantDetail::create([
+                'constant_master_id' => $measurementMethod->id,
+                'label' => $detail['label'],
+                'code' => $detail['code'],
+                'value' => $detail['value'],
+                'is_active' => true,
+                'order' => $detail['order'],
+            ]);
         }
 
         $this->command->info('تم إنشاء الثوابت بنجاح!');

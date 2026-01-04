@@ -17,7 +17,8 @@ class StoreGeneratorRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'generator_number' => ['nullable', 'string', 'max:255', 'unique:generators'],
-            'operator_id' => ['required', 'exists:operators,id'],
+            'operator_id' => ['nullable', 'exists:operators,id'],
+            'generation_unit_id' => ['required', 'exists:generation_units,id'],
             'description' => ['nullable', 'string'],
             'status' => ['required', 'string', Rule::in(['active', 'inactive'])],
             // المواصفات الفنية
@@ -28,7 +29,7 @@ class StoreGeneratorRequest extends FormRequest
             'engine_type' => ['nullable', 'string', Rule::in(['Perkins', 'Volvo', 'Caterpillar', 'DAF', 'MAN', 'SCAINA'])],
             // التشغيل والوقود
             'manufacturing_year' => ['nullable', 'integer', 'min:1900', 'max:'.date('Y')],
-            'injection_system' => ['nullable', 'string', Rule::in(['عادي', 'كهربائي', 'هجين'])],
+            'injection_system' => ['nullable', 'string', Rule::in(['ميكانيكي', 'الكتروني', 'هجين'])],
             'fuel_consumption_rate' => ['nullable', 'numeric', 'min:0'],
             'ideal_fuel_efficiency' => ['nullable', 'numeric', 'min:0', 'max:10'],
             'internal_tank_capacity' => ['nullable', 'integer', 'min:0'],
@@ -41,7 +42,7 @@ class StoreGeneratorRequest extends FormRequest
             // نظام التحكم
             'control_panel_available' => ['nullable', 'boolean'],
             'control_panel_type' => ['nullable', 'string', Rule::in(['Deep Sea', 'ComAp', 'Datakom', 'Analog'])],
-            'control_panel_status' => ['nullable', 'string', Rule::in(['تعمل', 'لا تعمل'])],
+            'control_panel_status' => ['nullable', 'string', Rule::in(['تعمل', 'لا تعمل', 'تحتاج الى اصلاح'])],
             'control_panel_image' => ['nullable', 'image', 'max:2048'],
             'operating_hours' => ['nullable', 'integer', 'min:0'],
             // خزانات الوقود
@@ -54,7 +55,7 @@ class StoreGeneratorRequest extends FormRequest
             'fuel_tanks.*.condition' => ['nullable', 'string'],
             'fuel_tanks.*.material' => ['nullable', 'string', Rule::in(['حديد', 'بلاستيك', 'بلاستيك مقوي', 'فايبر'])],
             'fuel_tanks.*.usage' => ['nullable', 'string', Rule::in(['مركزي', 'احتياطي'])],
-            'fuel_tanks.*.measurement_method' => ['nullable', 'string', Rule::in(['سيخ مدرج', 'ساعه ميكانيكية', 'حساس الكتروني', 'خرطوم شفاف'])],
+            'fuel_tanks.*.measurement_method' => ['nullable', 'string', Rule::in(['سيخ مدرج', 'ساعة ميكانيكية', 'حساس الكتروني', 'خرطوم شفاف'])],
         ];
     }
 
@@ -63,8 +64,9 @@ class StoreGeneratorRequest extends FormRequest
         return [
             'name.required' => 'اسم المولد مطلوب.',
             'generator_number.unique' => 'رقم المولد هذا مستخدم بالفعل.',
-            'operator_id.required' => 'المشغل مطلوب.',
             'operator_id.exists' => 'المشغل المحدد غير موجود.',
+            'generation_unit_id.required' => 'وحدة التوليد مطلوبة.',
+            'generation_unit_id.exists' => 'وحدة التوليد المحددة غير موجودة.',
             'status.required' => 'حالة المولد مطلوبة.',
             'status.in' => 'حالة المولد المحددة غير صحيحة.',
             // رسائل خزانات الوقود

@@ -59,6 +59,17 @@
                             <div class="col-md-3 col-sm-6">
                                 <div class="stat-card">
                                     <div class="stat-icon bg-primary">
+                                        <i class="bi bi-building"></i>
+                                    </div>
+                                    <div class="stat-content">
+                                        <div class="stat-label">وحدات التوليد</div>
+                                        <div class="stat-value">{{ $operator->generation_units_count ?? 0 }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-sm-6">
+                                <div class="stat-card">
+                                    <div class="stat-icon bg-info">
                                         <i class="bi bi-lightning-charge"></i>
                                     </div>
                                     <div class="stat-content">
@@ -80,7 +91,7 @@
                             </div>
                             <div class="col-md-3 col-sm-6">
                                 <div class="stat-card">
-                                    <div class="stat-icon bg-info">
+                                    <div class="stat-icon bg-warning">
                                         <i class="bi bi-journal-text"></i>
                                     </div>
                                     <div class="stat-content">
@@ -344,54 +355,95 @@
                 </div>
             </div>
 
-            {{-- Sidebar: Generators List --}}
+            {{-- Sidebar: Generation Units List --}}
             <div class="col-12 col-lg-4">
                 <div class="card op-card">
                     <div class="op-card-header">
                         <div class="d-flex align-items-center justify-content-between">
                             <div class="op-title">
                                 <i class="bi bi-lightning-charge me-2"></i>
-                                المولدات
+                                وحدات التوليد
                             </div>
-                            @if($operator->generators_count > 0)
-                                <a href="{{ route('admin.generators.index', ['operator_id' => $operator->id]) }}" class="btn btn-sm btn-outline-primary">
-                                    عرض الكل
-                                </a>
+                            @if($operator->generation_units_count > 0)
+                                <span class="badge bg-primary">{{ $operator->generation_units_count }}</span>
                             @endif
                         </div>
                     </div>
                     <div class="card-body">
-                        @if($operator->generators->count() > 0)
-                            <div class="generators-list">
-                                @foreach($operator->generators as $generator)
-                                    <div class="generator-item">
-                                        <div class="d-flex align-items-center justify-content-between">
-                                            <div>
-                                                <div class="fw-semibold">{{ $generator->name }}</div>
-                                                @if($generator->generator_number)
-                                                    <small class="text-muted">{{ $generator->generator_number }}</small>
+                        @if($operator->generationUnits->count() > 0)
+                            <div class="generation-units-list">
+                                @foreach($operator->generationUnits as $unit)
+                                    <div class="generation-unit-item mb-3 pb-3 border-bottom">
+                                        <div class="d-flex align-items-start justify-content-between mb-2">
+                                            <div class="flex-grow-1">
+                                                <div class="fw-semibold d-flex align-items-center gap-2">
+                                                    <i class="bi bi-building"></i>
+                                                    {{ $unit->name }}
+                                                </div>
+                                                @if($unit->unit_code)
+                                                    <small class="text-muted">
+                                                        <code>{{ $unit->unit_code }}</code>
+                                                    </small>
                                                 @endif
-                                                @if($generator->capacity_kva)
-                                                    <div class="mt-1">
-                                                        <span class="badge bg-info">{{ number_format($generator->capacity_kva, 2) }} KVA</span>
+                                                <div class="mt-2 d-flex gap-2 align-items-center">
+                                                    <span class="badge bg-info">
+                                                        {{ $unit->generators()->count() }} / {{ $unit->generators_count }} مولد
+                                                    </span>
+                                                    @if($unit->status === 'active')
+                                                        <span class="badge bg-success">نشط</span>
+                                                    @else
+                                                        <span class="badge bg-secondary">غير نشط</span>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        {{-- عرض المولدات داخل وحدة التوليد --}}
+                                        @if($unit->generators->count() > 0)
+                                            <div class="generators-list ms-3 mt-2">
+                                                @foreach($unit->generators as $generator)
+                                                    <div class="generator-item-small d-flex align-items-center justify-content-between py-1">
+                                                        <div class="flex-grow-1">
+                                                            <div class="small fw-semibold">{{ $generator->name }}</div>
+                                                            @if($generator->generator_number)
+                                                                <small class="text-muted">{{ $generator->generator_number }}</small>
+                                                            @endif
+                                                        </div>
+                                                        <a href="{{ route('admin.generators.show', $generator) }}" class="btn btn-xs btn-outline-primary" title="عرض التفاصيل">
+                                                            <i class="bi bi-eye"></i>
+                                                        </a>
+                                                    </div>
+                                                @endforeach
+                                                @if($unit->generators()->count() > $unit->generators->count())
+                                                    <div class="text-center mt-2">
+                                                        <a href="{{ route('admin.generators.index', ['generation_unit_id' => $unit->id]) }}" class="btn btn-sm btn-outline-primary">
+                                                            عرض جميع المولدات ({{ $unit->generators()->count() }})
+                                                        </a>
                                                     </div>
                                                 @endif
                                             </div>
-                                            <a href="{{ route('admin.generators.index', ['q' => $generator->name]) }}" class="btn btn-sm btn-outline-primary">
-                                                <i class="bi bi-arrow-left"></i>
-                                            </a>
-                                        </div>
+                                        @else
+                                            <div class="text-muted small ms-3 mt-2">
+                                                <i class="bi bi-info-circle"></i>
+                                                لا توجد مولدات في هذه الوحدة
+                                                @can('create', App\Models\Generator::class)
+                                                    <a href="{{ route('admin.generators.create', ['generation_unit_id' => $unit->id]) }}" class="btn btn-xs btn-primary ms-2">
+                                                        إضافة مولد
+                                                    </a>
+                                                @endcan
+                                            </div>
+                                        @endif
                                     </div>
                                 @endforeach
                             </div>
                         @else
                             <div class="text-center text-muted py-4">
                                 <i class="bi bi-lightning-charge fs-1 d-block mb-2"></i>
-                                <p>لا توجد مولدات</p>
-                                    @can('create', App\Models\Generator::class)
-                                    <a href="{{ route('admin.generators.create') }}" class="btn btn-sm btn-primary">
+                                <p>لا توجد وحدات توليد</p>
+                                @can('create', App\Models\GenerationUnit::class)
+                                    <a href="{{ route('admin.operators.profile') }}" class="btn btn-sm btn-primary">
                                         <i class="bi bi-plus-circle me-1"></i>
-                                        إضافة مولد
+                                        إضافة وحدة توليد
                                     </a>
                                 @endcan
                             </div>

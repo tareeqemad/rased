@@ -117,8 +117,8 @@ class FuelEfficiencyController extends Controller
         } elseif ($user->isCompanyOwner()) {
             $operator = $user->ownedOperators()->first();
             if ($operator) {
-                $generators = $operator->generators()->select('id', 'name', 'generator_number', 'operator_id')
-                    ->orderBy('generator_number')
+                $generators = $operator->generators()->select('generators.id', 'generators.name', 'generators.generator_number', 'generators.operator_id')
+                    ->orderBy('generators.generator_number')
                     ->get();
             }
         } elseif ($user->isEmployee() || $user->isTechnician()) {

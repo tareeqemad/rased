@@ -358,7 +358,7 @@
                     @endif
 
                     <!-- خزانات الوقود -->
-                    @if($generator->external_fuel_tank || $generator->fuelTanks->count() > 0)
+                    @if($generator->external_fuel_tank || ($generator->generationUnit && $generator->generationUnit->fuelTanks->count() > 0))
                         <div class="info-section">
                             <h5 class="mb-4 fw-bold">
                                 <i class="bi bi-droplet me-2 text-primary"></i>
@@ -385,7 +385,7 @@
                                         <div class="info-value">{{ $generator->fuel_tanks_count }}</div>
                                     </div>
                                 @endif
-                                @if($generator->fuelTanks->count() > 0)
+                                @if($generator->generationUnit && $generator->generationUnit->fuelTanks->count() > 0)
                                     <div class="col-12">
                                         <div class="info-label mb-3">
                                             <i class="bi bi-list-ul text-info"></i>
@@ -401,7 +401,7 @@
                                                     </tr>
                                                 </thead>
                                                 <tbody>
-                                                    @foreach($generator->fuelTanks as $tank)
+                                                    @foreach($generator->generationUnit->fuelTanks as $tank)
                                                         <tr>
                                                             <td>{{ $tank->id }}</td>
                                                             <td>{{ number_format($tank->capacity, 2) }}</td>

@@ -161,6 +161,7 @@ class User extends Authenticatable
             return in_array($permissionName, [
                 'operators.view',
                 'generators.view',
+                'generation_units.view',
                 'operation_logs.view',
                 'fuel_efficiencies.view',
                 'maintenance_records.view',
@@ -202,6 +203,7 @@ class User extends Authenticatable
             $adminPermissions = [
                 'operators.view',
                 'generators.view',
+                'generation_units.view',
                 'operation_logs.view',
                 'fuel_efficiencies.view',
                 'maintenance_records.view',
@@ -262,6 +264,7 @@ class User extends Authenticatable
             $adminPermissions = [
                 'operators.view',
                 'generators.view',
+                'generation_units.view',
                 'operation_logs.view',
                 'fuel_efficiencies.view',
                 'maintenance_records.view',

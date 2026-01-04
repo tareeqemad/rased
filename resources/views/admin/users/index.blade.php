@@ -62,11 +62,6 @@
                                 إضافة مستخدم
                             </button>
                         @endcan
-
-                        <button type="button" class="btn btn-outline-secondary" id="btnResetFilters">
-                            <i class="bi bi-arrow-counterclockwise me-1"></i>
-                            تصفير
-                        </button>
                     </div>
                 </div>
 
@@ -91,16 +86,26 @@
                             <div class="row g-3">
                                 <div class="col-lg-4">
                                     <label class="form-label fw-semibold">
-                                        <i class="bi bi-search me-1"></i>
-                                        بحث
+                                        <i class="bi bi-person me-1"></i>
+                                        الاسم
                                     </label>
-                                    <div class="users-search">
-                                        <i class="bi bi-search"></i>
-                                        <input type="text" class="form-control" id="usersSearch" placeholder="اسم / اسم المستخدم / البريد..." autocomplete="off">
-                                        <button type="button" class="users-clear d-none" id="btnClearSearch" title="إلغاء البحث">
-                                            <i class="bi bi-x-circle"></i>
-                                        </button>
-                                    </div>
+                                    <input type="text" class="form-control" id="nameFilter" placeholder="ابحث بالاسم..." autocomplete="off">
+                                </div>
+
+                                <div class="col-lg-4">
+                                    <label class="form-label fw-semibold">
+                                        <i class="bi bi-person-badge me-1"></i>
+                                        اسم المستخدم
+                                    </label>
+                                    <input type="text" class="form-control" id="usernameFilter" placeholder="ابحث باسم المستخدم..." autocomplete="off">
+                                </div>
+
+                                <div class="col-lg-4">
+                                    <label class="form-label fw-semibold">
+                                        <i class="bi bi-envelope me-1"></i>
+                                        البريد الإلكتروني
+                                    </label>
+                                    <input type="text" class="form-control" id="emailFilter" placeholder="ابحث بالبريد الإلكتروني..." autocomplete="off">
                                 </div>
 
                                 <div class="col-lg-3">
@@ -126,15 +131,18 @@
                                         <div class="form-text small">فلترة الموظفين/الفنيين حسب مشغل معيّن.</div>
                                     </div>
                                 @endif
-
-                                <div class="col-lg-2 d-flex align-items-end">
-                                    <div class="d-flex gap-2 w-100">
-                                        <button class="btn btn-primary flex-fill" id="btnSearch">
+                            </div>
+                            
+                            <div class="row g-3 mt-2">
+                                <div class="col-12">
+                                    <div class="d-flex gap-2">
+                                        <button class="btn btn-primary" id="btnSearch">
                                             <i class="bi bi-search me-1"></i>
                                             بحث
                                         </button>
-                                        <button class="btn btn-outline-primary" id="btnRefresh" title="تحديث">
-                                            <i class="bi bi-arrow-repeat"></i>
+                                        <button class="btn btn-outline-secondary" id="btnResetFilters" title="تفريغ الحقول">
+                                            <i class="bi bi-arrow-counterclockwise me-1"></i>
+                                            تفريغ الحقول
                                         </button>
                                     </div>
                                 </div>
@@ -348,9 +356,11 @@
             });
 
             const state = {
-                q: '',
+                name: '',
+                username: '',
+                email: '',
                 role: '',
-                operator_id: null,
+                operator_id: 0,
                 page: 1,
             };
 
@@ -409,7 +419,7 @@
                     const email = u.email || '-';
                     const roleKey = u.role || u.role_key || '';
                     const roleLabel = u.role_label || '';
-                    const operatorName = u.operator_name || (u.operator && u.operator.name) || '';
+                    const operatorName = u.operator || u.operator_name || (u.operator && u.operator.name) || '';
                     const employeesCount = (u.employees_count !== undefined && u.employees_count !== null) ? u.employees_count : '-';
 
                     const initials = (name && name !== '-') ? name.trim().charAt(0) : '?';
@@ -564,7 +574,9 @@
                     dataType: 'json',
                     data: {
                         ajax: 1,
-                        q: state.q,
+                        name: state.name,
+                        username: state.username,
+                        email: state.email,
                         role: state.role,
                         operator_id: state.operator_id,
                         page: state.page,
@@ -596,76 +608,71 @@
             }
 
             // ===== Filters
-            const $search = $('#usersSearch');
-            const $clearSearch = $('#btnClearSearch');
+            const $nameFilter = $('#nameFilter');
+            const $usernameFilter = $('#usernameFilter');
+            const $emailFilter = $('#emailFilter');
             const $roleFilter = $('#roleFilter');
 
             const doSearch = function(){
-                state.q = $search.val().trim();
-                $clearSearch.toggleClass('d-none', state.q.length === 0);
+                state.name = $nameFilter.val().trim();
+                state.username = $usernameFilter.val().trim();
+                state.email = $emailFilter.val().trim();
+                state.role = $roleFilter.val() || '';
+                
+                if(IS_SUPER_ADMIN){
+                    const val = $('#operatorFilter').val();
+                    // Select2 قد يعيد '' أو null
+                    state.operator_id = (val && val !== '' && val !== null) ? parseInt(val, 10) : 0;
+                }
+                
                 loadUsers(1);
             };
 
             // Search on button click
             $('#btnSearch').on('click', doSearch);
             
-            // Search on Enter key
-            $search.on('keypress', function(e) {
+            // Search on Enter key in any filter field
+            $nameFilter.add($usernameFilter).add($emailFilter).on('keypress', function(e) {
                 if (e.which === 13) {
                     e.preventDefault();
                     doSearch();
                 }
             });
-            
-            // Show/hide clear button when typing (without auto search)
-            $search.on('input', function() {
-                $clearSearch.toggleClass('d-none', $(this).val().trim().length === 0);
-            });
-
-            $clearSearch.on('click', function(){
-                $search.val('');
-                state.q = '';
-                $clearSearch.addClass('d-none');
-                loadUsers(1);
-            });
 
             $roleFilter.on('change', function(){
-                state.role = $(this).val() || '';
+                const role = $(this).val() || '';
 
                 // SuperAdmin: operator filter is meaningful mostly for employee/technician/all
                 if(IS_SUPER_ADMIN){
-                    const role = state.role;
                     const shouldShowOperator = (role === '' || role === 'employee' || role === 'technician');
                     $('#operatorFilterWrap').toggleClass('d-none', !shouldShowOperator);
 
                     if(!shouldShowOperator){
-                        state.operator_id = null;
                         try { $('#operatorFilter').val(null).trigger('change'); } catch(e){}
                     }
                 }
-
-                loadUsers(1);
+                // لا نقوم بتحميل البيانات تلقائياً - فقط عند الضغط على زر البحث
             });
 
             $('#btnResetFilters').on('click', function(){
-                $search.val('');
-                $clearSearch.addClass('d-none');
+                $nameFilter.val('');
+                $usernameFilter.val('');
+                $emailFilter.val('');
                 $roleFilter.val('').trigger('change');
 
-                state.q = '';
+                state.name = '';
+                state.username = '';
+                state.email = '';
                 state.role = '';
-                state.operator_id = null;
+                state.operator_id = 0;
 
                 if(IS_SUPER_ADMIN){
                     try { $('#operatorFilter').val(null).trigger('change'); } catch(e){}
                     $('#operatorFilterWrap').removeClass('d-none');
                 }
 
-                loadUsers(1);
-            });
-
-            $('#btnRefresh').on('click', function(){
-                loadUsers(state.page || 1);
+                // تفريغ الحقول فقط - لا تحميل تلقائي
+                // يمكن للمستخدم الضغط على "بحث" بعد تفريغ الحقول
             });
 
             // Pagination click
@@ -711,9 +718,8 @@
                 });
 
                 $('#operatorFilter').on('change', function(){
-                    const val = $(this).val();
-                    state.operator_id = val ? parseInt(val, 10) : null;
-                    loadUsers(1);
+                    // لا نقوم بتحميل البيانات تلقائياً - فقط عند الضغط على زر البحث
+                    // القيمة ستُقرأ في doSearch()
                 });
 
                 // hide initially only if role is not eligible

@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Setting;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
@@ -93,8 +95,27 @@ class SettingsController extends Controller
         }
         unset($settings['dark_color_hex']); // Remove hex key to avoid duplicate
         
+        // Handle header_color - prefer hex value if provided
+        if (isset($settings['header_color_hex']) && !empty($settings['header_color_hex'])) {
+            $settings['header_color'] = $settings['header_color_hex'];
+        }
+        unset($settings['header_color_hex']); // Remove hex key to avoid duplicate
+        
+        // Track if any color was changed to clear cache
+        $colorChanged = false;
+        
         foreach ($settings as $key => $value) {
             $setting = Setting::where('key', $key)->first();
+            
+            // Check if color or style was changed (before update/create)
+            if (in_array($key, ['primary_color', 'dark_color', 'header_color', 'menu_styles', 'header_styles'])) {
+                if ($setting && $setting->value !== $value) {
+                    $colorChanged = true;
+                } elseif (!$setting) {
+                    $colorChanged = true;
+                }
+            }
+            
             if ($setting) {
                 $setting->update(['value' => $value]);
             } else {
@@ -102,10 +123,10 @@ class SettingsController extends Controller
                 $type = 'text';
                 
                 // Set appropriate group and type for specific settings
-                if ($key === 'primary_color' || $key === 'dark_color') {
+                if ($key === 'primary_color' || $key === 'dark_color' || $key === 'header_color') {
                     $group = 'design';
                     $type = 'color';
-                } elseif ($key === 'menu_styles') {
+                } elseif ($key === 'menu_styles' || $key === 'header_styles') {
                     $group = 'design';
                     $type = 'select';
                 }
@@ -117,6 +138,14 @@ class SettingsController extends Controller
                     'group' => $group,
                 ]);
             }
+        }
+
+        // Clear cache if any color was changed
+        if ($colorChanged) {
+            Cache::flush();
+            Artisan::call('cache:clear');
+            Artisan::call('config:clear');
+            Artisan::call('view:clear');
         }
 
         return redirect()->route('admin.settings.index')

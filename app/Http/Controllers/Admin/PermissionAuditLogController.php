@@ -10,11 +10,13 @@ class PermissionAuditLogController extends Controller
 {
     public function index(): View
     {
+        // التحقق من الصلاحية باستخدام Policy
+        $this->authorize('viewAny', PermissionAuditLog::class);
+
         $user = auth()->user();
         $query = PermissionAuditLog::with(['user', 'performedBy', 'permission']);
 
         // SuperAdmin يرى جميع السجلات
-        // Admin يرى جميع السجلات (view only)
         // CompanyOwner يرى فقط سجلات موظفيه وفنييه
         if ($user->isCompanyOwner()) {
             $operator = $user->ownedOperators()->first();
@@ -24,9 +26,8 @@ class PermissionAuditLogController extends Controller
             } else {
                 $query->whereRaw('1 = 0'); // لا يوجد سجلات
             }
-        } elseif (! $user->isSuperAdmin() && ! $user->isAdmin()) {
-            abort(403);
         }
+        // السوبر أدمن يرى كل شيء (لا فلترة)
 
         $auditLogs = $query->latest()->paginate(20);
 
@@ -35,17 +36,8 @@ class PermissionAuditLogController extends Controller
 
     public function show(PermissionAuditLog $permissionAuditLog): View
     {
-        $user = auth()->user();
-
-        // التحقق من الصلاحيات
-        if ($user->isCompanyOwner()) {
-            $operator = $user->ownedOperators()->first();
-            if (! $operator || ! $operator->users->contains($permissionAuditLog->user)) {
-                abort(403);
-            }
-        } elseif (! $user->isSuperAdmin() && ! $user->isAdmin()) {
-            abort(403);
-        }
+        // التحقق من الصلاحية باستخدام Policy
+        $this->authorize('view', $permissionAuditLog);
 
         $permissionAuditLog->load(['user', 'performedBy', 'permission']);
 

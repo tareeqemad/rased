@@ -395,10 +395,10 @@ class DashboardController extends Controller
         $baseQuery = function() use ($operatorIds, $generatorIds) {
             $query = OperationLog::query();
             if ($operatorIds) {
-                $query->whereIn('operator_id', $operatorIds);
+                $query->whereIn('operation_logs.operator_id', $operatorIds);
             }
             if ($generatorIds) {
-                $query->whereIn('generator_id', $generatorIds);
+                $query->whereIn('operation_logs.generator_id', $generatorIds);
             }
             return $query;
         };
@@ -406,15 +406,13 @@ class DashboardController extends Controller
         // بيانات المولدات مع الطاقة المنتجة والوقود المستهلك
         $generatorsData = (clone $baseQuery())
             ->join('generators', 'operation_logs.generator_id', '=', 'generators.id')
-            ->leftJoin('fuel_tanks', 'generators.id', '=', 'fuel_tanks.generator_id')
             ->select(
                 'generators.id',
                 'generators.name',
                 DB::raw('SUM(operation_logs.energy_produced) as total_energy'),
                 DB::raw('SUM(operation_logs.fuel_consumed) as total_fuel_consumed'),
-                DB::raw('COALESCE(SUM(fuel_tanks.capacity), 0) as total_tank_capacity'),
                 DB::raw('AVG(operation_logs.load_percentage) as avg_load'),
-                DB::raw('COUNT(*) as records_count')
+                DB::raw('COUNT(DISTINCT operation_logs.id) as records_count')
             )
             ->whereNotNull('operation_logs.energy_produced')
             ->groupBy('generators.id', 'generators.name')
@@ -422,7 +420,6 @@ class DashboardController extends Controller
             ->limit(10)
             ->get()
             ->map(function($item) {
-                $totalCapacity = (float)$item->total_tank_capacity;
                 $consumed = (float)$item->total_fuel_consumed;
                 $energy = (float)$item->total_energy;
                 
@@ -434,7 +431,6 @@ class DashboardController extends Controller
                     'name' => $item->name,
                     'energy' => round($energy, 2),
                     'fuel_consumed' => round($consumed, 2),
-                    'fuel_capacity' => round($totalCapacity, 2),
                     'fuel_efficiency' => $fuel_efficiency, // كفاءة الوقود (kWh/لتر)
                     'avg_load' => round((float)$item->avg_load, 2), // متوسط نسبة التحميل
                     'records_count' => (int)$item->records_count, // عدد السجلات
@@ -445,15 +441,13 @@ class DashboardController extends Controller
         $operatorsData = (clone $baseQuery())
             ->join('operators', 'operation_logs.operator_id', '=', 'operators.id')
             ->join('generators', 'operation_logs.generator_id', '=', 'generators.id')
-            ->leftJoin('fuel_tanks', 'generators.id', '=', 'fuel_tanks.generator_id')
             ->select(
                 'operators.id',
                 'operators.name',
                 DB::raw('SUM(operation_logs.energy_produced) as total_energy'),
                 DB::raw('SUM(operation_logs.fuel_consumed) as total_fuel_consumed'),
-                DB::raw('COALESCE(SUM(fuel_tanks.capacity), 0) as total_tank_capacity'),
                 DB::raw('AVG(operation_logs.load_percentage) as avg_load'),
-                DB::raw('COUNT(*) as records_count')
+                DB::raw('COUNT(DISTINCT operation_logs.id) as records_count')
             )
             ->whereNotNull('operation_logs.energy_produced')
             ->groupBy('operators.id', 'operators.name')
@@ -461,7 +455,6 @@ class DashboardController extends Controller
             ->limit(10)
             ->get()
             ->map(function($item) {
-                $totalCapacity = (float)$item->total_tank_capacity;
                 $consumed = (float)$item->total_fuel_consumed;
                 $energy = (float)$item->total_energy;
                 
@@ -473,7 +466,6 @@ class DashboardController extends Controller
                     'name' => $item->name,
                     'energy' => round($energy, 2),
                     'fuel_consumed' => round($consumed, 2),
-                    'fuel_capacity' => round($totalCapacity, 2),
                     'fuel_efficiency' => $fuel_efficiency, // كفاءة الوقود (kWh/لتر)
                     'avg_load' => round((float)$item->avg_load, 2), // متوسط نسبة التحميل
                     'records_count' => (int)$item->records_count, // عدد السجلات
@@ -484,14 +476,12 @@ class DashboardController extends Controller
         $governoratesData = (clone $baseQuery())
             ->join('operators', 'operation_logs.operator_id', '=', 'operators.id')
             ->join('generators', 'operation_logs.generator_id', '=', 'generators.id')
-            ->leftJoin('fuel_tanks', 'generators.id', '=', 'fuel_tanks.generator_id')
             ->select(
                 'operators.governorate',
                 DB::raw('SUM(operation_logs.energy_produced) as total_energy'),
                 DB::raw('SUM(operation_logs.fuel_consumed) as total_fuel_consumed'),
-                DB::raw('COALESCE(SUM(fuel_tanks.capacity), 0) as total_tank_capacity'),
                 DB::raw('AVG(operation_logs.load_percentage) as avg_load'),
-                DB::raw('COUNT(*) as records_count')
+                DB::raw('COUNT(DISTINCT operation_logs.id) as records_count')
             )
             ->whereNotNull('operation_logs.energy_produced')
             ->whereNotNull('operators.governorate')
@@ -500,7 +490,6 @@ class DashboardController extends Controller
             ->get()
             ->map(function($item) {
                 $governorate = \App\Governorate::fromValue((int)$item->governorate);
-                $totalCapacity = (float)$item->total_tank_capacity;
                 $consumed = (float)$item->total_fuel_consumed;
                 $energy = (float)$item->total_energy;
                 
@@ -513,7 +502,6 @@ class DashboardController extends Controller
                     'code' => $governorate ? $governorate->code() : '',
                     'energy' => round($energy, 2),
                     'fuel_consumed' => round($consumed, 2),
-                    'fuel_capacity' => round($totalCapacity, 2),
                     'fuel_efficiency' => $fuel_efficiency, // كفاءة الوقود (kWh/لتر)
                     'avg_load' => round((float)$item->avg_load, 2), // متوسط نسبة التحميل
                     'records_count' => (int)$item->records_count, // عدد السجلات

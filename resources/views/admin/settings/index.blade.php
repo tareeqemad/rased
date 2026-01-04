@@ -83,6 +83,38 @@
                                     <i class="bi bi-palette text-primary me-2"></i>
                                     إعدادات التصميم
                                 </h6>
+                                
+                                {{-- عرض الألوان المحفوظة حالياً --}}
+                                <div class="alert alert-info d-flex align-items-center gap-3 mb-3" style="background: #e7f3ff; border: 1px solid #b3d9ff;">
+                                    <i class="bi bi-info-circle fs-5"></i>
+                                    <div class="flex-grow-1">
+                                        <strong class="d-block mb-1">الألوان المحفوظة حالياً:</strong>
+                                        <div class="d-flex flex-wrap gap-3 small">
+                                            <span>
+                                                <strong>اللون الأساسي:</strong> 
+                                                <span class="badge" style="background-color: {{ \App\Models\Setting::get('primary_color', '#19228f') }}; color: #fff; padding: 4px 8px;">
+                                                    {{ \App\Models\Setting::get('primary_color', '#19228f') }}
+                                                </span>
+                                            </span>
+                                            <span>
+                                                <strong>اللون الداكن:</strong> 
+                                                <span class="badge" style="background-color: {{ \App\Models\Setting::get('dark_color', '#3b4863') }}; color: #fff; padding: 4px 8px;">
+                                                    {{ \App\Models\Setting::get('dark_color', '#3b4863') }}
+                                                </span>
+                                            </span>
+                                            <span>
+                                                <strong>لون الـ Header:</strong> 
+                                                <span class="badge" style="background-color: {{ \App\Models\Setting::get('header_color', '#19228f') }}; color: #fff; padding: 4px 8px;">
+                                                    {{ \App\Models\Setting::get('header_color', '#19228f') }}
+                                                </span>
+                                            </span>
+                                        </div>
+                                        <small class="text-muted d-block mt-2">
+                                            <i class="bi bi-lightbulb me-1"></i>
+                                            عند الضغط على "إعادة ضبط" لأي لون، سيعود إلى القيمة المحفوظة أعلاه
+                                        </small>
+                                    </div>
+                                </div>
 
                                 <div class="row g-3">
                                     <div class="col-md-6">
@@ -151,6 +183,50 @@
                                         <small class="text-muted d-block mt-2">
                                             <i class="bi bi-info-circle me-1"></i>
                                             اختر درجة اللون الداكن المستخدم في القائمة الجانبية (يظهر فقط عند اختيار Dark)
+                                        </small>
+                                    </div>
+                                </div>
+
+                                <div class="row g-3 mt-2">
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">ستايل الـ Header (Header Style)</label>
+                                        <select name="settings[header_styles]" class="form-select" id="headerStylesSelect">
+                                            <option value="light" {{ \App\Models\Setting::get('header_styles', 'color') === 'light' ? 'selected' : '' }}>فاتح (Light)</option>
+                                            <option value="dark" {{ \App\Models\Setting::get('header_styles', 'color') === 'dark' ? 'selected' : '' }}>داكن (Dark)</option>
+                                            <option value="color" {{ \App\Models\Setting::get('header_styles', 'color') === 'color' ? 'selected' : '' }}>ملون (Color)</option>
+                                        </select>
+                                        <small class="text-muted d-block mt-2">
+                                            <i class="bi bi-info-circle me-1"></i>
+                                            اختر نمط عرض الـ Header العلوي
+                                        </small>
+                                    </div>
+                                </div>
+
+                                <div class="row g-3 mt-2" id="headerColorPickerRow" style="display: none;">
+                                    <div class="col-md-12">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <label class="form-label fw-semibold mb-0">لون الـ Header (Header Color)</label>
+                                            <button type="button" class="btn btn-sm btn-outline-secondary" id="resetHeaderColor" title="إعادة ضبط لون الـ Header">
+                                                <i class="bi bi-arrow-counterclockwise me-1"></i>
+                                                إعادة ضبط
+                                            </button>
+                                        </div>
+                                        <div class="input-group">
+                                            <input type="color" name="settings[header_color]" 
+                                                   class="form-control form-control-color" 
+                                                   id="headerColorInput"
+                                                   value="{{ \App\Models\Setting::get('header_color', '#19228f') }}"
+                                                   title="اختر لون الـ Header">
+                                            <input type="text" name="settings[header_color_hex]" 
+                                                   class="form-control" 
+                                                   id="headerColorHex"
+                                                   value="{{ \App\Models\Setting::get('header_color', '#19228f') }}"
+                                                   placeholder="#19228f"
+                                                   pattern="^#[0-9A-Fa-f]{6}$">
+                                        </div>
+                                        <small class="text-muted d-block mt-2">
+                                            <i class="bi bi-info-circle me-1"></i>
+                                            اختر لون الـ Header (يظهر فقط عند اختيار Dark أو Color)
                                         </small>
                                     </div>
                                 </div>
@@ -419,7 +495,8 @@
             const primaryColorInput = $('#primaryColorInput');
             const primaryColorHex = $('#primaryColorHex');
             const resetPrimaryColorBtn = $('#resetPrimaryColor');
-            const DEFAULT_PRIMARY_COLOR = '#19228f';
+            // Use current saved color as default (from database)
+            const DEFAULT_PRIMARY_COLOR = primaryColorInput.val() || '#19228f';
             
             /**
              * Convert hex color to RGB values (format: "25, 34, 143")
@@ -543,20 +620,26 @@
             }
             
             if (menuStyleSelect.length) {
+                // Initialize with current style on page load
+                const currentMenuStyle = menuStyleSelect.val();
+                if (currentMenuStyle === 'dark') {
+                    darkColorPickerRow.show();
+                } else {
+                    darkColorPickerRow.hide();
+                }
+                
                 menuStyleSelect.on('change', function() {
                     const selectedStyle = $(this).val();
                     updateMenuStyle(selectedStyle);
+                    // Update localStorage when user changes it manually
+                    localStorage.setItem('nowaMenu', selectedStyle);
                 });
-                
-                // Initialize with current style (only if not overridden by localStorage)
-                // Don't auto-apply on page load to avoid changing header/sidebar unexpectedly
-                // The style will be applied from layouts/admin.blade.php on initial load
-                // Only apply when user manually changes the select
             }
             
             // Dark Color Picker Sync & Dynamic Preview
             const resetDarkColorBtn = $('#resetDarkColor');
-            const DEFAULT_DARK_COLOR = '#3b4863';
+            // Use current saved color as default (from database)
+            const DEFAULT_DARK_COLOR = darkColorInput.val() || '#3b4863';
             
             if (darkColorInput.length && darkColorHex.length) {
                 // Sync color picker with text input
@@ -588,6 +671,162 @@
                 });
             }
 
+            // Header Style Dynamic Preview
+            const headerStyleSelect = $('#headerStylesSelect');
+            const headerColorPickerRow = $('#headerColorPickerRow');
+            const headerColorInput = $('#headerColorInput');
+            const headerColorHex = $('#headerColorHex');
+            
+            /**
+             * Update data-header-styles attribute dynamically
+             */
+            function updateHeaderStyle(style) {
+                if (style && ['light', 'dark', 'color'].includes(style)) {
+                    document.documentElement.setAttribute('data-header-styles', style);
+                    
+                    // Show/hide header color picker based on selection
+                    if (style === 'dark' || style === 'color') {
+                        headerColorPickerRow.slideDown(200);
+                        // Update header background color with current header color
+                        const currentHeaderColor = headerColorInput.val();
+                        if (currentHeaderColor) {
+                            updateHeaderColor(currentHeaderColor);
+                        }
+                    } else {
+                        headerColorPickerRow.slideUp(200);
+                        // Remove custom header background color if light
+                        const headerEl = document.querySelector('.app-header');
+                        if (headerEl) {
+                            headerEl.style.backgroundColor = '';
+                        }
+                        // Reset search input and button styles for light header
+                        const searchInput = document.querySelector('.header-content-left .form-control');
+                        if (searchInput) {
+                            searchInput.style.backgroundColor = '';
+                            searchInput.style.borderColor = '';
+                            searchInput.style.color = '';
+                        }
+                        const searchBtn = document.querySelector('.header-content-left .btn');
+                        if (searchBtn) {
+                            searchBtn.style.backgroundColor = '';
+                            searchBtn.style.borderColor = '';
+                            searchBtn.style.color = '';
+                        }
+                    }
+                }
+            }
+            
+            /**
+             * Convert hex color to RGB values (format: "25, 34, 143")
+             */
+            function hexToRgbForHeader(hex) {
+                hex = hex.replace('#', '');
+                if (hex.length === 3) {
+                    hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
+                }
+                const r = parseInt(hex.substring(0, 2), 16);
+                const g = parseInt(hex.substring(2, 4), 16);
+                const b = parseInt(hex.substring(4, 6), 16);
+                return `${r}, ${g}, ${b}`;
+            }
+            
+            /**
+             * Update CSS variable --header-rgb and header background color dynamically
+             */
+            function updateHeaderColor(hexColor) {
+                if (!hexColor || !/^#[0-9A-Fa-f]{3,6}$/i.test(hexColor)) {
+                    return;
+                }
+                const rgb = hexToRgbForHeader(hexColor);
+                document.documentElement.style.setProperty('--header-rgb', rgb);
+                
+                // Update header background color if dark or color style is selected
+                if (headerStyleSelect.val() === 'dark' || headerStyleSelect.val() === 'color') {
+                    const headerEl = document.querySelector('.app-header');
+                    if (headerEl) {
+                        headerEl.style.backgroundColor = hexColor;
+                    }
+                    
+                    // Update search input in header to match header color
+                    const searchInput = document.querySelector('.header-content-left .form-control');
+                    if (searchInput) {
+                        searchInput.style.backgroundColor = hexColor;
+                        searchInput.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+                        searchInput.style.color = '#fff';
+                    }
+                    
+                    // Update search button in header to match header color
+                    const searchBtn = document.querySelector('.header-content-left .btn');
+                    if (searchBtn) {
+                        searchBtn.style.backgroundColor = hexColor;
+                        searchBtn.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+                        searchBtn.style.color = '#fff';
+                    }
+                } else {
+                    // Reset search input and button styles for light header
+                    const searchInput = document.querySelector('.header-content-left .form-control');
+                    if (searchInput) {
+                        searchInput.style.backgroundColor = '';
+                        searchInput.style.borderColor = '';
+                        searchInput.style.color = '';
+                    }
+                    const searchBtn = document.querySelector('.header-content-left .btn');
+                    if (searchBtn) {
+                        searchBtn.style.backgroundColor = '';
+                        searchBtn.style.borderColor = '';
+                        searchBtn.style.color = '';
+                    }
+                }
+            }
+            
+            if (headerStyleSelect.length) {
+                // Initialize with current style on page load
+                const currentHeaderStyle = headerStyleSelect.val();
+                if (currentHeaderStyle === 'dark' || currentHeaderStyle === 'color') {
+                    headerColorPickerRow.show();
+                } else {
+                    headerColorPickerRow.hide();
+                }
+                
+                headerStyleSelect.on('change', function() {
+                    const selectedStyle = $(this).val();
+                    updateHeaderStyle(selectedStyle);
+                    // Update localStorage when user changes it manually
+                    localStorage.setItem('nowaHeader', selectedStyle);
+                });
+            }
+            
+            // Header Color Picker Sync & Dynamic Preview
+            const resetHeaderColorBtn = $('#resetHeaderColor');
+            // Use current saved color as default (from database)
+            const DEFAULT_HEADER_COLOR = headerColorInput.val() || '#19228f';
+            
+            if (headerColorInput.length && headerColorHex.length) {
+                // Sync color picker with text input
+                headerColorInput.on('change', function() {
+                    const colorValue = $(this).val();
+                    headerColorHex.val(colorValue);
+                    updateHeaderColor(colorValue);
+                });
+                
+                headerColorHex.on('input', function() {
+                    const value = $(this).val();
+                    if (/^#[0-9A-Fa-f]{6}$/i.test(value)) {
+                        headerColorInput.val(value);
+                        updateHeaderColor(value);
+                    }
+                });
+            }
+            
+            // Reset Header Color Button
+            if (resetHeaderColorBtn.length) {
+                resetHeaderColorBtn.on('click', function() {
+                    headerColorInput.val(DEFAULT_HEADER_COLOR);
+                    headerColorHex.val(DEFAULT_HEADER_COLOR);
+                    updateHeaderColor(DEFAULT_HEADER_COLOR);
+                });
+            }
+
             if (settingsForm.length) {
                 settingsForm.on('submit', function(e) {
                     if (logoInput.length && logoInput[0].files.length > 0) {
@@ -607,6 +846,11 @@
                             return false;
                         }
                     }
+
+                    // Clear localStorage for menu_styles and header_styles to use database values
+                    // This ensures that saved settings from database take precedence
+                    localStorage.removeItem('nowaMenu');
+                    localStorage.removeItem('nowaHeader');
 
                     submitBtn.prop('disabled', true);
                     const originalText = submitBtn.html();

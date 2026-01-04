@@ -42,7 +42,6 @@
                                     المشغل
                                 </label>
                                 <select id="operatorSelect" class="form-select" style="width:100%"></select>
-                                <div class="form-text">ابحث بالاسم/الكود/صاحب المشغل. (ريموت – مناسب لـ 500+)</div>
                             </div>
 
                             <div class="mb-3">
@@ -178,49 +177,81 @@
                         </div>
 
                         <div class="perm-toolbar mt-3">
-                            <div class="row g-2 align-items-center">
-                                <div class="col-md-6">
-
-                                    {{-- NEW: Search Bar (icon inside input + soft clear) --}}
+                            <div class="row g-3 align-items-end">
+                                <div class="col-md-7">
+                                    <label class="form-label fw-semibold mb-2">
+                                        <i class="bi bi-search me-1"></i>
+                                        البحث في الصلاحيات
+                                    </label>
                                     <div class="perm-searchbar">
                                         <div class="perm-searchfield">
                                             <i class="bi bi-search perm-search-icon"></i>
-
                                             <input
                                                 type="text"
                                                 id="searchInput"
                                                 class="form-control perm-search-input"
-                                                placeholder="ابحث عن صلاحية بالاسم/الوصف."
+                                                placeholder="ابحث بالاسم، الوصف، أو الكود..."
                                                 value="{{ $search }}"
+                                                autocomplete="off"
                                             >
+                                            <button 
+                                                type="button" 
+                                                class="perm-clear-input d-none" 
+                                                id="clearSearchInput"
+                                                title="مسح البحث"
+                                            >
+                                                <i class="bi bi-x-circle"></i>
+                                            </button>
                                         </div>
-
                                         <button class="btn btn-primary perm-search-action" type="button" id="searchBtn">
                                             <i class="bi bi-search me-1"></i>
                                             بحث
                                         </button>
-
                                         <button
-                                            class="btn perm-clear-btn perm-search-action {{ $search ? '' : 'd-none' }}"
+                                            class="btn btn-outline-secondary perm-search-action {{ $search ? '' : 'd-none' }}"
                                             type="button"
                                             id="clearSearchBtn"
                                         >
-                                            <i class="bi bi-x me-1"></i>
-                                            إلغاء
+                                            <i class="bi bi-arrow-counterclockwise me-1"></i>
+                                            تفريغ
                                         </button>
                                     </div>
-
                                 </div>
 
-                                <div class="col-md-6">
+                                <div class="col-md-5">
+                                    <label class="form-label fw-semibold mb-2">
+                                        <i class="bi bi-funnel me-1"></i>
+                                        الفلاتر
+                                    </label>
                                     <div class="perm-filters">
-                                        <button type="button" class="perm-filter active" data-filter="all">الكل</button>
-                                        <button type="button" class="perm-filter" data-filter="enabled">مفعلة</button>
-                                        <button type="button" class="perm-filter" data-filter="disabled">غير مفعلة</button>
-                                        <button type="button" class="perm-filter" data-filter="revoked">ممنوعة</button>
-                                        <button type="button" class="perm-filter" data-filter="role">من الدور</button>
-                                        <button type="button" class="perm-filter" data-filter="direct">مباشرة</button>
-                                        <button type="button" class="perm-filter" data-filter="dirty">تغييرات</button>
+                                        <button type="button" class="perm-filter active" data-filter="all">
+                                            <i class="bi bi-list-ul me-1"></i>
+                                            الكل
+                                        </button>
+                                        <button type="button" class="perm-filter" data-filter="enabled">
+                                            <i class="bi bi-check-circle me-1"></i>
+                                            مفعلة
+                                        </button>
+                                        <button type="button" class="perm-filter" data-filter="disabled">
+                                            <i class="bi bi-x-circle me-1"></i>
+                                            غير مفعلة
+                                        </button>
+                                        <button type="button" class="perm-filter" data-filter="revoked">
+                                            <i class="bi bi-slash-circle me-1"></i>
+                                            ممنوعة
+                                        </button>
+                                        <button type="button" class="perm-filter" data-filter="role">
+                                            <i class="bi bi-shield-check me-1"></i>
+                                            من الدور
+                                        </button>
+                                        <button type="button" class="perm-filter" data-filter="direct">
+                                            <i class="bi bi-star me-1"></i>
+                                            مباشرة
+                                        </button>
+                                        <button type="button" class="perm-filter" data-filter="dirty">
+                                            <i class="bi bi-pencil-square me-1"></i>
+                                            تغييرات
+                                        </button>
                                     </div>
                                 </div>
                             </div>

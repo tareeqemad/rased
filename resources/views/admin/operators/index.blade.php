@@ -13,34 +13,34 @@
 <div class="operators-page">
 
     @if(auth()->user()->isSuperAdmin())
-        <div class="row">
+        <div class="row g-3">
             <div class="col-12">
-                <div class="card op-card">
+                <div class="op-card">
                     <div class="op-card-header">
-                        <div class="d-flex flex-column flex-md-row gap-3 align-items-md-center justify-content-between">
-                            <div>
-                                <div class="op-title">
-                                    <i class="bi bi-buildings me-2"></i>
-                                    إدارة المشغلين
-                                </div>
-                                <div class="op-subtitle">
-                                    بحث + إضافة/تعديل/حذف بدون Reload (Server‑Side AJAX).
-                                </div>
-                            </div>
-
-                            <div class="d-flex gap-2">
-                                @can('create', App\Models\Operator::class)
-                                    <button class="btn btn-primary" id="openCreateOperator"
-                                            data-url="{{ route('admin.operators.create') }}">
-                                        <i class="bi bi-plus-circle me-1"></i>
-                                        إضافة مشغل
-                                    </button>
-                                @endcan
+                        <div>
+                            <h5 class="op-title">
+                                <i class="bi bi-buildings me-2"></i>
+                                إدارة المشغلين
+                            </h5>
+                            <div class="op-subtitle">
+                                إدارة المشغلين والموظفين التابعين لهم.
                             </div>
                         </div>
 
+                        <div class="d-flex gap-2">
+                            @can('create', App\Models\Operator::class)
+                                <button class="btn btn-primary" id="openCreateOperator"
+                                        data-url="{{ route('admin.operators.create') }}">
+                                    <i class="bi bi-plus-lg me-1"></i>
+                                    إضافة مشغل
+                                </button>
+                            @endcan
+                        </div>
+                    </div>
+
+                    <div class="card-body pb-4">
                         {{-- كارد واحد للفلاتر --}}
-                        <div class="card border mt-3 mb-3">
+                        <div class="card border mb-3">
                             <div class="card-header bg-light">
                                 <h6 class="card-title mb-0">
                                     <i class="bi bi-funnel me-2"></i>
@@ -49,63 +49,58 @@
                             </div>
                             <div class="card-body">
                                 <div class="row g-3">
-                                    <div class="col-lg-6">
+                                    <div class="col-lg-4">
                                         <label class="form-label fw-semibold">
-                                            <i class="bi bi-search me-1"></i>
-                                            البحث
+                                            <i class="bi bi-building me-1"></i>
+                                            اسم المشغل
                                         </label>
-                                        <div class="op-search">
-                                            <i class="bi bi-search"></i>
-                                            <input type="text" id="opSearch" class="form-control"
-                                                   placeholder="ابحث بالاسم / رقم الوحدة / اسم المستخدم..."
-                                                   value="{{ $q ?? '' }}">
-                                            <button type="button" class="btn op-clear" id="opClearBtn" title="مسح البحث">
-                                                <i class="bi bi-x-circle"></i>
-                                            </button>
-                                        </div>
+                                        <input type="text" id="opNameFilter" class="form-control"
+                                               placeholder="ابحث باسم المشغل..."
+                                               value="{{ request('name') ?? '' }}" autocomplete="off">
                                     </div>
 
-                                    <div class="col-lg-3">
+                                    <div class="col-lg-4">
                                         <label class="form-label fw-semibold">
                                             <i class="bi bi-funnel me-1"></i>
                                             الحالة
                                         </label>
                                         <select id="opStatus" class="form-select">
                                             <option value="">كل الحالات</option>
-                                            <option value="active" {{ ($status ?? '') === 'active' ? 'selected' : '' }}>فعّال</option>
-                                            <option value="inactive" {{ ($status ?? '') === 'inactive' ? 'selected' : '' }}>غير فعّال</option>
+                                            <option value="active" {{ (request('status') ?? '') === 'active' ? 'selected' : '' }}>فعّال</option>
+                                            <option value="inactive" {{ (request('status') ?? '') === 'inactive' ? 'selected' : '' }}>غير فعّال</option>
                                         </select>
                                     </div>
-
-                                    <div class="col-lg-3 d-flex align-items-end">
-                                        <div class="d-flex gap-2 w-100">
-                                            <button class="btn btn-primary flex-fill" id="btnOpSearch">
+                                </div>
+                                
+                                <div class="row g-3 mt-2">
+                                    <div class="col-12">
+                                        <div class="d-flex gap-2">
+                                            <button class="btn btn-primary" id="btnOpSearch">
                                                 <i class="bi bi-search me-1"></i>
                                                 بحث
                                             </button>
-                                            <button class="btn btn-outline-secondary" id="opRefreshBtn" title="تحديث">
-                                                <i class="bi bi-arrow-clockwise"></i>
+                                            <button class="btn btn-outline-secondary" id="btnOpResetFilters" title="تفريغ الحقول">
+                                                <i class="bi bi-arrow-counterclockwise me-1"></i>
+                                                تفريغ الحقول
                                             </button>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
 
-                    {{-- list (body + footer pagination) --}}
-                    <div id="operatorsListWrap">
-                        @include('admin.operators.partials.list', ['operators' => $operators])
-                    </div>
-
-                    {{-- Loading overlay --}}
-                    <div class="op-loading d-none" id="opLoading">
-                        <div class="text-center">
-                            <div class="spinner-border" role="status"></div>
-                            <div class="mt-2 text-muted fw-semibold">جاري التحميل...</div>
+                        {{-- list (body + footer pagination) --}}
+                        <div class="position-relative" id="operatorsListWrap">
+                            {{-- Loading overlay --}}
+                            <div class="op-loading d-none" id="opLoading">
+                                <div class="text-center">
+                                    <div class="spinner-border" role="status"></div>
+                                    <div class="mt-2 text-muted fw-semibold">جاري التحميل...</div>
+                                </div>
+                            </div>
+                            @include('admin.operators.partials.list', ['operators' => $operators])
                         </div>
                     </div>
-
                 </div>
             </div>
         </div>
@@ -139,9 +134,6 @@
                     <div class="modal-body">
                         <div class="text-muted">هل أنت متأكد من حذف المشغل:</div>
                         <div class="fw-bold mt-1" id="deleteOpName">—</div>
-                        <div class="alert alert-warning mt-3 mb-0">
-                            سيتم حذف حساب المستخدم المرتبط أيضًا.
-                        </div>
                     </div>
                     <div class="modal-footer">
                         <button class="btn btn-light" data-bs-dismiss="modal">إلغاء</button>
@@ -174,18 +166,14 @@
                                 <div class="v">{{ $myOperator->unit_name ?? $myOperator->name }}</div>
                             </div>
                             <div class="op-kv">
-                                <div class="k">رقم الوحدة</div>
-                                <div class="v">{{ $myOperator->unit_number ?? '—' }}</div>
-                            </div>
-                            <div class="op-kv">
                                 <div class="k">المحافظة</div>
                                 <div class="v">{{ $myOperator->getGovernorateLabel() ?? '—' }}</div>
                             </div>
 
                             <div class="d-flex flex-wrap gap-2 mt-3">
                                 <span class="badge bg-info">
-                                    <i class="bi bi-lightning-charge me-1"></i>
-                                    {{ $myOperator->generators_count ?? $myOperator->generators()->count() }} مولد
+                                    <i class="bi bi-building me-1"></i>
+                                    {{ $myOperator->generation_units_count ?? $myOperator->generationUnits()->count() }} وحدة توليد
                                 </span>
                                 <span class="badge bg-success">
                                     <i class="bi bi-people me-1"></i>
@@ -331,7 +319,7 @@
 
     function currentParams(extra = {}) {
         return Object.assign({
-            q: $('#opSearch').val() || '',
+            name: $('#opNameFilter').val() || '',
             status: $('#opStatus').val() || '',
         }, extra);
     }
@@ -356,15 +344,10 @@
             },
             complete: function () {
                 setLoading(false);
-                toggleClearBtn();
             }
         });
     }
 
-    function toggleClearBtn() {
-        const has = ($('#opSearch').val() || '').trim().length > 0;
-        $('#opClearBtn').toggleClass('d-none', !has);
-    }
 
     // ========== Modal load (create/edit) ==========
     function openOperatorModal(url) {
@@ -580,33 +563,36 @@
     }
 
     // ========== UI events ==========
-    $('#opRefreshBtn').on('click', function () { loadList({ page: 1 }); });
-
-    $('#opClearBtn').on('click', function () {
-        $('#opSearch').val('');
-        toggleClearBtn();
-        loadList({ page: 1 });
-    });
-
-    $('#opStatus').on('change', function () { loadList({ page: 1 }); });
-
     // Search on button click
     $('#btnOpSearch').on('click', function () {
         loadList({ page: 1 });
     });
+
+    // Reset filters
+    $('#btnOpResetFilters').on('click', function () {
+        $('#opNameFilter').val('');
+        $('#opStatus').val('').trigger('change');
+        loadList({ page: 1 });
+    });
     
-    // Search on Enter key
-    $('#opSearch').on('keypress', function (e) {
+    // Search on Enter key in filter fields
+    $('#opNameFilter').on('keypress', function (e) {
         if (e.which === 13) {
             e.preventDefault();
             loadList({ page: 1 });
         }
     });
-    
-    // Show/hide clear button when typing (without auto search)
-    $('#opSearch').on('input', function () {
-        toggleClearBtn();
-    });
+
+    // Toggle clear button visibility
+    function toggleClearBtn() {
+        const hasValue = $('#opNameFilter').val().trim() !== '' || 
+                        $('#opStatus').val() !== '';
+        $('#btnOpResetFilters').toggleClass('d-none', !hasValue);
+    }
+
+    // Update clear button visibility on input change
+    $('#opNameFilter').on('input', toggleClearBtn);
+    $('#opStatus').on('change', toggleClearBtn);
 
     // initial
     wireListEvents();

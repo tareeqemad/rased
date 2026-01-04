@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Operator extends Model
@@ -19,31 +20,10 @@ class Operator extends Model
 
     protected $fillable = [
         'name',
-        'email',
-        'phone',
-        'phone_alt',
-        'address',
         'owner_id',
-        'unit_number',
-        'unit_code',
-        'unit_name',
-        'governorate',
-        'city',
-        'city_id',
-        'detailed_address',
-        'latitude',
-        'longitude',
-        'total_capacity',
-        'generators_count',
-        'synchronization_available',
-        'max_synchronization_capacity',
         'owner_name',
         'owner_id_number',
-        'operation_entity',
         'operator_id_number',
-        'beneficiaries_count',
-        'beneficiaries_description',
-        'environmental_compliance_status',
         'status',
         'profile_completed',
     ];
@@ -80,9 +60,20 @@ class Operator extends Model
         return $this->users()->whereIn('role', [Role::Employee, Role::Technician]);
     }
 
-    public function generators(): HasMany
+    /**
+     * وحدات التوليد التابعة لهذا المشغل
+     */
+    public function generationUnits(): HasMany
     {
-        return $this->hasMany(Generator::class);
+        return $this->hasMany(GenerationUnit::class);
+    }
+
+    /**
+     * المولدات التابعة لهذا المشغل (عبر وحدات التوليد)
+     */
+    public function generators(): HasManyThrough
+    {
+        return $this->hasManyThrough(Generator::class, GenerationUnit::class);
     }
 
     public function operationLogs(): HasMany
@@ -112,18 +103,7 @@ class Operator extends Model
 
     public function isProfileComplete(): bool
     {
-        return $this->profile_completed &&
-            !empty($this->unit_number) &&
-            !empty($this->unit_name) &&
-            !is_null($this->governorate) &&
-            !is_null($this->city_id) &&
-            !empty($this->detailed_address) &&
-            !is_null($this->latitude) &&
-            !is_null($this->longitude) &&
-            !empty($this->owner_name) &&
-            !empty($this->operator_id_number) &&
-            !empty($this->operation_entity) &&
-            !is_null($this->status);
+        return $this->profile_completed && !empty($this->name);
     }
 
     public function getGovernorateDetails(): ?array
@@ -204,16 +184,7 @@ class Operator extends Model
     {
         $missing = [];
 
-        if (empty($this->unit_number)) $missing[] = 'رقم الوحدة';
-        if (empty($this->unit_name)) $missing[] = 'اسم الوحدة';
-        if (is_null($this->governorate)) $missing[] = 'المحافظة';
-        if (is_null($this->city_id)) $missing[] = 'المدينة';
-        if (empty($this->detailed_address)) $missing[] = 'العنوان التفصيلي';
-        if (is_null($this->latitude) || is_null($this->longitude)) $missing[] = 'إحداثيات الموقع';
-        if (empty($this->owner_name)) $missing[] = 'اسم المالك';
-        if (empty($this->operator_id_number)) $missing[] = 'رقم هوية المشغل';
-        if (empty($this->operation_entity)) $missing[] = 'جهة التشغيل';
-        if (is_null($this->status)) $missing[] = 'حالة الوحدة';
+        if (empty($this->name)) $missing[] = 'اسم المشغل';
 
         return $missing;
     }

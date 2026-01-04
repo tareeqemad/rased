@@ -63,6 +63,12 @@ class PermissionSeeder extends Seeder
 
             // إدارة الصلاحيات
             ['name' => 'permissions.manage', 'label' => 'إدارة الصلاحيات', 'group' => 'permissions', 'group_label' => 'الصلاحيات', 'description' => 'القدرة على إدارة صلاحيات المستخدمين', 'order' => 33],
+
+            // وحدات التوليد
+            ['name' => 'generation_units.view', 'label' => 'عرض وحدات التوليد', 'group' => 'generation_units', 'group_label' => 'وحدات التوليد', 'description' => 'القدرة على عرض قائمة وحدات التوليد', 'order' => 34],
+            ['name' => 'generation_units.create', 'label' => 'إنشاء وحدة توليد', 'group' => 'generation_units', 'group_label' => 'وحدات التوليد', 'description' => 'القدرة على إنشاء وحدة توليد جديدة', 'order' => 35],
+            ['name' => 'generation_units.update', 'label' => 'تحديث وحدة توليد', 'group' => 'generation_units', 'group_label' => 'وحدات التوليد', 'description' => 'القدرة على تحديث بيانات وحدة التوليد', 'order' => 36],
+            ['name' => 'generation_units.delete', 'label' => 'حذف وحدة توليد', 'group' => 'generation_units', 'group_label' => 'وحدات التوليد', 'description' => 'القدرة على حذف وحدة التوليد', 'order' => 37],
         ];
 
         foreach ($permissions as $permission) {

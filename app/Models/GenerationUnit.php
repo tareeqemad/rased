@@ -1,0 +1,222 @@
+<?php
+
+namespace App\Models;
+
+use App\Governorate;
+use App\Models\ConstantDetail;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
+
+class GenerationUnit extends Model
+{
+    use SoftDeletes;
+
+    protected $table = 'generation_units';
+
+    protected $fillable = [
+        'operator_id',
+        'unit_code',
+        'unit_number',
+        'name',
+        'generators_count',
+        'status',
+        'created_by',
+        'last_updated_by',
+        // الملكية والتشغيل
+        'owner_name',
+        'owner_id_number',
+        'operation_entity',
+        'operator_id_number',
+        'phone',
+        'phone_alt',
+        'email',
+        // الموقع
+        'governorate',
+        'city_id',
+        'detailed_address',
+        'latitude',
+        'longitude',
+        // القدرات الفنية
+        'total_capacity',
+        'synchronization_available',
+        'max_synchronization_capacity',
+        // المستفيدون والبيئة
+        'beneficiaries_count',
+        'beneficiaries_description',
+        'environmental_compliance_status',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'latitude' => 'decimal:8',
+            'longitude' => 'decimal:8',
+            'total_capacity' => 'decimal:2',
+            'max_synchronization_capacity' => 'decimal:2',
+            'synchronization_available' => 'boolean',
+            'beneficiaries_count' => 'integer',
+        ];
+    }
+
+    public function operator(): BelongsTo
+    {
+        return $this->belongsTo(Operator::class);
+    }
+
+    public function generators(): HasMany
+    {
+        return $this->hasMany(Generator::class);
+    }
+
+    public function fuelTanks(): HasMany
+    {
+        return $this->hasMany(FuelTank::class)->orderBy('order');
+    }
+
+    public function city(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\ConstantDetail::class, 'city_id');
+    }
+
+    /**
+     * توليد رقم الوحدة التالي (001, 002, إلخ) حسب المحافظة والمدينة
+     * الرقم التسلسلي فريد ضمن نفس المحافظة والمدينة
+     */
+    public static function getNextUnitNumber(int $operatorId): string
+    {
+        $operator = Operator::find($operatorId);
+        if (!$operator) {
+            return '001';
+        }
+
+        $governorate = $operator->governorate;
+        $cityId = $operator->city_id;
+
+        if (!$governorate || !$cityId) {
+            return '001';
+        }
+
+        // الحصول على ترميز المحافظة والمدينة
+        $governorateCode = $governorate->code();
+        $cityDetail = ConstantDetail::find($cityId);
+        if (!$cityDetail || !$cityDetail->code) {
+            return '001';
+        }
+        $cityCode = $cityDetail->code;
+
+        // البحث عن آخر رقم وحدة في نفس المحافظة والمدينة
+        // من خلال البحث في كود الوحدة بالصيغة GU-PP-CC-NNN
+        $prefix = "GU-{$governorateCode}-{$cityCode}-";
+        
+        $lastUnit = static::where('unit_code', 'like', $prefix . '%')
+            ->whereNotNull('unit_code')
+            ->get()
+            ->map(function ($unit) use ($prefix) {
+                // استخراج الرقم التسلسلي من unit_code
+                $code = $unit->unit_code;
+                if (str_starts_with($code, $prefix)) {
+                    $numberPart = substr($code, strlen($prefix));
+                    return (int) $numberPart;
+                }
+                return 0;
+            })
+            ->filter(fn($num) => $num > 0)
+            ->sortDesc()
+            ->first();
+
+        if ($lastUnit) {
+            $nextNumber = $lastUnit + 1;
+        } else {
+            $nextNumber = 1;
+        }
+
+        return str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
+    }
+
+    /**
+     * توليد رقم الوحدة التالي بناءً على governorate code و city code مباشرة
+     */
+    public static function getNextUnitNumberByLocation(string $governorateCode, string $cityCode): string
+    {
+        $prefix = "GU-{$governorateCode}-{$cityCode}-";
+        
+        $lastUnit = static::where('unit_code', 'like', $prefix . '%')
+            ->whereNotNull('unit_code')
+            ->get()
+            ->map(function ($unit) use ($prefix) {
+                $code = $unit->unit_code;
+                if (str_starts_with($code, $prefix)) {
+                    $numberPart = substr($code, strlen($prefix));
+                    return (int) $numberPart;
+                }
+                return 0;
+            })
+            ->filter(fn($num) => $num > 0)
+            ->sortDesc()
+            ->first();
+
+        if ($lastUnit) {
+            $nextNumber = $lastUnit + 1;
+        } else {
+            $nextNumber = 1;
+        }
+
+        return str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
+    }
+
+    /**
+     * توليد كود الوحدة بالصيغة GU-PP-CC-NNN
+     * حيث:
+     * GU: ثابت (GENERATION UNIT)
+     * PP: ترميز المحافظة (2 أحرف: NG, GZ, MD, KH, RF)
+     * CC: ترميز المدينة (2-3 أحرف: BH, BL, JB, GZ, DB, NS, BR, MG, ZW, KH, QR, AK, AS, KZ, RF, SH, NS)
+     * NNN: رقم تسلسلي للوحدة (3 أرقام: 001, 002, إلخ) - فريد ضمن نفس المحافظة والمدينة
+     */
+    public static function generateUnitCode(int $operatorId, ?string $unitNumber = null, ?string $governorateCode = null, ?string $cityCode = null): ?string
+    {
+        // إذا تم تمرير governorateCode و cityCode مباشرة، استخدمهما
+        if ($governorateCode && $cityCode) {
+            if (!$unitNumber) {
+                $unitNumber = self::getNextUnitNumberByLocation($governorateCode, $cityCode);
+            }
+            return "GU-{$governorateCode}-{$cityCode}-{$unitNumber}";
+        }
+
+        // الطريقة القديمة (للتوافق مع الكود القديم - لكن لن تعمل لأن Operator لم يعد لديه governorate و city_id)
+        // هذه الدالة موجودة للتوافق فقط، لكن الأفضل استخدام getNextUnitNumberByLocation وبناء الكود يدوياً
+        return null;
+    }
+
+    /**
+     * توليد كود الوحدة باستخدام كود المحافظة وكود المدينة مباشرة
+     * الصيغة: GU-PP-CC-NNN
+     */
+    public static function generateUnitCodeByLocation(string $governorateCode, string $cityCode, ?string $unitNumber = null): string
+    {
+        if (!$unitNumber) {
+            $unitNumber = self::getNextUnitNumberByLocation($governorateCode, $cityCode);
+        }
+        return "GU-{$governorateCode}-{$cityCode}-{$unitNumber}";
+    }
+
+    /**
+     * التحقق من أن عدد المولدات الفعلي يطابق العدد المطلوب
+     */
+    public function hasCorrectGeneratorCount(): bool
+    {
+        $actualCount = $this->generators()->count();
+        return $actualCount === $this->generators_count;
+    }
+
+    /**
+     * الحصول على عدد المولدات المتبقية لإكمال العدد المطلوب
+     */
+    public function getRemainingGeneratorsCount(): int
+    {
+        $actualCount = $this->generators()->count();
+        return max(0, $this->generators_count - $actualCount);
+    }
+}
+

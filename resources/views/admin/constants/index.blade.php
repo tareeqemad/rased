@@ -39,17 +39,15 @@
                     </div>
                 </div>
 
-                <div class="card-body">
-
-                    {{-- كارد واحد للفلاتر --}}
-                    <div class="card border mb-3">
-                        <div class="card-header bg-light">
-                            <h6 class="card-title mb-0">
-                                <i class="bi bi-funnel me-2"></i>
-                                فلاتر البحث
-                            </h6>
-                        </div>
-                        <div class="card-body">
+                {{-- كارد واحد للفلاتر --}}
+                <div class="card border mb-3">
+                    <div class="card-header bg-light">
+                        <h6 class="card-title mb-0">
+                            <i class="bi bi-funnel me-2"></i>
+                            فلاتر البحث
+                        </h6>
+                    </div>
+                    <div class="card-body">
                             <div class="row g-3">
                                 <div class="col-md-5">
                                     <label class="form-label fw-semibold">
@@ -85,47 +83,45 @@
                             </div>
                         </div>
                     </div>
-                </div>
 
-                {{-- Row 3: Card للجدول --}}
-                <div class="card border mt-3">
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-hover align-middle mb-0 constants-table">
-                                <thead>
-                                <tr>
-                                    <th style="min-width:120px;">رقم الثابت</th>
-                                    <th>اسم الثابت</th>
-                                    <th class="d-none d-md-table-cell">الوصف</th>
-                                    <th class="text-center">التفاصيل</th>
-                                    <th class="text-center">الحالة</th>
-                                    <th class="text-center d-none d-lg-table-cell">الترتيب</th>
-                                    <th style="min-width:140px;">الإجراءات</th>
-                                </tr>
-                                </thead>
-                                <tbody id="constantsTbody">
-                                    @include('admin.constants.partials.tbody-rows', ['constants' => $constants])
-                                </tbody>
-                            </table>
-                        </div>
-
-                        <div class="d-flex flex-wrap justify-content-between align-items-center mt-3 gap-2">
-                            <div class="small text-muted" id="constantsMeta">
-                                @if($constants->total() > 0)
-                                    عرض {{ $constants->firstItem() }} - {{ $constants->lastItem() }} من {{ $constants->total() }}
-                                @else
-                                    —
-                                @endif
+                    {{-- كارد للجدول --}}
+                    <div class="card border mt-3">
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0 constants-table">
+                                    <thead>
+                                    <tr>
+                                        <th style="min-width:120px;">رقم الثابت</th>
+                                        <th>اسم الثابت</th>
+                                        <th class="d-none d-md-table-cell">الوصف</th>
+                                        <th class="text-center">التفاصيل</th>
+                                        <th class="text-center">الحالة</th>
+                                        <th class="text-center d-none d-lg-table-cell">الترتيب</th>
+                                        <th style="min-width:140px;">الإجراءات</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody id="constantsTbody">
+                                        @include('admin.constants.partials.tbody-rows', ['constants' => $constants])
+                                    </tbody>
+                                </table>
                             </div>
-                            <nav>
-                                <ul class="pagination mb-0" id="constantsPagination">
-                                    @include('admin.constants.partials.pagination', ['constants' => $constants])
-                                </ul>
-                            </nav>
+
+                            <div class="d-flex flex-wrap justify-content-between align-items-center mt-3 gap-2">
+                                <div class="small text-muted" id="constantsMeta">
+                                    @if($constants->total() > 0)
+                                        عرض {{ $constants->firstItem() }} - {{ $constants->lastItem() }} من {{ $constants->total() }}
+                                    @else
+                                        —
+                                    @endif
+                                </div>
+                                <nav>
+                                    <ul class="pagination mb-0" id="constantsPagination">
+                                        @include('admin.constants.partials.pagination', ['constants' => $constants])
+                                    </ul>
+                                </nav>
+                            </div>
                         </div>
                     </div>
-                </div>
-                </div>
             </div>
         </div>
 

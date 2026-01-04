@@ -36,6 +36,7 @@ class PermissionsController extends Controller
 
                     // Tenant Modules
                     ->orWhere('name', 'like', 'generators.%')
+                    ->orWhere('name', 'like', 'generation_units.%')
                     ->orWhere('name', 'like', 'operation_logs.%')
                     ->orWhere('name', 'like', 'fuel_efficiencies.%')
                     ->orWhere('name', 'like', 'maintenance_records.%')

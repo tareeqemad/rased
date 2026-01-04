@@ -6,7 +6,7 @@
                 <th>المشغل</th>
                 <th class="d-none d-lg-table-cell">المالك</th>
                 <th class="text-center">الموظفون</th>
-                <th class="text-center">المولدات</th>
+                <th class="text-center">وحدات التوليد</th>
                 <th class="text-center d-none d-md-table-cell">الحالة</th>
                 <th class="d-none d-xl-table-cell">تاريخ الإنشاء</th>
                 <th class="text-nowrap">إجراءات</th>
@@ -16,18 +16,7 @@
             @forelse($operators as $operator)
                 <tr>
                     <td>
-                        <div class="d-flex align-items-center gap-2">
-                            <div class="avatar-circle">{{ mb_substr($operator->name, 0, 1) }}</div>
-                            <div>
-                                <div class="fw-bold">{{ $operator->unit_name ?? $operator->name }}</div>
-                                <div class="text-muted small">
-                                    {{ $operator->unit_number ?? '—' }}
-                                    @if($operator->getGovernorateLabel())
-                                        • {{ $operator->getGovernorateLabel() }}
-                                    @endif
-                                </div>
-                            </div>
-                        </div>
+                        <div class="fw-bold">{{ $operator->unit_name ?? $operator->name }}</div>
                     </td>
 
                     <td class="d-none d-lg-table-cell">
@@ -47,7 +36,7 @@
 
                     <td class="text-center">
                         <span class="badge bg-info">
-                            {{ $operator->generators_count ?? 0 }}
+                            {{ $operator->generation_units_count ?? 0 }}
                         </span>
                     </td>
 

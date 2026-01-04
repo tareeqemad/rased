@@ -74,12 +74,6 @@
                                 تحكم
                             </button>
                         </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="tanks-tab" data-bs-toggle="tab" 
-                                    data-bs-target="#tanks" type="button" role="tab">
-                                خزانات
-                            </button>
-                        </li>
                     </ul>
 
                     <!-- Tab Content -->
@@ -402,43 +396,6 @@
                             </div>
                         </div>
                     </div>
-                        </div>
-
-                        <!-- خزانات الوقود -->
-                        <div class="tab-pane fade" id="tanks" role="tabpanel">
-                            <div class="mb-4">
-                                <!-- خزان وقود خارجي -->
-                                <div class="card mb-4 border-0 shadow-sm">
-                                    <div class="card-body">
-                                        <div class="row g-3">
-                                            <div class="col-md-6">
-                                                <label class="form-label fw-semibold">خزان وقود خارجي <span class="text-danger">*</span></label>
-                                                <select name="external_fuel_tank" id="external_fuel_tank" class="form-select @error('external_fuel_tank') is-invalid @enderror">
-                                                    <option value="0" {{ old('external_fuel_tank', $generator->external_fuel_tank ? '1' : '0') == '0' ? 'selected' : '' }}>لا</option>
-                                                    <option value="1" {{ old('external_fuel_tank', $generator->external_fuel_tank ? '1' : '0') == '1' ? 'selected' : '' }}>نعم</option>
-                                                </select>
-                                                
-                                            </div>
-                                            <div class="col-md-6" id="fuel_tanks_count_wrapper" style="{{ $generator->external_fuel_tank ? 'display: block;' : 'display: none;' }}">
-                                                <label class="form-label fw-semibold">عدد خزانات الوقود (1-10) <span class="text-danger">*</span></label>
-                                                <select name="fuel_tanks_count" id="fuel_tanks_count" class="form-select @error('fuel_tanks_count') is-invalid @enderror">
-                                                    <option value="0">اختر العدد</option>
-                                                    @for($i = 1; $i <= 10; $i++)
-                                                        <option value="{{ $i }}" {{ old('fuel_tanks_count', $generator->fuelTanks->count() > 0 ? $generator->fuelTanks->count() : null) == $i ? 'selected' : '' }}>{{ $i }}</option>
-                                                    @endfor
-                                                </select>
-                                                
-                                            </div>
-                                            <!-- حقل hidden لإرسال القيمة الافتراضية عندما يكون external_fuel_tank = 0 -->
-                                            <input type="hidden" id="fuel_tanks_count_hidden" value="{{ old('fuel_tanks_count', $generator->fuel_tanks_count ?? 0) }}">
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- خزانات الوقود الديناميكية -->
-                                <div id="fuel_tanks_container"></div>
-                            </div>
-                        </div>
                     </div>
 
                     <!-- Navigation Buttons -->
@@ -560,6 +517,10 @@
     }
     
     /* تحسين التاب المحتوى */
+    .tab-content {
+        min-height: 400px;
+    }
+    
     .tab-pane {
         animation: fadeIn 0.5s ease-in;
     }
@@ -665,7 +626,7 @@
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         let currentTab = 0;
-        const tabs = ['basic', 'specs', 'fuel', 'technical', 'control', 'tanks'];
+        const tabs = ['basic', 'specs', 'fuel', 'technical', 'control'];
         let lastRefreshTime = Date.now();
         const refreshInterval = 10 * 60 * 1000; // 10 دقائق
         
@@ -696,7 +657,6 @@
         
         // تمرير الثوابت للـ JavaScript
         window.GENERATOR_CONSTANTS = {
-            location: @json(($constants['location'] ?? collect())->map(fn($c) => ['id' => $c->id, 'label' => $c->label])->values()),
             material: @json(($constants['material'] ?? collect())->map(fn($c) => ['id' => $c->id, 'label' => $c->label])->values()),
             usage: @json(($constants['usage'] ?? collect())->map(fn($c) => ['id' => $c->id, 'label' => $c->label])->values()),
             measurement_method: @json(($constants['measurement_method'] ?? collect())->map(fn($c) => ['id' => $c->id, 'label' => $c->label])->values()),
@@ -770,24 +730,6 @@
                 return false;
             }
 
-            // إدارة حقول fuel_tanks_count قبل الإرسال
-            const externalFuelTankValue = externalFuelTankSelect ? externalFuelTankSelect.value : '0';
-            if (externalFuelTankValue === '0') {
-                if (fuelTanksCountSelect) {
-                    fuelTanksCountSelect.removeAttribute('name');
-                }
-                if (fuelTanksCountHidden) {
-                    fuelTanksCountHidden.setAttribute('name', 'fuel_tanks_count');
-                }
-            } else {
-                if (fuelTanksCountHidden) {
-                    fuelTanksCountHidden.removeAttribute('name');
-                }
-                if (fuelTanksCountSelect) {
-                    fuelTanksCountSelect.setAttribute('name', 'fuel_tanks_count');
-                }
-            }
-
             $submitBtn.prop('disabled', true);
             const originalText = $submitBtn.html();
             $submitBtn.html('<span class="spinner-border spinner-border-sm me-2"></span>جاري الحفظ...');
@@ -822,43 +764,58 @@
 
                     if (xhr.status === 422) {
                         const errors = xhr.responseJSON?.errors || {};
+                        let errorMessages = [];
                         let firstError = '';
 
                         $form.find('.is-invalid').removeClass('is-invalid');
                         $form.find('.invalid-feedback').remove();
 
+                        // خريطة أسماء الحقول العربية
+                        const fieldLabels = {
+                            'name': 'اسم المولد',
+                            'generator_number': 'رقم المولد',
+                            'operator_id': 'المشغل',
+                            'generation_unit_id': 'وحدة التوليد',
+                            'status': 'حالة المولد',
+                            'description': 'الوصف',
+                            'capacity_kva': 'قدرة المولد (KVA)',
+                            'power_factor': 'معامل القدرة (P.F)',
+                            'voltage': 'الجهد الناتج (V)',
+                            'frequency': 'التردد (Hz)',
+                            'engine_type': 'نوع المحرك',
+                            'manufacturing_year': 'سنة التصنيع',
+                            'injection_system': 'نظام الحقن',
+                            'fuel_consumption_rate': 'معدل استهلاك الوقود',
+                            'ideal_fuel_efficiency': 'كفاءة الوقود المثالية',
+                            'internal_tank_capacity': 'سعة خزان الوقود الداخلي',
+                            'measurement_indicator': 'مؤشر القياس',
+                            'technical_condition': 'الحالة الفنية',
+                            'last_major_maintenance_date': 'تاريخ آخر صيانة كبرى',
+                            'engine_data_plate_image': 'صورة لوحة البيانات للمحرك',
+                            'generator_data_plate_image': 'صورة لوحة البيانات للمولد',
+                            'control_panel_available': 'لوحة التحكم',
+                            'control_panel_type': 'نوع لوحة التحكم',
+                            'control_panel_status': 'حالة لوحة التحكم',
+                            'control_panel_image': 'صورة لوحة التحكم',
+                            'operating_hours': 'قراءة ساعات التشغيل الحالية'
+                        };
+
                         $.each(errors, function(field, messages) {
                             const errorMsg = Array.isArray(messages) ? messages[0] : messages;
-                            if (!firstError) firstError = errorMsg;
+                            const fieldLabel = fieldLabels[field] || field;
                             
-                            // معالجة أخطاء خزانات الوقود (fuel_tanks.0.capacity)
-                            if (field.startsWith('fuel_tanks.')) {
-                                const fieldParts = field.split('.');
-                                if (fieldParts.length >= 3) {
-                                    const tankIndex = fieldParts[1];
-                                    const tankField = fieldParts[2];
-                                    const $tankField = $form.find('[name="fuel_tanks[' + tankIndex + '][' + tankField + ']"]');
-                                    if ($tankField.length) {
-                                        $tankField.addClass('is-invalid');
-                                        $tankField.closest('.col-md-6, .col-md-4, .col-md-12').find('.invalid-feedback').remove();
-                                        $tankField.after('<div class="invalid-feedback d-block">' + errorMsg + '</div>');
-                                        
-                                        // إظهار تنبيه في كارد الخزان
-                                        const $tankCard = $tankField.closest('.card');
-                                        if ($tankCard.length) {
-                                            $tankCard.addClass('border-danger');
-                                            $tankCard.find('.card-header').addClass('bg-danger bg-opacity-10');
-                                        }
-                                    }
-                                }
-                            } else {
-                                // معالجة الحقول العادية
-                                const $field = $form.find('[name="' + field + '"]');
-                                if ($field.length) {
-                                    $field.addClass('is-invalid');
-                                    $field.closest('.col-md-6, .col-md-4, .col-md-12').find('.invalid-feedback').remove();
-                                    $field.after('<div class="invalid-feedback d-block">' + errorMsg + '</div>');
-                                }
+                            if (!firstError) {
+                                firstError = fieldLabel + ': ' + errorMsg;
+                            }
+                            
+                            errorMessages.push(fieldLabel + ': ' + errorMsg);
+                            
+                            // معالجة الحقول
+                            const $field = $form.find('[name="' + field + '"]');
+                            if ($field.length) {
+                                $field.addClass('is-invalid');
+                                $field.closest('.col-md-6, .col-md-4, .col-md-12').find('.invalid-feedback').remove();
+                                $field.after('<div class="invalid-feedback d-block">' + errorMsg + '</div>');
                             }
                         });
 
@@ -869,17 +826,26 @@
                             }, 500);
                         }
 
+                        // عرض جميع الأخطاء في إشعار أحمر
+                        let errorMessage = 'يرجى تصحيح الأخطاء التالية:\n\n';
+                        errorMessage += errorMessages.join('\n');
+                        
                         if (typeof window.showToast === 'function') {
-                            window.showToast(firstError || 'يرجى التحقق من الحقول المطلوبة', 'error');
+                            window.showToast(errorMessage, 'error', 'تحقق من الأخطاء');
+                        } else if (window.adminNotifications && typeof window.adminNotifications.error === 'function') {
+                            window.adminNotifications.error(errorMessage, 'تحقق من الأخطاء');
                         } else {
-                            alert(firstError || 'يرجى التحقق من الحقول المطلوبة');
+                            // Fallback: استخدام notify من الصفحة نفسها إذا كان متاحاً
+                            console.error('Validation errors:', errorMessages);
                         }
                     } else {
                         const errorMsg = xhr.responseJSON?.message || 'حدث خطأ أثناء حفظ البيانات';
                         if (typeof window.showToast === 'function') {
                             window.showToast(errorMsg, 'error');
+                        } else if (window.adminNotifications && typeof window.adminNotifications.error === 'function') {
+                            window.adminNotifications.error(errorMsg);
                         } else {
-                            alert(errorMsg);
+                            console.error('Error:', errorMsg);
                         }
                     }
                 }
@@ -1066,168 +1032,6 @@
             }
             initYearPicker();
         }
-
-        // إدارة خزانات الوقود الديناميكية
-        const externalFuelTankSelect = document.getElementById('external_fuel_tank');
-        const fuelTanksCountWrapper = document.getElementById('fuel_tanks_count_wrapper');
-        const fuelTanksCountSelect = document.getElementById('fuel_tanks_count');
-        const fuelTanksCountHidden = document.getElementById('fuel_tanks_count_hidden');
-        const fuelTanksContainer = document.getElementById('fuel_tanks_container');
-
-        // عند تغيير "خزان وقود خارجي"
-        if (externalFuelTankSelect) {
-            externalFuelTankSelect.addEventListener('change', function() {
-                if (this.value === '1') {
-                    fuelTanksCountWrapper.style.display = 'block';
-                    fuelTanksCountSelect.required = true;
-                    // إخفاء الحقل المخفي وإظهار الـ select
-                    if (fuelTanksCountHidden) {
-                        fuelTanksCountHidden.disabled = true;
-                    }
-                    fuelTanksCountSelect.disabled = false;
-                } else {
-                    fuelTanksCountWrapper.style.display = 'none';
-                    fuelTanksCountSelect.required = false;
-                    fuelTanksCountSelect.value = '0';
-                    fuelTanksContainer.innerHTML = '';
-                    // إظهار الحقل المخفي وإخفاء الـ select
-                    if (fuelTanksCountHidden) {
-                        fuelTanksCountHidden.disabled = false;
-                    }
-                    fuelTanksCountSelect.disabled = true;
-                }
-            });
-
-            // تهيئة أولية
-            if (externalFuelTankSelect.value === '1') {
-                fuelTanksCountWrapper.style.display = 'block';
-                fuelTanksCountSelect.required = true;
-                if (fuelTanksCountHidden) {
-                    fuelTanksCountHidden.disabled = true;
-                }
-                fuelTanksCountSelect.disabled = false;
-                if (fuelTanksCountSelect.value && fuelTanksCountSelect.value !== '0') {
-                    renderFuelTanks(parseInt(fuelTanksCountSelect.value));
-                }
-            } else {
-                if (fuelTanksCountHidden) {
-                    fuelTanksCountHidden.disabled = false;
-                }
-                fuelTanksCountSelect.disabled = true;
-            }
-        }
-
-        // عند تغيير عدد الخزانات
-        if (fuelTanksCountSelect) {
-            fuelTanksCountSelect.addEventListener('change', function() {
-                const count = parseInt(this.value);
-                if (count > 0 && count <= 10) {
-                    renderFuelTanks(count);
-                } else {
-                    fuelTanksContainer.innerHTML = '';
-                }
-            });
-        }
-
-        // دالة لرسم خزانات الوقود
-        function renderFuelTanks(count) {
-            fuelTanksContainer.innerHTML = '';
-
-            for (let i = 1; i <= count; i++) {
-                const tankHtml = `
-                    <div class="card mb-3 border-0 shadow-sm" id="tank_${i}">
-                        <div class="card-header" style="background: linear-gradient(135deg, #2563eb 0%, #60a5fa 100%); padding: 1rem;">
-                            <h6 class="mb-0 fw-bold text-white">
-                                <i class="bi bi-droplet-fill me-2"></i>خزان الوقود ${i}
-                            </h6>
-                        </div>
-                        <div class="card-body">
-                            <div class="row g-3">
-                                <div class="col-md-6">
-                                    <label class="form-label fw-semibold">سعة الخزان ${i} (لتر) <span class="text-danger">*</span></label>
-                                    <input type="number" 
-                                           name="fuel_tanks[${i-1}][capacity]" 
-                                           class="form-control" 
-                                           min="0" 
-                                           max="10000" 
-                                           step="1"
-                                           placeholder="أدخل السعة باللتر">
-                                    <small class="form-text text-muted">يمكن إدخال سعة تصل إلى 10000 لتر</small>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label fw-semibold">موقع الخزان ${i} <span class="text-danger">*</span></label>
-                                    <select name="fuel_tanks[${i-1}][location]" class="form-select">
-                                        <option value="">اختر الموقع</option>
-                                        ${(window.GENERATOR_CONSTANTS.location && window.GENERATOR_CONSTANTS.location.length > 0) 
-                                            ? window.GENERATOR_CONSTANTS.location.map(loc => `<option value="${loc.id}">${loc.label}</option>`).join('')
-                                            : '<option value="ارضي">ارضي</option><option value="علوي">علوي</option><option value="تحت الارض">تحت الارض</option>'
-                                        }
-                                    </select>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label fw-semibold">نظام الفلترة ${i}</label>
-                                    <select name="fuel_tanks[${i-1}][filtration_system_available]" class="form-select">
-                                        <option value="0">غير متوفر</option>
-                                        <option value="1">متوفر</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label fw-semibold">حالة الخزان ${i}</label>
-                                    <input type="text" name="fuel_tanks[${i-1}][condition]" class="form-control">
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label fw-semibold">مادة التصنيع ${i}</label>
-                                    <select name="fuel_tanks[${i-1}][material]" class="form-select">
-                                        <option value="">اختر المادة</option>
-                                        ${(window.GENERATOR_CONSTANTS.material && window.GENERATOR_CONSTANTS.material.length > 0) 
-                                            ? window.GENERATOR_CONSTANTS.material.map(mat => `<option value="${mat.id}">${mat.label}</option>`).join('')
-                                            : '<option value="حديد">حديد</option><option value="بلاستيك">بلاستيك</option><option value="بلاستيك مقوي">بلاستيك مقوي</option><option value="فايبر">فايبر</option>'
-                                        }
-                                    </select>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label fw-semibold">استخدامه ${i}</label>
-                                    <select name="fuel_tanks[${i-1}][usage]" class="form-select">
-                                        <option value="">اختر الاستخدام</option>
-                                        ${(window.GENERATOR_CONSTANTS.usage && window.GENERATOR_CONSTANTS.usage.length > 0) 
-                                            ? window.GENERATOR_CONSTANTS.usage.map(use => `<option value="${use.id}">${use.label}</option>`).join('')
-                                            : '<option value="مركزي">مركزي</option><option value="احتياطي">احتياطي</option>'
-                                        }
-                                    </select>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label fw-semibold">طريقة القياس ${i}</label>
-                                    <select name="fuel_tanks[${i-1}][measurement_method]" class="form-select">
-                                        <option value="">اختر الطريقة</option>
-                                        ${(window.GENERATOR_CONSTANTS.measurement_method && window.GENERATOR_CONSTANTS.measurement_method.length > 0) 
-                                            ? window.GENERATOR_CONSTANTS.measurement_method.map(method => `<option value="${method.id}">${method.label}</option>`).join('')
-                                            : '<option value="سيخ مدرج">سيخ مدرج</option><option value="ساعه ميكانيكية">ساعه ميكانيكية</option><option value="حساس الكتروني">حساس الكتروني</option><option value="خرطوم شفاف">خرطوم شفاف</option>'
-                                        }
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                fuelTanksContainer.insertAdjacentHTML('beforeend', tankHtml);
-            }
-        }
-
-        // تهيئة أولية إذا كانت هناك خزانات موجودة
-        @if($generator->external_fuel_tank && $generator->fuelTanks->count() > 0)
-            renderFuelTanks({{ $generator->fuelTanks->count() }});
-            @foreach($generator->fuelTanks as $index => $tank)
-                document.querySelector(`input[name="fuel_tanks[{{ $index }}][capacity]"]`).value = '{{ $tank->capacity }}';
-                document.querySelector(`select[name="fuel_tanks[{{ $index }}][location]"]`).value = '{{ $tank->location }}';
-                document.querySelector(`select[name="fuel_tanks[{{ $index }}][filtration_system_available]"]`).value = '{{ $tank->filtration_system_available ? 1 : 0 }}';
-                document.querySelector(`input[name="fuel_tanks[{{ $index }}][condition]"]`).value = '{{ $tank->condition ?? '' }}';
-                document.querySelector(`select[name="fuel_tanks[{{ $index }}][material]"]`).value = '{{ $tank->material ?? '' }}';
-                document.querySelector(`select[name="fuel_tanks[{{ $index }}][usage]"]`).value = '{{ $tank->usage ?? '' }}';
-                document.querySelector(`select[name="fuel_tanks[{{ $index }}][measurement_method]"]`).value = '{{ $tank->measurement_method ?? '' }}';
-            @endforeach
-        @elseif(old('external_fuel_tank') == '1' && old('fuel_tanks_count'))
-            renderFuelTanks({{ old('fuel_tanks_count') }});
-        @endif
     });
 </script>
 @endpush

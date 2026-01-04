@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\ConstantDetailController;
 use App\Http\Controllers\Admin\ConstantMasterController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\FuelEfficiencyController;
+use App\Http\Controllers\Admin\GenerationUnitController;
 use App\Http\Controllers\Admin\GeneratorController;
 use App\Http\Controllers\Admin\MaintenanceRecordController;
 use App\Http\Controllers\Admin\MessageController;
@@ -128,7 +129,11 @@ Route::middleware(['auth', 'admin'])->group(function () {
     /**
      * Generators & related modules
      */
+    Route::resource('generation-units', GenerationUnitController::class);
+    Route::get('/operators/{operator}/data', [GenerationUnitController::class, 'getOperatorData'])->name('operators.data');
     Route::resource('generators', GeneratorController::class);
+    Route::get('/operators/{operator}/generation-units', [GeneratorController::class, 'getGenerationUnits'])->name('operators.generation-units');
+    Route::post('/generators/generate-number/{generationUnit}', [GeneratorController::class, 'generateGeneratorNumber'])->name('generators.generate-number');
     Route::resource('operation-logs', OperationLogController::class);
     Route::resource('fuel-efficiencies', FuelEfficiencyController::class);
     Route::resource('maintenance-records', MaintenanceRecordController::class);

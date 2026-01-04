@@ -4,10 +4,11 @@ namespace App;
 
 enum Governorate: int
 {
-    case Gaza = 10;
-    case Middle = 20;
-    case KhanYunis = 30;
-    case Rafah = 40;
+    case NorthGaza = 10;
+    case Gaza = 20;
+    case Middle = 30;
+    case KhanYunis = 40;
+    case Rafah = 50;
 
     /**
      * الحصول على اسم المحافظة بالعربية
@@ -15,6 +16,7 @@ enum Governorate: int
     public function label(): string
     {
         return match ($this) {
+            self::NorthGaza => 'شمال غزة',
             self::Gaza => 'غزة',
             self::Middle => 'الوسطى',
             self::KhanYunis => 'خانيونس',
@@ -28,10 +30,11 @@ enum Governorate: int
     public function code(): string
     {
         return match ($this) {
-            self::Gaza => 'GAZ',
-            self::Middle => 'MID',
-            self::KhanYunis => 'KHU',
-            self::Rafah => 'RAF',
+            self::NorthGaza => 'NG',
+            self::Gaza => 'GZ',
+            self::Middle => 'MD',
+            self::KhanYunis => 'KH',
+            self::Rafah => 'RF',
         };
     }
 

@@ -40,17 +40,38 @@
                     </a>
                 </li>
 
-                {{-- صلاحيات: SuperAdmin + CompanyOwner فقط --}}
-                @if($u->isSuperAdmin() || $u->isCompanyOwner())
+                {{-- صلاحيات: SuperAdmin + CompanyOwner + من لديه الصلاحية --}}
+                @php
+                    $canViewPermissions = $u->isSuperAdmin() || $u->isCompanyOwner() || $u->can('viewAny', \App\Models\Permission::class);
+                    $canViewAuditLogs = $u->isSuperAdmin() || $u->isCompanyOwner() || $u->can('viewAny', \App\Models\PermissionAuditLog::class);
+                @endphp
+                @if($canViewPermissions || $canViewAuditLogs)
                     <li class="slide__category mt-3">
                         <span class="side-menu__label text-muted text-xs opacity-70">الصلاحيات</span>
                     </li>
 
-                    <li class="slide {{ $isActive('admin.permissions.*') }}">
-                        <a href="{{ route('admin.permissions.index') }}" class="side-menu__item">
+                    <li class="slide has-sub {{ $isOpen('admin.permissions.*') || $isOpen('admin.permission-audit-logs.*') ? 'open' : '' }}">
+                        <a href="javascript:void(0);" class="side-menu__item {{ $isActive('admin.permissions.*') || $isActive('admin.permission-audit-logs.*') ? 'active' : '' }}">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="side-menu__angle" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
                             <svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" width="24" height="24" viewBox="0 0 24 24"><path d="M12 2L4 5v6.09c0 5.05 3.41 9.76 8 10.91 4.59-1.15 8-5.86 8-10.91V5l-8-3zm6 9.09c0 4-2.55 7.7-6 8.83-3.45-1.13-6-4.83-6-8.83V6.31l6-2.12 6 2.12v4.78z"/></svg>
-                            <span class="side-menu__label">شجرة الصلاحيات</span>
+                            <span class="side-menu__label">الصلاحيات</span>
                         </a>
+                        <ul class="slide-menu child1" style="{{ ($show('admin.permissions.*') || $show('admin.permission-audit-logs.*')) ? 'display:block' : '' }}">
+                            @if($canViewPermissions)
+                                <li class="slide">
+                                    <a href="{{ route('admin.permissions.index') }}" class="side-menu__item {{ $isActive('admin.permissions.index') }}">
+                                        شجرة الصلاحيات
+                                    </a>
+                                </li>
+                            @endif
+                            @if($canViewAuditLogs)
+                                <li class="slide">
+                                    <a href="{{ route('admin.permission-audit-logs.index') }}" class="side-menu__item {{ $isActive('admin.permission-audit-logs.*') }}">
+                                        سجل التغييرات
+                                    </a>
+                                </li>
+                            @endif
+                        </ul>
                     </li>
                     
                     @if($u->isCompanyOwner())
@@ -140,13 +161,20 @@
                             </span>
                         </a>
 
-                        <ul class="slide-menu child1" style="{{ ($show('admin.operators.*') || $show('admin.users.*') || $show('admin.operators.tariff-prices.*')) ? 'display:block' : '' }}">
+                        <ul class="slide-menu child1" style="{{ ($show('admin.operators.*') || $show('admin.users.*') || $show('admin.operators.tariff-prices.*') || $show('admin.generation-units.*')) ? 'display:block' : '' }}">
                             @if($u->isCompanyOwner())
                                 <li class="slide">
                                     <a href="{{ route('admin.operators.profile') }}" class="side-menu__item {{ $isActive('admin.operators.profile') }}">
                                         ملف المشغل
                                     </a>
                                 </li>
+                                @can('viewAny', App\Models\GenerationUnit::class)
+                                    <li class="slide">
+                                        <a href="{{ route('admin.generation-units.index') }}" class="side-menu__item {{ $isActive('admin.generation-units.*') }}">
+                                            وحدات التوليد
+                                        </a>
+                                    </li>
+                                @endcan
                                 <li class="slide">
                                     <a href="{{ route('admin.users.index') }}" class="side-menu__item {{ $isActive('admin.users.index') }}">
                                         الموظفون

@@ -20068,8 +20068,8 @@ code[class*=language-] {
 }
 
 .app-sidebar .main-sidebar-header .header-logo img {
-    height: 2.5rem;
-    line-height: 2rem
+    height: 4.0rem;
+    line-height: 2rem;
 }
 
 .app-sidebar .main-sidebar-header .header-logo .desktop-logo {
@@ -20198,11 +20198,11 @@ code[class*=language-] {
 
 .app-sidebar .side-menu__label {
     white-space: nowrap;
-    color: var(--menu-prime-color);
+    color: #000000;
     position: relative;
-    font-size: .875rem;
+    font-size: .975rem;
     line-height: 1;
-    vertical-align: middle
+    vertical-align: middle;
 }
 
 .app-sidebar .side-menu__icon {

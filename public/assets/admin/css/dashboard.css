@@ -8,7 +8,7 @@
 
 /* Welcome Card */
 .dashboard-welcome-card {
-    background: linear-gradient(135deg, rgba(var(--primary-rgb), 1) 0%, rgba(var(--primary-rgb), 0.85) 100%);
+    background: linear-gradient(135deg, rgb(121 122 137) 0%, rgb(73 76 104 / 85%) 100%);
     border-radius: 14px;
     padding: 2rem;
     color: white;

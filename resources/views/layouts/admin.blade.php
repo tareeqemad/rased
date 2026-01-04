@@ -3,9 +3,12 @@
     $favicon = \App\Models\Setting::get('site_favicon', 'assets/admin/images/brand-logos/favicon.ico');
     $primaryColor = \App\Models\Setting::get('primary_color', '#19228f');
     $darkColor = \App\Models\Setting::get('dark_color', '#3b4863');
+    $headerColor = \App\Models\Setting::get('header_color', '#19228f');
+    $menuColor = \App\Models\Setting::get('menu_color', '#F7F7F7');
     // استخدام localStorage إذا كان موجوداً، وإلا استخدام الإعدادات
     // سيتم تطبيق القيمة من localStorage عبر JavaScript
-    $menuStyles = \App\Models\Setting::get('menu_styles', 'color');
+    $menuStyles = \App\Models\Setting::get('menu_styles', 'light');
+    $headerStyles = \App\Models\Setting::get('header_styles', 'light');
     
     // Convert hex to RGB (format: --primary-rgb: 25, 34, 143;)
     $hex = ltrim($primaryColor, '#');
@@ -38,9 +41,24 @@
         // Default fallback: #3b4863 -> 59, 72, 99
         $darkRgb = "59, 72, 99";
     }
+    
+    // Convert header color hex to RGB (format: --header-rgb: 25, 34, 143;)
+    $headerHex = ltrim($headerColor, '#');
+    if (strlen($headerHex) === 3) {
+        $headerHex = $headerHex[0] . $headerHex[0] . $headerHex[1] . $headerHex[1] . $headerHex[2] . $headerHex[2];
+    }
+    if (strlen($headerHex) === 6 && ctype_xdigit($headerHex)) {
+        $hr = hexdec(substr($headerHex, 0, 2));
+        $hg = hexdec(substr($headerHex, 2, 2));
+        $hb = hexdec(substr($headerHex, 4, 2));
+        $headerRgb = "{$hr}, {$hg}, {$hb}";
+    } else {
+        // Default fallback: #19228f -> 25, 34, 143
+        $headerRgb = "25, 34, 143";
+    }
 @endphp
 <!DOCTYPE html>
-<html lang="ar" dir="rtl" data-nav-layout="vertical" data-theme-mode="light" data-header-styles="color" data-menu-styles="{{ $menuStyles }}" data-toggled="close">
+<html lang="ar" dir="rtl" data-nav-layout="vertical" data-theme-mode="light" data-header-styles="{{ $headerStyles }}" data-menu-styles="{{ $menuStyles }}" data-toggled="close">
 <head>
     <!-- Meta Data -->
     <meta charset="UTF-8">
@@ -65,37 +83,139 @@
     <!-- Style Css -->
     <link href="{{ asset('assets/admin/css/styles.min.css') }}" rel="stylesheet">
     
-    <!-- Dynamic Primary Color & Dark Color (must be after styles.min.css to override) -->
+    <!-- Dynamic Primary Color & Dark Color & Header Color (must be after styles.min.css to override) -->
     <style>
         :root {
             --primary-rgb: {{ $primaryRgb }};
             --dark-rgb: {{ $darkRgb }};
+            --header-rgb: {{ $headerRgb }};
         }
         [data-menu-styles=dark] {
             --menu-bg: {{ str_starts_with($darkColor, '#') ? $darkColor : '#' . $darkColor }};
+        }
+        [data-menu-styles=light] {
+            --menu-bg: {{ str_starts_with($menuColor, '#') ? $menuColor : '#' . $menuColor }};
+        }
+        /* Header background color for dark and color styles */
+        [data-header-styles=dark] .app-header,
+        [data-header-styles=color] .app-header {
+            background-color: {{ str_starts_with($headerColor, '#') ? $headerColor : '#' . $headerColor }} !important;
+        }
+        
+        /* Fallback: apply header color if header_styles is dark or color from settings */
+        @if($headerStyles === 'dark' || $headerStyles === 'color')
+        html:not([data-header-styles="light"]) .app-header {
+            background-color: {{ str_starts_with($headerColor, '#') ? $headerColor : '#' . $headerColor }} !important;
+        }
+        @endif
+        
+        /* Apply header color to search input and button in header */
+        @if($headerStyles === 'dark' || $headerStyles === 'color')
+        [data-header-styles=dark] .header-content-left .form-control,
+        [data-header-styles=color] .header-content-left .form-control {
+            background-color: {{ str_starts_with($headerColor, '#') ? $headerColor : '#' . $headerColor }} !important;
+            border-color: rgba(255, 255, 255, 0.2) !important;
+            color: #fff !important;
+        }
+        
+        [data-header-styles=dark] .header-content-left .form-control::placeholder,
+        [data-header-styles=color] .header-content-left .form-control::placeholder {
+            color: rgba(255, 255, 255, 0.7) !important;
+        }
+        
+        [data-header-styles=dark] .header-content-left .form-control:focus,
+        [data-header-styles=color] .header-content-left .form-control:focus {
+            background-color: {{ str_starts_with($headerColor, '#') ? $headerColor : '#' . $headerColor }} !important;
+            border-color: rgba(255, 255, 255, 0.3) !important;
+            color: #fff !important;
+        }
+        
+        [data-header-styles=dark] .header-content-left .btn,
+        [data-header-styles=color] .header-content-left .btn {
+            background-color: {{ str_starts_with($headerColor, '#') ? $headerColor : '#' . $headerColor }} !important;
+            border-color: rgba(255, 255, 255, 0.2) !important;
+            color: #fff !important;
+        }
+        
+        [data-header-styles=dark] .header-content-left .btn:hover,
+        [data-header-styles=color] .header-content-left .btn:hover {
+            background-color: {{ str_starts_with($headerColor, '#') ? $headerColor : '#' . $headerColor }} !important;
+            border-color: rgba(255, 255, 255, 0.3) !important;
+            color: #fff !important;
+            opacity: 0.9;
+        }
+        @endif
+        
+        /* Dark Mode: جعل كل شيء أسود */
+        [data-theme-mode=dark] .app-header {
+            background-color: #000000 !important;
+        }
+        
+        [data-theme-mode=dark] .app-sidebar {
+            background-color: #000000 !important;
+        }
+        
+        [data-theme-mode=dark] .header-link,
+        [data-theme-mode=dark] .header-link-icon {
+            color: #ffffff !important;
+        }
+        
+        [data-theme-mode=dark] .layout-setting,
+        [data-theme-mode=dark] .layout-setting * {
+            color: #ffffff !important;
+        }
+        
+        [data-theme-mode=dark] .layout-setting .dark-layout,
+        [data-theme-mode=dark] .layout-setting .light-layout {
+            color: #ffffff !important;
         }
     </style>
     
     <!-- Apply theme mode and menu styles from localStorage on page load (before main.js) -->
     <script>
         (function() {
+            const serverHeaderStyles = "{{ $headerStyles }}";
+            const serverMenuStyles = "{{ $menuStyles }}";
+            
             // Apply theme mode from localStorage
             if (localStorage.getItem("nowadarktheme")) {
                 document.documentElement.setAttribute("data-theme-mode", "dark");
-                document.documentElement.setAttribute("data-header-styles", "dark");
+                
+                // Apply header styles: if dark mode is active, use saved header style or default to dark
+                // But respect user's settings if they chose dark or color
+                const savedHeaderStyle = localStorage.getItem("nowaHeader");
+                if (savedHeaderStyle) {
+                    document.documentElement.setAttribute("data-header-styles", savedHeaderStyle);
+                } else if (serverHeaderStyles === "dark" || serverHeaderStyles === "color") {
+                    // Respect server settings if they're dark or color
+                    document.documentElement.setAttribute("data-header-styles", serverHeaderStyles);
+                } else {
+                    // Default to dark when dark mode is active
+                    document.documentElement.setAttribute("data-header-styles", "dark");
+                }
             } else {
                 document.documentElement.setAttribute("data-theme-mode", "light");
-                document.documentElement.setAttribute("data-header-styles", "color");
+                
+                // Apply header styles from localStorage or server value
+                const savedHeaderStyle = localStorage.getItem("nowaHeader");
+                if (savedHeaderStyle) {
+                    document.documentElement.setAttribute("data-header-styles", savedHeaderStyle);
+                } else {
+                    // Use server value if no localStorage value
+                    document.documentElement.setAttribute("data-header-styles", serverHeaderStyles);
+                }
             }
             
-            // Apply menu styles from localStorage (if exists), otherwise use server value
+            // Apply menu styles: prioritize server value from database
+            // Only use localStorage if it was set manually (not from settings page)
+            // When settings are saved, localStorage is cleared, so server value is used
             const savedMenuStyle = localStorage.getItem("nowaMenu");
-            if (savedMenuStyle) {
-                document.documentElement.setAttribute("data-menu-styles", savedMenuStyle);
-            } else {
-                // Use server value if no localStorage value
-                document.documentElement.setAttribute("data-menu-styles", "{{ $menuStyles }}");
-            }
+            // Always use server value to respect database settings
+            document.documentElement.setAttribute("data-menu-styles", serverMenuStyles);
+            
+            // If localStorage exists and is different, it means user changed it manually in this session
+            // In that case, we can optionally keep it, but for consistency, we'll use server value
+            // and let the settings page update localStorage when user changes it
         })();
     </script>
 

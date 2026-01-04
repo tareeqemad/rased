@@ -31,13 +31,13 @@ class OperatorController extends Controller
 
         $authUser = $request->user();
 
-        $q = trim((string) $request->get('q', ''));
+        $name = trim((string) $request->get('name', ''));
         $status = trim((string) $request->get('status', ''));
 
         $operatorsQuery = Operator::query()
             ->with('owner')
             ->withCount([
-                'generators',
+                'generationUnits',
                 'users as employees_count' => function ($q) {
                     // غالبًا جدول pivot operator_user فيه فقط موظفين/فنيين
                     // ومع ذلك نخليه فلترة احتياطية حسب enum القديم
@@ -53,18 +53,17 @@ class OperatorController extends Controller
             $operatorsQuery->whereIn('id', $operatorIds);
         }
 
-        // Search
-        if ($q !== '') {
-            $operatorsQuery->where(function ($sub) use ($q) {
-                $sub->where('name', 'like', "%{$q}%")
-                    ->orWhere('unit_name', 'like', "%{$q}%")
-                    ->orWhere('unit_number', 'like', "%{$q}%")
-                    ->orWhere('email', 'like', "%{$q}%")
-                    ->orWhere('phone', 'like', "%{$q}%")
-                    ->orWhereHas('owner', function ($oq) use ($q) {
-                        $oq->where('name', 'like', "%{$q}%")
-                           ->orWhere('username', 'like', "%{$q}%")
-                           ->orWhere('email', 'like', "%{$q}%");
+        // Search by name
+        if ($name !== '') {
+            $operatorsQuery->where(function ($sub) use ($name) {
+                $sub->where('name', 'like', "%{$name}%")
+                    ->orWhere('unit_name', 'like', "%{$name}%")
+                    ->orWhere('email', 'like', "%{$name}%")
+                    ->orWhere('phone', 'like', "%{$name}%")
+                    ->orWhereHas('owner', function ($oq) use ($name) {
+                        $oq->where('name', 'like', "%{$name}%")
+                           ->orWhere('username', 'like', "%{$name}%")
+                           ->orWhere('email', 'like', "%{$name}%");
                     });
             });
         }
@@ -94,7 +93,6 @@ class OperatorController extends Controller
 
         return view('admin.operators.index', [
             'operators' => $operators,
-            'q' => $q,
             'status' => $status,
             'myOperator' => $myOperator,
         ]);
@@ -240,8 +238,8 @@ class OperatorController extends Controller
 
         $operator->load([
             'owner',
-            'generators' => function ($q) {
-                $q->latest()->take(10);
+            'generationUnits.generators' => function ($q) {
+                $q->latest()->take(5);
             },
             'users',
             'operationLogs' => function ($q) {
@@ -250,6 +248,7 @@ class OperatorController extends Controller
         ]);
 
         $operator->loadCount([
+            'generationUnits',
             'generators',
             'users',
             'operationLogs',

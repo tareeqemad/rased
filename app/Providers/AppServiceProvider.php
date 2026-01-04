@@ -4,17 +4,21 @@ namespace App\Providers;
 
 use App\Models\ComplianceSafety;
 use App\Models\FuelEfficiency;
+use App\Models\GenerationUnit;
 use App\Models\Generator;
 use App\Models\MaintenanceRecord;
 use App\Models\OperationLog;
 use App\Models\Operator;
+use App\Models\PermissionAuditLog;
 use App\Models\User;
 use App\Policies\ComplianceSafetyPolicy;
 use App\Policies\FuelEfficiencyPolicy;
+use App\Policies\GenerationUnitPolicy;
 use App\Policies\GeneratorPolicy;
 use App\Policies\MaintenanceRecordPolicy;
 use App\Policies\OperationLogPolicy;
 use App\Policies\OperatorPolicy;
+use App\Policies\PermissionAuditLogPolicy;
 use App\Policies\UserPolicy;
 use Carbon\Carbon;
 use Illuminate\Pagination\Paginator;
@@ -31,6 +35,7 @@ class AppServiceProvider extends ServiceProvider
     protected $policies = [
         Operator::class => OperatorPolicy::class,
         Generator::class => GeneratorPolicy::class,
+        GenerationUnit::class => GenerationUnitPolicy::class,
         User::class => UserPolicy::class,
         OperationLog::class => OperationLogPolicy::class,
         FuelEfficiency::class => FuelEfficiencyPolicy::class,
@@ -38,6 +43,7 @@ class AppServiceProvider extends ServiceProvider
         ComplianceSafety::class => ComplianceSafetyPolicy::class,
         \App\Models\AuditLog::class => \App\Policies\AuditLogPolicy::class,
         \App\Models\Message::class => \App\Policies\MessagePolicy::class,
+        PermissionAuditLog::class => PermissionAuditLogPolicy::class,
     ];
 
     /**
