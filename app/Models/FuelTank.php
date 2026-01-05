@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\ConstantDetail;
 
 class FuelTank extends Model
 {
@@ -14,12 +15,12 @@ class FuelTank extends Model
         'generation_unit_id',
         'tank_code',
         'capacity',
-        'location',
+        'location_id', // ID من constant_details - ثابت Master رقم 21 (موقع الخزان)
         'filtration_system_available',
         'condition',
-        'material',
-        'usage',
-        'measurement_method',
+        'material_id', // ID من constant_details - ثابت Master رقم 10 (مادة التصنيع)
+        'usage_id', // ID من constant_details - ثابت Master رقم 11 (الاستخدام)
+        'measurement_method_id', // ID من constant_details - ثابت Master رقم 19 (طريقة القياس)
         'order',
     ];
 
@@ -33,6 +34,30 @@ class FuelTank extends Model
     public function generationUnit(): BelongsTo
     {
         return $this->belongsTo(GenerationUnit::class);
+    }
+
+    // Relationships للثوابت - ثابت Master رقم 21 (موقع الخزان)
+    public function locationDetail(): BelongsTo
+    {
+        return $this->belongsTo(ConstantDetail::class, 'location_id');
+    }
+
+    // Relationships للثوابت - ثابت Master رقم 10 (مادة التصنيع)
+    public function materialDetail(): BelongsTo
+    {
+        return $this->belongsTo(ConstantDetail::class, 'material_id');
+    }
+
+    // Relationships للثوابت - ثابت Master رقم 11 (الاستخدام)
+    public function usageDetail(): BelongsTo
+    {
+        return $this->belongsTo(ConstantDetail::class, 'usage_id');
+    }
+
+    // Relationships للثوابت - ثابت Master رقم 19 (طريقة القياس)
+    public function measurementMethodDetail(): BelongsTo
+    {
+        return $this->belongsTo(ConstantDetail::class, 'measurement_method_id');
     }
 
     /**

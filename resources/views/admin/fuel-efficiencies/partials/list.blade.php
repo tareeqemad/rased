@@ -34,7 +34,7 @@
                         </td>
                         <td>
                             @if($efficiency->fuel_efficiency_percentage)
-                                <span class="badge bg-{{ $efficiency->fuel_efficiency_comparison === 'within_standard' ? 'success' : ($efficiency->fuel_efficiency_comparison === 'above' ? 'warning' : 'danger') }}">
+                                <span class="badge bg-{{ $efficiency->fuelEfficiencyComparisonDetail?->getBadgeColor() ?? 'secondary' }}">
                                     {{ $efficiency->fuel_efficiency_percentage }}%
                                 </span>
                             @else
@@ -43,7 +43,7 @@
                         </td>
                         <td>
                             @if($efficiency->energy_distribution_efficiency)
-                                <span class="badge bg-{{ $efficiency->energy_efficiency_comparison === 'within_standard' ? 'success' : ($efficiency->energy_efficiency_comparison === 'above' ? 'warning' : 'danger') }}">
+                                <span class="badge bg-{{ $efficiency->energyEfficiencyComparisonDetail?->getBadgeColor() ?? 'secondary' }}">
                                     {{ $efficiency->energy_distribution_efficiency }}%
                                 </span>
                             @else

@@ -19,6 +19,8 @@ return new class extends Migration
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
             $table->string('role')->default('employee');
+            $table->string('status')->default('active');
+            // role_id سيتم إضافته بعد إنشاء جدول roles
             $table->rememberToken();
             $table->timestamps();
             $table->softDeletes();

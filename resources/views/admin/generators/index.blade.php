@@ -86,8 +86,16 @@
                                         </label>
                                         <select id="statusFilter" class="form-select">
                                             <option value="">الكل</option>
-                                            <option value="active" {{ request('status') == 'active' ? 'selected' : '' }}>فعال</option>
-                                            <option value="inactive" {{ request('status') == 'inactive' ? 'selected' : '' }}>غير فعال</option>
+                                            @php
+                                                $activeStatus = ($statusConstants ?? collect())->firstWhere('code', 'ACTIVE');
+                                                $inactiveStatus = ($statusConstants ?? collect())->firstWhere('code', 'INACTIVE');
+                                            @endphp
+                                            @if($activeStatus)
+                                                <option value="{{ $activeStatus->id }}" {{ request('status_id') == $activeStatus->id ? 'selected' : '' }}>{{ $activeStatus->label }}</option>
+                                            @endif
+                                            @if($inactiveStatus)
+                                                <option value="{{ $inactiveStatus->id }}" {{ request('status_id') == $inactiveStatus->id ? 'selected' : '' }}>{{ $inactiveStatus->label }}</option>
+                                            @endif
                                         </select>
                                     </div>
 
@@ -97,7 +105,7 @@
                                                 <i class="bi bi-search"></i>
                                             </button>
                                             <button
-                                                class="btn btn-outline-secondary {{ request('q') || request('operator_id') || request('status') ? '' : 'd-none' }}"
+                                                class="btn btn-outline-secondary {{ request('q') || request('operator_id') || request('status_id') ? '' : 'd-none' }}"
                                                 type="button"
                                                 id="clearSearchBtn"
                                                 title="تفريغ"

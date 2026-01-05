@@ -108,17 +108,17 @@
                                         <label class="form-label fw-semibold">اسم وحدة التوليد <span class="text-danger">*</span></label>
                                         <input type="text" name="name" id="name" class="form-control @error('name') is-invalid @enderror"
                                                value="{{ old('name') }}"
-                                               placeholder="مثال: وحدة التوليد الرئيسية">
+                                               placeholder="مثال: وحدة التوليد الرئيسية" required>
                                         <div class="form-text">الاسم الرسمي لوحدة التوليد</div>
                                         @error('name')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
                                     <div class="col-md-6">
-                                        <label class="form-label fw-semibold">عدد المولدات المطلوبة <span class="text-danger">*</span></label>
+                                        <label class="form-label fw-semibold">عدد المولدات المطلوبة</label>
                                         <input type="number" name="generators_count" id="generators_count" class="form-control @error('generators_count') is-invalid @enderror"
-                                               value="{{ old('generators_count', 1) }}" min="1" max="99" required>
-                                        <div class="form-text">عدد المولدات التي يجب أن تكون في هذه الوحدة</div>
+                                               value="{{ old('generators_count', 1) }}" min="1" max="99">
+                                        <div class="form-text">عدد المولدات التي يجب أن تكون في هذه الوحدة (يمكن تحديده لاحقاً)</div>
                                         @error('generators_count')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
@@ -128,6 +128,10 @@
                                             <i class="bi bi-info-circle me-2"></i>
                                             <strong>ملاحظة:</strong> رقم الوحدة وكود الوحدة يتم توليدهما تلقائياً بناءً على المحافظة والمدينة.
                                         </div>
+                                        <div class="alert alert-warning">
+                                            <i class="bi bi-exclamation-triangle me-2"></i>
+                                            <strong>يمكنك إدخال الحد الأدنى من البيانات الآن:</strong> اسم الوحدة، المحافظة، المدينة، العنوان التفصيلي، والإحداثيات. باقي البيانات يمكن ملؤها لاحقاً عند التعديل.
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -136,9 +140,10 @@
                             <div class="tab-pane fade" id="tab-owner" role="tabpanel">
                                 <div class="row g-3">
                                     <div class="col-md-6">
-                                        <label class="form-label fw-semibold">اسم المالك <span class="text-danger">*</span></label>
+                                        <label class="form-label fw-semibold">اسم المالك</label>
                                         <input type="text" name="owner_name" class="form-control @error('owner_name') is-invalid @enderror"
-                                               value="{{ old('owner_name') }}" required>
+                                               value="{{ old('owner_name') }}">
+                                        <div class="form-text">يمكن ملؤه لاحقاً</div>
                                         @error('owner_name')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
@@ -154,21 +159,26 @@
                                     </div>
 
                                     <div class="col-md-6">
-                                        <label class="form-label fw-semibold">جهة التشغيل <span class="text-danger">*</span></label>
-                                        <select name="operation_entity" id="operation_entity" class="form-select @error('operation_entity') is-invalid @enderror" required>
+                                        <label class="form-label fw-semibold">جهة التشغيل</label>
+                                        <select name="operation_entity_id" id="operation_entity_id" class="form-select @error('operation_entity_id') is-invalid @enderror">
                                             <option value="">اختر</option>
-                                            <option value="same_owner" {{ old('operation_entity') === 'same_owner' ? 'selected' : '' }}>نفس المالك</option>
-                                            <option value="other_party" {{ old('operation_entity') === 'other_party' ? 'selected' : '' }}>طرف آخر</option>
+                                            @foreach($constants['operation_entity'] as $entity)
+                                                <option value="{{ $entity->id }}" data-code="{{ $entity->code }}" {{ old('operation_entity_id') == $entity->id ? 'selected' : '' }}>
+                                                    {{ $entity->label }}
+                                                </option>
+                                            @endforeach
                                         </select>
-                                        @error('operation_entity')
+                                        <div class="form-text">يمكن ملؤه لاحقاً</div>
+                                        @error('operation_entity_id')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
 
                                     <div class="col-md-6">
-                                        <label class="form-label fw-semibold">رقم هوية المشغل <span class="text-danger">*</span></label>
+                                        <label class="form-label fw-semibold">رقم هوية المشغل</label>
                                         <input type="text" name="operator_id_number" class="form-control @error('operator_id_number') is-invalid @enderror"
-                                               value="{{ old('operator_id_number') }}" required>
+                                               value="{{ old('operator_id_number') }}">
+                                        <div class="form-text">يمكن ملؤه لاحقاً</div>
                                         @error('operator_id_number')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
@@ -208,12 +218,12 @@
                                 <div class="row g-3">
                                     <div class="col-md-6">
                                         <label class="form-label fw-semibold">المحافظة <span class="text-danger">*</span></label>
-                                        <select name="governorate" id="governorate" class="form-select @error('governorate') is-invalid @enderror" required>
+                                        <select name="governorate_id" id="governorate" class="form-select @error('governorate_id') is-invalid @enderror" required>
                                             <option value="">اختر</option>
                                             @forelse($governorates as $gov)
-                                                <option value="{{ $gov->code }}"
-                                                    data-governorate-id="{{ $gov->id }}"
-                                                    {{ old('governorate', $selectedGovernorateCode) == $gov->code ? 'selected' : '' }}>
+                                                <option value="{{ $gov->id }}"
+                                                    data-governorate-code="{{ $gov->code }}"
+                                                    {{ old('governorate_id', $selectedGovernorateId) == $gov->id ? 'selected' : '' }}>
                                                     {{ $gov->label }} ({{ $gov->code }})
                                                 </option>
                                             @empty
@@ -223,7 +233,7 @@
                                         @if($governorates->isEmpty())
                                             <div class="form-text text-danger">تحذير: لا توجد محافظات في الثوابت. يرجى تشغيل ConstantSeeder.</div>
                                         @endif
-                                        @error('governorate')
+                                        @error('governorate_id')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
@@ -293,11 +303,15 @@
 
                                     <div class="col-md-6">
                                         <label class="form-label fw-semibold">مزامنة المولدات</label>
-                                        <select name="synchronization_available" class="form-select @error('synchronization_available') is-invalid @enderror">
-                                            <option value="0" {{ old('synchronization_available', '0') == '0' ? 'selected':'' }}>غير متوفرة</option>
-                                            <option value="1" {{ old('synchronization_available') == '1' ? 'selected':'' }}>متوفرة</option>
+                                        <select name="synchronization_available_id" class="form-select @error('synchronization_available_id') is-invalid @enderror">
+                                            <option value="">اختر</option>
+                                            @foreach($constants['synchronization_available'] as $sync)
+                                                <option value="{{ $sync->id }}" {{ old('synchronization_available_id') == $sync->id ? 'selected' : '' }}>
+                                                    {{ $sync->label }}
+                                                </option>
+                                            @endforeach
                                         </select>
-                                        @error('synchronization_available')
+                                        @error('synchronization_available_id')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
@@ -327,14 +341,15 @@
 
                                     <div class="col-md-6">
                                         <label class="form-label fw-semibold">الامتثال البيئي</label>
-                                        <select name="environmental_compliance_status" class="form-select @error('environmental_compliance_status') is-invalid @enderror">
+                                        <select name="environmental_compliance_status_id" class="form-select @error('environmental_compliance_status_id') is-invalid @enderror">
                                             <option value="">اختر</option>
-                                            <option value="compliant" {{ old('environmental_compliance_status') === 'compliant' ? 'selected':'' }}>ملتزم</option>
-                                            <option value="under_monitoring" {{ old('environmental_compliance_status') === 'under_monitoring' ? 'selected':'' }}>تحت المراقبة</option>
-                                            <option value="under_evaluation" {{ old('environmental_compliance_status') === 'under_evaluation' ? 'selected':'' }}>تحت التقييم</option>
-                                            <option value="non_compliant" {{ old('environmental_compliance_status') === 'non_compliant' ? 'selected':'' }}>غير ملتزم</option>
+                                            @foreach($constants['environmental_compliance_status'] as $compliance)
+                                                <option value="{{ $compliance->id }}" {{ old('environmental_compliance_status_id') == $compliance->id ? 'selected' : '' }}>
+                                                    {{ $compliance->label }}
+                                                </option>
+                                            @endforeach
                                         </select>
-                                        @error('environmental_compliance_status')
+                                        @error('environmental_compliance_status_id')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
@@ -354,11 +369,15 @@
                                 <div class="row g-3">
                                     <div class="col-md-6">
                                         <label class="form-label fw-semibold">حالة الوحدة <span class="text-danger">*</span></label>
-                                        <select name="status" class="form-select @error('status') is-invalid @enderror" required>
-                                            <option value="active" {{ old('status', 'active') === 'active' ? 'selected':'' }}>فعّالة</option>
-                                            <option value="inactive" {{ old('status') === 'inactive' ? 'selected':'' }}>غير فعّالة</option>
+                                        <select name="status_id" class="form-select @error('status_id') is-invalid @enderror" required>
+                                            <option value="">اختر</option>
+                                            @foreach($constants['status'] as $status)
+                                                <option value="{{ $status->id }}" {{ old('status_id', $constants['status']->firstWhere('code', 'ACTIVE')?->id) == $status->id ? 'selected' : '' }}>
+                                                    {{ $status->label }}
+                                                </option>
+                                            @endforeach
                                         </select>
-                                        @error('status')
+                                        @error('status_id')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
@@ -390,8 +409,6 @@
                                                             <option value="{{ $i }}" {{ old('fuel_tanks_count') == $i ? 'selected' : '' }}>{{ $i }}</option>
                                                         @endfor
                                                     </select>
-                                                    @error('fuel_tanks_count')
-                                                        <div class="invalid-feedback">{{ $message }}</div>
                                                     @error('fuel_tanks_count')
                                                         <div class="invalid-feedback">{{ $message }}</div>
                                                     @enderror
@@ -533,7 +550,7 @@
     }
 
     // ====== جلب بيانات المشغل تلقائياً عند اختيار "نفس المالك" ======
-    const operationEntitySelect = document.getElementById('operation_entity');
+    const operationEntitySelect = document.getElementById('operation_entity_id');
     const operatorIdSelect = document.getElementById('operator_id');
     const ownerNameInput = form.querySelector('input[name="owner_name"]');
     const ownerIdNumberInput = form.querySelector('input[name="owner_id_number"]');
@@ -562,59 +579,99 @@
     }
 
     operationEntitySelect?.addEventListener('change', function() {
-        const value = this.value;
-        const isSameOwner = value === 'same_owner';
+        const selectedOption = this.options[this.selectedIndex];
+        const code = selectedOption ? selectedOption.getAttribute('data-code') : '';
+        const isSameOwner = code === 'SAME_OWNER';
 
-        // إذا كان "نفس المالك" وكان هناك مشغل محدد، جلب البيانات
         if (isSameOwner) {
+            // إذا كان "نفس المالك" وكان هناك مشغل محدد، جلب البيانات
             const operatorId = operatorIdSelect ? operatorIdSelect.value : 
                               (form.querySelector('input[name="operator_id"]') ? form.querySelector('input[name="operator_id"]').value : null);
             if (operatorId) {
                 loadOperatorData(operatorId);
             }
-        }
 
-        // تفعيل/تعطيل الحقول
-        if (ownerNameInput) {
-            ownerNameInput.readOnly = isSameOwner;
-            ownerNameInput.style.backgroundColor = isSameOwner ? '#f8f9fa' : '';
-        }
-        if (ownerIdNumberInput) {
-            ownerIdNumberInput.readOnly = isSameOwner;
-            ownerIdNumberInput.style.backgroundColor = isSameOwner ? '#f8f9fa' : '';
-        }
-        if (operatorIdNumberInput) {
-            operatorIdNumberInput.readOnly = isSameOwner;
-            operatorIdNumberInput.style.backgroundColor = isSameOwner ? '#f8f9fa' : '';
+            // تعطيل الحقول وجعلها للقراءة فقط
+            if (ownerNameInput) {
+                ownerNameInput.readOnly = true;
+                ownerNameInput.style.backgroundColor = '#f8f9fa';
+            }
+            if (ownerIdNumberInput) {
+                ownerIdNumberInput.readOnly = true;
+                ownerIdNumberInput.style.backgroundColor = '#f8f9fa';
+            }
+            if (operatorIdNumberInput) {
+                operatorIdNumberInput.readOnly = true;
+                operatorIdNumberInput.style.backgroundColor = '#f8f9fa';
+            }
+        } else {
+            // إذا كان "طرف آخر"، مسح الحقول وتمكينها للإدخال
+            if (ownerNameInput) {
+                ownerNameInput.value = '';
+                ownerNameInput.readOnly = false;
+                ownerNameInput.style.backgroundColor = '';
+            }
+            if (ownerIdNumberInput) {
+                ownerIdNumberInput.value = '';
+                ownerIdNumberInput.readOnly = false;
+                ownerIdNumberInput.style.backgroundColor = '';
+            }
+            if (operatorIdNumberInput) {
+                operatorIdNumberInput.value = '';
+                operatorIdNumberInput.readOnly = false;
+                operatorIdNumberInput.style.backgroundColor = '';
+            }
         }
     });
 
     // عند تغيير المشغل (للسوبر أدمن فقط)
     operatorIdSelect?.addEventListener('change', function() {
-        if (operationEntitySelect && operationEntitySelect.value === 'same_owner') {
-            loadOperatorData(this.value);
+        if (operationEntitySelect) {
+            const selectedOption = operationEntitySelect.options[operationEntitySelect.selectedIndex];
+            const code = selectedOption ? selectedOption.getAttribute('data-code') : '';
+            if (code === 'SAME_OWNER') {
+                loadOperatorData(this.value);
+            }
         }
     });
 
     // عند تحميل الصفحة، إذا كان "نفس المالك" محدد مسبقاً
     document.addEventListener('DOMContentLoaded', function() {
-        if (operationEntitySelect && operationEntitySelect.value === 'same_owner') {
-            const operatorId = operatorIdSelect ? operatorIdSelect.value : 
-                              (form.querySelector('input[name="operator_id"]') ? form.querySelector('input[name="operator_id"]').value : null);
-            if (operatorId) {
-                loadOperatorData(operatorId);
-                // تفعيل/تعطيل الحقول
+        if (operationEntitySelect) {
+            const selectedOption = operationEntitySelect.options[operationEntitySelect.selectedIndex];
+            const code = selectedOption ? selectedOption.getAttribute('data-code') : '';
+            if (code === 'SAME_OWNER') {
+                const operatorId = operatorIdSelect ? operatorIdSelect.value : 
+                                  (form.querySelector('input[name="operator_id"]') ? form.querySelector('input[name="operator_id"]').value : null);
+                if (operatorId) {
+                    loadOperatorData(operatorId);
+                    // تعطيل الحقول
+                    if (ownerNameInput) {
+                        ownerNameInput.readOnly = true;
+                        ownerNameInput.style.backgroundColor = '#f8f9fa';
+                    }
+                    if (ownerIdNumberInput) {
+                        ownerIdNumberInput.readOnly = true;
+                        ownerIdNumberInput.style.backgroundColor = '#f8f9fa';
+                    }
+                    if (operatorIdNumberInput) {
+                        operatorIdNumberInput.readOnly = true;
+                        operatorIdNumberInput.style.backgroundColor = '#f8f9fa';
+                    }
+                }
+            } else {
+                // إذا كان "طرف آخر"، التأكد من أن الحقول قابلة للتحرير
                 if (ownerNameInput) {
-                    ownerNameInput.readOnly = true;
-                    ownerNameInput.style.backgroundColor = '#f8f9fa';
+                    ownerNameInput.readOnly = false;
+                    ownerNameInput.style.backgroundColor = '';
                 }
                 if (ownerIdNumberInput) {
-                    ownerIdNumberInput.readOnly = true;
-                    ownerIdNumberInput.style.backgroundColor = '#f8f9fa';
+                    ownerIdNumberInput.readOnly = false;
+                    ownerIdNumberInput.style.backgroundColor = '';
                 }
                 if (operatorIdNumberInput) {
-                    operatorIdNumberInput.readOnly = true;
-                    operatorIdNumberInput.style.backgroundColor = '#f8f9fa';
+                    operatorIdNumberInput.readOnly = false;
+                    operatorIdNumberInput.style.backgroundColor = '';
                 }
             }
         }
@@ -626,8 +683,8 @@
 
     governorateSelect?.addEventListener('change', function() {
         if (typeof GeneralHelpers !== 'undefined' && GeneralHelpers.updateCitiesSelect) {
-            const selectedOption = governorateSelect.options[governorateSelect.selectedIndex];
-            const governorateId = selectedOption.getAttribute('data-governorate-id');
+            // الآن governorateSelect.value هو ID وليس code
+            const governorateId = this.value;
             if (governorateId) {
                 GeneralHelpers.updateCitiesSelect('#governorate', '#city_id');
             }
@@ -637,8 +694,8 @@
     // تحميل المدن تلقائياً عند تحميل الصفحة إذا كانت المحافظة محددة
     document.addEventListener('DOMContentLoaded', function() {
         if (governorateSelect && governorateSelect.value) {
-            const selectedOption = governorateSelect.options[governorateSelect.selectedIndex];
-            const governorateId = selectedOption.getAttribute('data-governorate-id');
+            // الآن governorateSelect.value هو ID وليس code
+            const governorateId = governorateSelect.value;
             if (governorateId && typeof GeneralHelpers !== 'undefined' && GeneralHelpers.updateCitiesSelect) {
                 const cityId = citySelect ? citySelect.value : null;
                 GeneralHelpers.updateCitiesSelect('#governorate', '#city_id', {
@@ -834,11 +891,11 @@
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">موقع الخزان ${i} <span class="text-danger">*</span></label>
-                                <select name="fuel_tanks[${i-1}][location]" class="form-select">
+                                <select name="fuel_tanks[${i-1}][location_id]" class="form-select" required>
                                     <option value="">اختر الموقع</option>
                                     ${(window.GENERATION_UNIT_CONSTANTS.location && window.GENERATION_UNIT_CONSTANTS.location.length > 0) 
                                         ? window.GENERATION_UNIT_CONSTANTS.location.map(loc => `<option value="${loc.id}">${loc.label}</option>`).join('')
-                                        : '<option value="ارضي">ارضي</option><option value="علوي">علوي</option><option value="تحت الارض">تحت الارض</option>'
+                                        : ''
                                     }
                                 </select>
                             </div>
@@ -855,31 +912,31 @@
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">مادة التصنيع ${i}</label>
-                                <select name="fuel_tanks[${i-1}][material]" class="form-select">
+                                <select name="fuel_tanks[${i-1}][material_id]" class="form-select">
                                     <option value="">اختر المادة</option>
                                     ${(window.GENERATION_UNIT_CONSTANTS.material && window.GENERATION_UNIT_CONSTANTS.material.length > 0) 
                                         ? window.GENERATION_UNIT_CONSTANTS.material.map(mat => `<option value="${mat.id}">${mat.label}</option>`).join('')
-                                        : '<option value="حديد">حديد</option><option value="بلاستيك">بلاستيك</option><option value="بلاستيك مقوي">بلاستيك مقوي</option><option value="فايبر">فايبر</option>'
+                                        : ''
                                     }
                                 </select>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">استخدامه ${i}</label>
-                                <select name="fuel_tanks[${i-1}][usage]" class="form-select">
+                                <select name="fuel_tanks[${i-1}][usage_id]" class="form-select">
                                     <option value="">اختر الاستخدام</option>
                                     ${(window.GENERATION_UNIT_CONSTANTS.usage && window.GENERATION_UNIT_CONSTANTS.usage.length > 0) 
                                         ? window.GENERATION_UNIT_CONSTANTS.usage.map(use => `<option value="${use.id}">${use.label}</option>`).join('')
-                                        : '<option value="مركزي">مركزي</option><option value="احتياطي">احتياطي</option>'
+                                        : ''
                                     }
                                 </select>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">طريقة القياس ${i}</label>
-                                <select name="fuel_tanks[${i-1}][measurement_method]" class="form-select">
+                                <select name="fuel_tanks[${i-1}][measurement_method_id]" class="form-select">
                                     <option value="">اختر الطريقة</option>
                                     ${(window.GENERATION_UNIT_CONSTANTS.measurement_method && window.GENERATION_UNIT_CONSTANTS.measurement_method.length > 0) 
                                         ? window.GENERATION_UNIT_CONSTANTS.measurement_method.map(method => `<option value="${method.id}">${method.label}</option>`).join('')
-                                        : '<option value="سيخ مدرج">سيخ مدرج</option><option value="ساعه ميكانيكية">ساعه ميكانيكية</option><option value="حساس الكتروني">حساس الكتروني</option><option value="خرطوم شفاف">خرطوم شفاف</option>'
+                                        : ''
                                     }
                                 </select>
                             </div>

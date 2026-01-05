@@ -113,15 +113,15 @@
                             @endif
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">حالة المولد <span class="text-danger">*</span></label>
-                                <select name="status" class="form-select @error('status') is-invalid @enderror">
+                                <select name="status_id" class="form-select @error('status_id') is-invalid @enderror" required>
                                     <option value="">اختر الحالة</option>
                                     @foreach($constants['status'] ?? [] as $status)
-                                        <option value="{{ $status->id }}" {{ old('status', $generator->status) == $status->id ? 'selected' : '' }}>
+                                        <option value="{{ $status->id }}" {{ old('status_id', $generator->status_id) == $status->id ? 'selected' : '' }}>
                                             {{ $status->label }}
                                         </option>
                                     @endforeach
                                 </select>
-                                @error('status')
+                                @error('status_id')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                                 
@@ -165,23 +165,17 @@
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">نوع المحرك</label>
-                                <select name="engine_type" class="form-select @error('engine_type') is-invalid @enderror">
+                                <select name="engine_type_id" class="form-select @error('engine_type_id') is-invalid @enderror">
                                     <option value="">اختر نوع المحرك</option>
                                     @foreach($constants['engine_type'] ?? [] as $engineType)
-                                        <option value="{{ $engineType->id }}" {{ old('engine_type', $generator->engine_type) == $engineType->id ? 'selected' : '' }}>
+                                        <option value="{{ $engineType->id }}" {{ old('engine_type_id', $generator->engine_type_id) == $engineType->id ? 'selected' : '' }}>
                                             {{ $engineType->label }}
                                         </option>
                                     @endforeach
-                                    {{-- Fallback للقيم القديمة --}}
-                                    @if(($constants['engine_type'] ?? collect())->isEmpty())
-                                        <option value="Perkins" {{ old('engine_type', $generator->engine_type) === 'Perkins' ? 'selected' : '' }}>Perkins</option>
-                                        <option value="Volvo" {{ old('engine_type', $generator->engine_type) === 'Volvo' ? 'selected' : '' }}>Volvo</option>
-                                        <option value="Caterpillar" {{ old('engine_type', $generator->engine_type) === 'Caterpillar' ? 'selected' : '' }}>Caterpillar</option>
-                                        <option value="DAF" {{ old('engine_type', $generator->engine_type) === 'DAF' ? 'selected' : '' }}>DAF</option>
-                                        <option value="MAN" {{ old('engine_type', $generator->engine_type) === 'MAN' ? 'selected' : '' }}>MAN</option>
-                                        <option value="SCAINA" {{ old('engine_type', $generator->engine_type) === 'SCAINA' ? 'selected' : '' }}>SCAINA</option>
-                                    @endif
                                 </select>
+                                @error('engine_type_id')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
                                 
                             </div>
                         </div>
@@ -200,20 +194,17 @@
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">نظام الحقن</label>
-                                <select name="injection_system" class="form-select @error('injection_system') is-invalid @enderror">
+                                <select name="injection_system_id" class="form-select @error('injection_system_id') is-invalid @enderror">
                                     <option value="">اختر نظام الحقن</option>
                                     @foreach($constants['injection_system'] ?? [] as $injection)
-                                        <option value="{{ $injection->id }}" {{ old('injection_system', $generator->injection_system) == $injection->id ? 'selected' : '' }}>
+                                        <option value="{{ $injection->id }}" {{ old('injection_system_id', $generator->injection_system_id) == $injection->id ? 'selected' : '' }}>
                                             {{ $injection->label }}
                                         </option>
                                     @endforeach
-                                    {{-- Fallback للقيم القديمة --}}
-                                    @if(($constants['injection_system'] ?? collect())->isEmpty())
-                                        <option value="عادي" {{ old('injection_system', $generator->injection_system) === 'عادي' ? 'selected' : '' }}>عادي</option>
-                                        <option value="كهربائي" {{ old('injection_system', $generator->injection_system) === 'كهربائي' ? 'selected' : '' }}>كهربائي</option>
-                                        <option value="هجين" {{ old('injection_system', $generator->injection_system) === 'هجين' ? 'selected' : '' }}>هجين</option>
-                                    @endif
                                 </select>
+                                @error('injection_system_id')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
                                 
                             </div>
                             <div class="col-md-6">
@@ -239,20 +230,17 @@
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">مؤشر القياس</label>
-                                <select name="measurement_indicator" class="form-select @error('measurement_indicator') is-invalid @enderror">
+                                <select name="measurement_indicator_id" class="form-select @error('measurement_indicator_id') is-invalid @enderror">
                                     <option value="">اختر الحالة</option>
                                     @foreach($constants['measurement_indicator'] ?? [] as $indicator)
-                                        <option value="{{ $indicator->id }}" {{ old('measurement_indicator', $generator->measurement_indicator) == $indicator->id ? 'selected' : '' }}>
+                                        <option value="{{ $indicator->id }}" {{ old('measurement_indicator_id', $generator->measurement_indicator_id) == $indicator->id ? 'selected' : '' }}>
                                             {{ $indicator->label }}
                                         </option>
                                     @endforeach
-                                    {{-- Fallback للقيم القديمة --}}
-                                    @if(($constants['measurement_indicator'] ?? collect())->isEmpty())
-                                        <option value="غير متوفر" {{ old('measurement_indicator', $generator->measurement_indicator) === 'غير متوفر' ? 'selected' : '' }}>غير متوفر</option>
-                                        <option value="متوفر ويعمل" {{ old('measurement_indicator', $generator->measurement_indicator) === 'متوفر ويعمل' ? 'selected' : '' }}>متوفر ويعمل</option>
-                                        <option value="متوفر ولا يعمل" {{ old('measurement_indicator', $generator->measurement_indicator) === 'متوفر ولا يعمل' ? 'selected' : '' }}>متوفر ولا يعمل</option>
-                                    @endif
                                 </select>
+                                @error('measurement_indicator_id')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
                                 
                             </div>
                         </div>
@@ -265,22 +253,17 @@
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">الحالة الفنية</label>
-                                <select name="technical_condition" class="form-select @error('technical_condition') is-invalid @enderror">
+                                <select name="technical_condition_id" class="form-select @error('technical_condition_id') is-invalid @enderror">
                                     <option value="">اختر الحالة</option>
                                     @foreach($constants['technical_condition'] ?? [] as $condition)
-                                        <option value="{{ $condition->id }}" {{ old('technical_condition', $generator->technical_condition) == $condition->id ? 'selected' : '' }}>
+                                        <option value="{{ $condition->id }}" {{ old('technical_condition_id', $generator->technical_condition_id) == $condition->id ? 'selected' : '' }}>
                                             {{ $condition->label }}
                                         </option>
                                     @endforeach
-                                    {{-- Fallback للقيم القديمة --}}
-                                    @if(($constants['technical_condition'] ?? collect())->isEmpty())
-                                        <option value="ممتازة" {{ old('technical_condition', $generator->technical_condition) === 'ممتازة' ? 'selected' : '' }}>ممتازة</option>
-                                        <option value="جيدة جدا" {{ old('technical_condition', $generator->technical_condition) === 'جيدة جدا' ? 'selected' : '' }}>جيدة جدا</option>
-                                        <option value="جيدة" {{ old('technical_condition', $generator->technical_condition) === 'جيدة' ? 'selected' : '' }}>جيدة</option>
-                                        <option value="متوسطة" {{ old('technical_condition', $generator->technical_condition) === 'متوسطة' ? 'selected' : '' }}>متوسطة</option>
-                                        <option value="سيئة" {{ old('technical_condition', $generator->technical_condition) === 'سيئة' ? 'selected' : '' }}>سيئة</option>
-                                    @endif
                                 </select>
+                                @error('technical_condition_id')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
                                 
                             </div>
                             <div class="col-md-6">
@@ -337,40 +320,31 @@
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">نوع لوحة التحكم</label>
-                                <select name="control_panel_type" class="form-select @error('control_panel_type') is-invalid @enderror">
+                                <select name="control_panel_type_id" class="form-select @error('control_panel_type_id') is-invalid @enderror">
                                     <option value="">اختر النوع</option>
                                     @foreach($constants['control_panel_type'] ?? [] as $panelType)
-                                        <option value="{{ $panelType->id }}" {{ old('control_panel_type', $generator->control_panel_type) == $panelType->id ? 'selected' : '' }}>
+                                        <option value="{{ $panelType->id }}" {{ old('control_panel_type_id', $generator->control_panel_type_id) == $panelType->id ? 'selected' : '' }}>
                                             {{ $panelType->label }}
                                         </option>
                                     @endforeach
-                                    {{-- Fallback للقيم القديمة --}}
-                                    @if(($constants['control_panel_type'] ?? collect())->isEmpty())
-                                        <option value="Deep Sea" {{ old('control_panel_type', $generator->control_panel_type) === 'Deep Sea' ? 'selected' : '' }}>Deep Sea</option>
-                                        <option value="ComAp" {{ old('control_panel_type', $generator->control_panel_type) === 'ComAp' ? 'selected' : '' }}>ComAp</option>
-                                        <option value="Datakom" {{ old('control_panel_type', $generator->control_panel_type) === 'Datakom' ? 'selected' : '' }}>Datakom</option>
-                                        <option value="Analog" {{ old('control_panel_type', $generator->control_panel_type) === 'Analog' ? 'selected' : '' }}>Analog</option>
-                                    @endif
                                 </select>
-                                @error('control_panel_type')
+                                @error('control_panel_type_id')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">حالة لوحة التحكم</label>
-                                <select name="control_panel_status" class="form-select @error('control_panel_status') is-invalid @enderror">
+                                <select name="control_panel_status_id" class="form-select @error('control_panel_status_id') is-invalid @enderror">
                                     <option value="">اختر الحالة</option>
                                     @foreach($constants['control_panel_status'] ?? [] as $panelStatus)
-                                        <option value="{{ $panelStatus->id }}" {{ old('control_panel_status', $generator->control_panel_status) == $panelStatus->id ? 'selected' : '' }}>
+                                        <option value="{{ $panelStatus->id }}" {{ old('control_panel_status_id', $generator->control_panel_status_id) == $panelStatus->id ? 'selected' : '' }}>
                                             {{ $panelStatus->label }}
                                         </option>
                                     @endforeach
-                                    {{-- Fallback للقيم القديمة --}}
-                                    @if(($constants['control_panel_status'] ?? collect())->isEmpty())
-                                        <option value="تعمل" {{ old('control_panel_status', $generator->control_panel_status) === 'تعمل' ? 'selected' : '' }}>تعمل</option>
-                                        <option value="لا تعمل" {{ old('control_panel_status', $generator->control_panel_status) === 'لا تعمل' ? 'selected' : '' }}>لا تعمل</option>
-                                    @endif
                                 </select>
+                                @error('control_panel_status_id')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
                                 
                             </div>
                             <div class="col-md-6">

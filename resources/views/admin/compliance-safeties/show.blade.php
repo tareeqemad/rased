@@ -106,24 +106,14 @@
                                     </div>
                                 @endif
 
-                                @if($complianceSafety->safety_certificate_status)
                                     <div class="col-md-6">
                                         <label class="form-label fw-semibold text-muted">حالة شهادة السلامة</label>
                                         <div>
-                                            @php
-                                                $statusBadge = match(strtolower($complianceSafety->safety_certificate_status)) {
-                                                    'valid', 'صالح', 'ساري' => 'success',
-                                                    'expired', 'منتهي', 'منتهية' => 'danger',
-                                                    'pending', 'قيد المعالجة' => 'warning',
-                                                    default => 'secondary'
-                                                };
-                                            @endphp
-                                            <span class="badge bg-{{ $statusBadge }}">
-                                                {{ $complianceSafety->safety_certificate_status }}
+                                            <span class="badge bg-{{ $complianceSafety->safetyCertificateStatusDetail?->getBadgeColor() ?? 'secondary' }}">
+                                                {{ $complianceSafety->safetyCertificateStatusDetail?->label ?? '-' }}
                                             </span>
                                         </div>
                                     </div>
-                                @endif
                             </div>
                         </div>
 

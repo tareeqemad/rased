@@ -175,14 +175,16 @@
                                             <i class="bi bi-bar-chart text-info me-1"></i>
                                             مقارنة كفاءة الوقود مع المعيار
                                         </label>
-                                        <select name="fuel_efficiency_comparison" 
-                                                class="form-select @error('fuel_efficiency_comparison') is-invalid @enderror">
+                                        <select name="fuel_efficiency_comparison_id" 
+                                                class="form-select @error('fuel_efficiency_comparison_id') is-invalid @enderror">
                                             <option value="">اختر المقارنة</option>
-                                            <option value="within_standard" {{ old('fuel_efficiency_comparison') === 'within_standard' ? 'selected' : '' }}>ضمن المعدل</option>
-                                            <option value="above" {{ old('fuel_efficiency_comparison') === 'above' ? 'selected' : '' }}>أعلى من المعدل</option>
-                                            <option value="below" {{ old('fuel_efficiency_comparison') === 'below' ? 'selected' : '' }}>أقل من المعدل</option>
+                                            @foreach($constants['fuel_efficiency_comparison'] ?? [] as $comparison)
+                                                <option value="{{ $comparison->id }}" {{ old('fuel_efficiency_comparison_id') == $comparison->id ? 'selected' : '' }}>
+                                                    {{ $comparison->label }}
+                                                </option>
+                                            @endforeach
                                         </select>
-                                        @error('fuel_efficiency_comparison')
+                                        @error('fuel_efficiency_comparison_id')
                                             <div class="invalid-feedback d-block">{{ $message }}</div>
                                         @enderror
                                     </div>
@@ -219,13 +221,16 @@
                                             <i class="bi bi-bar-chart text-info me-1"></i>
                                             مقارنة كفاءة الطاقة مع المعيار
                                         </label>
-                                        <input type="text" name="energy_efficiency_comparison" id="energy_efficiency_comparison"
-                                               class="form-control calculated-field @error('energy_efficiency_comparison') is-invalid @enderror" 
-                                               value="{{ old('energy_efficiency_comparison') }}" 
-                                               readonly
-                                               tabindex="-1">
-                                        <small class="text-muted">يتم الحساب تلقائياً بناءً على كفاءة توزيع الطاقة</small>
-                                        @error('energy_efficiency_comparison')
+                                        <select name="energy_efficiency_comparison_id" id="energy_efficiency_comparison_id"
+                                                class="form-select @error('energy_efficiency_comparison_id') is-invalid @enderror">
+                                            <option value="">اختر المقارنة</option>
+                                            @foreach($constants['energy_efficiency_comparison'] ?? [] as $comparison)
+                                                <option value="{{ $comparison->id }}" {{ old('energy_efficiency_comparison_id') == $comparison->id ? 'selected' : '' }}>
+                                                    {{ $comparison->label }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                        @error('energy_efficiency_comparison_id')
                                             <div class="invalid-feedback d-block">{{ $message }}</div>
                                         @enderror
                                     </div>
@@ -297,51 +302,10 @@
                 $('#total_operating_cost').val(totalCost.toFixed(2));
             }
             
-            // Calculate energy efficiency comparison
-            function calculateEnergyEfficiencyComparison() {
-                const efficiency = parseFloat($('#energy_distribution_efficiency').val()) || 0;
-                const standardValue = 80; // Standard efficiency value (80%)
-                let comparison = '';
-                let comparisonText = '';
-                
-                if (efficiency > 0) {
-                    const diff = efficiency - standardValue;
-                    const percentDiff = (diff / standardValue) * 100;
-                    
-                    if (Math.abs(percentDiff) <= 5) {
-                        // Within 5% of standard = within standard
-                        comparison = 'within_standard';
-                        comparisonText = 'ضمن المعدل';
-                    } else if (efficiency > standardValue) {
-                        // Above standard
-                        comparison = 'above';
-                        comparisonText = 'أعلى من المعدل';
-                    } else {
-                        // Below standard
-                        comparison = 'below';
-                        comparisonText = 'أقل من المعدل';
-                    }
-                }
-                
-                $('#energy_efficiency_comparison').val(comparisonText);
-                // Store the actual value in a hidden field for form submission
-                if ($('#energy_efficiency_comparison_value').length === 0) {
-                    $('<input>').attr({
-                        type: 'hidden',
-                        id: 'energy_efficiency_comparison_value',
-                        name: 'energy_efficiency_comparison'
-                    }).val(comparison).appendTo($form);
-                } else {
-                    $('#energy_efficiency_comparison_value').val(comparison);
-                }
-            }
-            
             $('#fuel_consumed, #fuel_price_per_liter').on('input', calculateTotalCost);
-            $('#energy_distribution_efficiency').on('input', calculateEnergyEfficiencyComparison);
             
             // Calculate initial values on page load
             calculateTotalCost();
-            calculateEnergyEfficiencyComparison();
 
             $form.on('submit', function(e) {
                 e.preventDefault();
@@ -359,12 +323,6 @@
                 
                 // Remove calculated fields from form data (server will calculate them)
                 formData.delete('total_operating_cost');
-                formData.delete('energy_efficiency_comparison');
-                // Add the calculated value
-                const comparisonValue = $('#energy_efficiency_comparison_value').val();
-                if (comparisonValue) {
-                    formData.append('energy_efficiency_comparison', comparisonValue);
-                }
 
                 $.ajax({
                     url: $form.attr('action'),

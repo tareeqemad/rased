@@ -23,7 +23,11 @@ class FuelEfficiencyController extends Controller
         $this->authorize('viewAny', FuelEfficiency::class);
 
         $user = auth()->user();
-        $query = FuelEfficiency::with('generator.operator');
+        $query = FuelEfficiency::with([
+            'generator.operator',
+            'fuelEfficiencyComparisonDetail',
+            'energyEfficiencyComparisonDetail'
+        ]);
 
         if ($user->isCompanyOwner()) {
             $operator = $user->ownedOperators()->first();
@@ -153,8 +157,14 @@ class FuelEfficiencyController extends Controller
             $operators = $user->operators;
             $generators = Generator::whereIn('operator_id', $operators->pluck('id'))->get();
         }
+        
+        // جلب الثوابت
+        $constants = [
+            'fuel_efficiency_comparison' => \App\Helpers\ConstantsHelper::get(17), // مقارنة كفاءة الوقود
+            'energy_efficiency_comparison' => \App\Helpers\ConstantsHelper::get(18), // مقارنة كفاءة الطاقة
+        ];
 
-        return view('admin.fuel-efficiencies.create', compact('generators'));
+        return view('admin.fuel-efficiencies.create', compact('generators', 'constants'));
     }
 
     /**
@@ -174,23 +184,7 @@ class FuelEfficiencyController extends Controller
             $data['total_operating_cost'] = null;
         }
         
-        // Always calculate energy efficiency comparison from energy distribution efficiency (ignore user input for security)
-        if (isset($data['energy_distribution_efficiency']) && $data['energy_distribution_efficiency'] > 0) {
-            $standardValue = 80; // Standard efficiency value (80%)
-            $efficiency = $data['energy_distribution_efficiency'];
-            $diff = $efficiency - $standardValue;
-            $percentDiff = ($diff / $standardValue) * 100;
-            
-            if (abs($percentDiff) <= 5) {
-                $data['energy_efficiency_comparison'] = 'within_standard';
-            } elseif ($efficiency > $standardValue) {
-                $data['energy_efficiency_comparison'] = 'above';
-            } else {
-                $data['energy_efficiency_comparison'] = 'below';
-            }
-        } else {
-            $data['energy_efficiency_comparison'] = null;
-        }
+        // لا نحسب energy_efficiency_comparison تلقائياً، المستخدم يختار من الثوابت
 
         $fuelEfficiency = FuelEfficiency::create($data);
 
@@ -223,7 +217,11 @@ class FuelEfficiencyController extends Controller
     {
         $this->authorize('view', $fuelEfficiency);
 
-        $fuelEfficiency->load('generator.operator');
+        $fuelEfficiency->load([
+            'generator.operator',
+            'fuelEfficiencyComparisonDetail',
+            'energyEfficiencyComparisonDetail'
+        ]);
 
         return view('admin.fuel-efficiencies.show', compact('fuelEfficiency'));
     }
@@ -249,8 +247,14 @@ class FuelEfficiencyController extends Controller
             $operators = $user->operators;
             $generators = Generator::whereIn('operator_id', $operators->pluck('id'))->get();
         }
+        
+        // جلب الثوابت
+        $constants = [
+            'fuel_efficiency_comparison' => \App\Helpers\ConstantsHelper::get(17), // مقارنة كفاءة الوقود
+            'energy_efficiency_comparison' => \App\Helpers\ConstantsHelper::get(18), // مقارنة كفاءة الطاقة
+        ];
 
-        return view('admin.fuel-efficiencies.edit', compact('fuelEfficiency', 'generators'));
+        return view('admin.fuel-efficiencies.edit', compact('fuelEfficiency', 'generators', 'constants'));
     }
 
     /**
@@ -270,23 +274,7 @@ class FuelEfficiencyController extends Controller
             $data['total_operating_cost'] = null;
         }
         
-        // Always calculate energy efficiency comparison from energy distribution efficiency (ignore user input for security)
-        if (isset($data['energy_distribution_efficiency']) && $data['energy_distribution_efficiency'] > 0) {
-            $standardValue = 80; // Standard efficiency value (80%)
-            $efficiency = $data['energy_distribution_efficiency'];
-            $diff = $efficiency - $standardValue;
-            $percentDiff = ($diff / $standardValue) * 100;
-            
-            if (abs($percentDiff) <= 5) {
-                $data['energy_efficiency_comparison'] = 'within_standard';
-            } elseif ($efficiency > $standardValue) {
-                $data['energy_efficiency_comparison'] = 'above';
-            } else {
-                $data['energy_efficiency_comparison'] = 'below';
-            }
-        } else {
-            $data['energy_efficiency_comparison'] = null;
-        }
+        // لا نحسب energy_efficiency_comparison تلقائياً، المستخدم يختار من الثوابت
 
         $fuelEfficiency->update($data);
 

@@ -106,11 +106,11 @@
                             </div>
                             <div class="col-md-6">
                                 <div class="info-label">
-                                    <i class="bi bi-toggle-on text-{{ $generator->status === 'active' ? 'success' : 'danger' }}"></i>
+                                    <i class="bi bi-toggle-on text-{{ ($generator->statusDetail && $generator->statusDetail->code === 'ACTIVE') ? 'success' : 'danger' }}"></i>
                                     الحالة
                                 </div>
                                 <div class="info-value">
-                                    @if($generator->status === 'active')
+                                    @if($generator->statusDetail && $generator->statusDetail->code === 'ACTIVE')
                                         <span class="badge bg-success">فعال</span>
                                     @else
                                         <span class="badge bg-danger">غير فعال</span>
@@ -172,13 +172,13 @@
                                     <div class="info-value">{{ $generator->frequency }} Hz</div>
                                 </div>
                             @endif
-                            @if($generator->engine_type)
+                            @if($generator->engineTypeDetail)
                                 <div class="col-md-4">
                                     <div class="info-label">
                                         <i class="bi bi-gear-wide text-secondary"></i>
                                         نوع المحرك
                                     </div>
-                                    <div class="info-value">{{ $generator->engine_type }}</div>
+                                    <div class="info-value">{{ $generator->engineTypeDetail->label }}</div>
                                 </div>
                             @endif
                         </div>
@@ -200,13 +200,13 @@
                                     <div class="info-value">{{ $generator->manufacturing_year }}</div>
                                 </div>
                             @endif
-                            @if($generator->injection_system)
+                            @if($generator->injectionSystemDetail)
                                 <div class="col-md-4">
                                     <div class="info-label">
                                         <i class="bi bi-droplet text-primary"></i>
                                         نظام الحقن
                                     </div>
-                                    <div class="info-value">{{ $generator->injection_system }}</div>
+                                    <div class="info-value">{{ $generator->injectionSystemDetail->label }}</div>
                                 </div>
                             @endif
                             @if($generator->fuel_consumption_rate)
@@ -236,13 +236,13 @@
                                     <div class="info-value">{{ number_format($generator->internal_tank_capacity, 2) }} لتر</div>
                                 </div>
                             @endif
-                            @if($generator->measurement_indicator)
+                            @if($generator->measurementIndicatorDetail)
                                 <div class="col-md-4">
                                     <div class="info-label">
                                         <i class="bi bi-rulers text-secondary"></i>
                                         مؤشر القياس
                                     </div>
-                                    <div class="info-value">{{ $generator->measurement_indicator }}</div>
+                                    <div class="info-value">{{ $generator->measurementIndicatorDetail->label }}</div>
                                 </div>
                             @endif
                         </div>
@@ -255,13 +255,13 @@
                             الحالة الفنية
                         </h5>
                         <div class="row g-3">
-                            @if($generator->technical_condition)
+                            @if($generator->technicalConditionDetail)
                                 <div class="col-md-6">
                                     <div class="info-label">
                                         <i class="bi bi-clipboard-check text-success"></i>
                                         الحالة الفنية
                                     </div>
-                                    <div class="info-value">{{ $generator->technical_condition }}</div>
+                                    <div class="info-value">{{ $generator->technicalConditionDetail->label }}</div>
                                 </div>
                             @endif
                             @if($generator->last_major_maintenance_date)
@@ -315,22 +315,22 @@
                                         <span class="badge bg-success">نعم</span>
                                     </div>
                                 </div>
-                                @if($generator->control_panel_type)
+                                @if($generator->controlPanelTypeDetail)
                                     <div class="col-md-4">
                                         <div class="info-label">
                                             <i class="bi bi-gear text-primary"></i>
                                             نوع لوحة التحكم
                                         </div>
-                                        <div class="info-value">{{ $generator->control_panel_type }}</div>
+                                        <div class="info-value">{{ $generator->controlPanelTypeDetail->label }}</div>
                                     </div>
                                 @endif
-                                @if($generator->control_panel_status)
+                                @if($generator->controlPanelStatusDetail)
                                     <div class="col-md-4">
                                         <div class="info-label">
                                             <i class="bi bi-activity text-info"></i>
                                             حالة لوحة التحكم
                                         </div>
-                                        <div class="info-value">{{ $generator->control_panel_status }}</div>
+                                        <div class="info-value">{{ $generator->controlPanelStatusDetail->label }}</div>
                                     </div>
                                 @endif
                                 @if($generator->operating_hours)

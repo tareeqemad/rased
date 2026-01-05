@@ -17,19 +17,19 @@ class UpdateGenerationUnitRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'generators_count' => ['required', 'integer', 'min:1', 'max:99'],
-            'status' => ['required', 'string', Rule::in(['active', 'inactive'])],
+            'status_id' => ['required', 'exists:constant_details,id'],
 
             // الملكية والتشغيل
             'owner_name' => ['required', 'string', 'max:255'],
             'owner_id_number' => ['nullable', 'string', 'max:255'],
-            'operation_entity' => ['required', 'string', Rule::in(['same_owner', 'other_party'])],
+            'operation_entity_id' => ['required', 'exists:constant_details,id'],
             'operator_id_number' => ['required', 'string', 'max:255'],
             'phone' => ['nullable', 'string', 'max:255'],
             'phone_alt' => ['nullable', 'string', 'max:255'],
             'email' => ['nullable', 'string', 'email', 'max:255'],
 
             // الموقع
-            'governorate' => ['required', 'string'],
+            'governorate_id' => ['required', 'exists:constant_details,id'],
             'city_id' => ['required', 'exists:constant_details,id'],
             'detailed_address' => ['required', 'string'],
             'latitude' => ['required', 'numeric', 'between:-90,90'],
@@ -37,13 +37,13 @@ class UpdateGenerationUnitRequest extends FormRequest
 
             // القدرات الفنية
             'total_capacity' => ['nullable', 'numeric', 'min:0'],
-            'synchronization_available' => ['nullable', 'boolean'],
+            'synchronization_available_id' => ['nullable', 'exists:constant_details,id'],
             'max_synchronization_capacity' => ['nullable', 'numeric', 'min:0'],
 
             // المستفيدون والبيئة
             'beneficiaries_count' => ['nullable', 'integer', 'min:0'],
             'beneficiaries_description' => ['nullable', 'string'],
-            'environmental_compliance_status' => ['nullable', 'string', Rule::in(['compliant', 'under_monitoring', 'under_evaluation', 'non_compliant'])],
+            'environmental_compliance_status_id' => ['nullable', 'exists:constant_details,id'],
             
             // خزانات الوقود
             'external_fuel_tank' => ['nullable', 'boolean'],
@@ -66,11 +66,14 @@ class UpdateGenerationUnitRequest extends FormRequest
             'generators_count.required' => 'عدد المولدات مطلوب.',
             'generators_count.min' => 'يجب أن يكون عدد المولدات على الأقل 1.',
             'generators_count.max' => 'يجب ألا يتجاوز عدد المولدات 99.',
-            'status.required' => 'حالة الوحدة مطلوبة.',
+            'status_id.required' => 'حالة الوحدة مطلوبة.',
+            'status_id.exists' => 'حالة الوحدة المحددة غير صحيحة.',
             'owner_name.required' => 'اسم المالك مطلوب.',
-            'operation_entity.required' => 'جهة التشغيل مطلوبة.',
+            'operation_entity_id.required' => 'جهة التشغيل مطلوبة.',
+            'operation_entity_id.exists' => 'جهة التشغيل المحددة غير صحيحة.',
             'operator_id_number.required' => 'رقم هوية المشغل مطلوب.',
-            'governorate.required' => 'المحافظة مطلوبة.',
+            'governorate_id.required' => 'المحافظة مطلوبة.',
+            'governorate_id.exists' => 'المحافظة المحددة غير صحيحة.',
             'city_id.required' => 'المدينة مطلوبة.',
             'city_id.exists' => 'المدينة المحددة غير صحيحة.',
             'detailed_address.required' => 'العنوان التفصيلي مطلوب.',

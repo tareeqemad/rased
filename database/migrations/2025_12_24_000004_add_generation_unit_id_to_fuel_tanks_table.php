@@ -12,8 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('fuel_tanks', function (Blueprint $table) {
-            $table->string('tank_code')->nullable()->after('generator_id');
-            $table->index('tank_code');
+            $table->foreignId('generation_unit_id')
+                ->constrained('generation_units')->cascadeOnDelete();
+            $table->index('generation_unit_id');
         });
     }
 
@@ -23,8 +24,10 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('fuel_tanks', function (Blueprint $table) {
-            $table->dropIndex(['tank_code']);
-            $table->dropColumn('tank_code');
+            $table->dropForeign(['generation_unit_id']);
+            $table->dropIndex(['generation_unit_id']);
+            $table->dropColumn('generation_unit_id');
         });
     }
 };
+

@@ -76,33 +76,8 @@
                                         نوع الصيانة
                                     </label>
                                     <div class="form-control-plaintext">
-                                        @php
-                                            $maintenanceTypes = [
-                                                'periodic' => 'دورية',
-                                                'preventive' => 'وقائية',
-                                                'emergency' => 'طارئة',
-                                                'major' => 'كبرى',
-                                                'regular' => 'عادية',
-                                                'صيانة دورية' => 'دورية',
-                                                'صيانة وقائية' => 'وقائية',
-                                                'صيانة طارئة' => 'طارئة',
-                                                'صيانة كبرى' => 'كبرى',
-                                                'صيانة عادية' => 'عادية',
-                                            ];
-                                            $maintenanceTypeAr = $maintenanceTypes[$maintenanceRecord->maintenance_type] ?? $maintenanceRecord->maintenance_type;
-                                            
-                                            // تحديد لون الـ badge
-                                            $badgeColor = 'info';
-                                            if (in_array($maintenanceRecord->maintenance_type, ['emergency', 'طارئة', 'صيانة طارئة'])) {
-                                                $badgeColor = 'danger';
-                                            } elseif (in_array($maintenanceRecord->maintenance_type, ['periodic', 'دورية', 'صيانة دورية'])) {
-                                                $badgeColor = 'info';
-                                            } else {
-                                                $badgeColor = 'warning';
-                                            }
-                                        @endphp
-                                        <span class="badge bg-{{ $badgeColor }}">
-                                            {{ $maintenanceTypeAr }}
+                                        <span class="badge bg-{{ $maintenanceRecord->maintenanceTypeDetail?->getBadgeColor() ?? 'secondary' }}">
+                                            {{ $maintenanceRecord->maintenanceTypeDetail?->label ?? '-' }}
                                         </span>
                                     </div>
                                 </div>

@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\ConstantDetail;
 
 class Generator extends Model
 {
@@ -17,29 +18,29 @@ class Generator extends Model
         'operator_id',
         'generation_unit_id',
         'description',
-        'status',
+        'status_id', // ID من constant_details - ثابت Master رقم 3 (حالة المولد)
         // المواصفات الفنية
         'capacity_kva',
         'power_factor',
         'voltage',
         'frequency',
-        'engine_type',
+        'engine_type_id', // ID من constant_details - ثابت Master رقم 4 (نوع المحرك)
         // التشغيل والوقود
         'manufacturing_year',
-        'injection_system',
+        'injection_system_id', // ID من constant_details - ثابت Master رقم 5 (نظام الحقن)
         'fuel_consumption_rate',
         'ideal_fuel_efficiency',
         'internal_tank_capacity',
-        'measurement_indicator',
+        'measurement_indicator_id', // ID من constant_details - ثابت Master رقم 6 (مؤشر القياس)
         // الحالة الفنية والتوثيق
-        'technical_condition',
+        'technical_condition_id', // ID من constant_details - ثابت Master رقم 7 (الحالة الفنية)
         'last_major_maintenance_date',
         'engine_data_plate_image',
         'generator_data_plate_image',
         // نظام التحكم
         'control_panel_available',
-        'control_panel_type',
-        'control_panel_status',
+        'control_panel_type_id', // ID من constant_details - ثابت Master رقم 8 (نوع لوحة التحكم)
+        'control_panel_status_id', // ID من constant_details - ثابت Master رقم 9 (حالة لوحة التحكم)
         'control_panel_image',
         'operating_hours',
         // خزانات الوقود
@@ -70,6 +71,47 @@ class Generator extends Model
         return $this->belongsTo(GenerationUnit::class);
     }
 
+    // Relationships للثوابت - ثابت Master رقم 3 (حالة المولد)
+    public function statusDetail(): BelongsTo
+    {
+        return $this->belongsTo(ConstantDetail::class, 'status_id');
+    }
+
+    // Relationships للثوابت - ثابت Master رقم 4 (نوع المحرك)
+    public function engineTypeDetail(): BelongsTo
+    {
+        return $this->belongsTo(ConstantDetail::class, 'engine_type_id');
+    }
+
+    // Relationships للثوابت - ثابت Master رقم 5 (نظام الحقن)
+    public function injectionSystemDetail(): BelongsTo
+    {
+        return $this->belongsTo(ConstantDetail::class, 'injection_system_id');
+    }
+
+    // Relationships للثوابت - ثابت Master رقم 6 (مؤشر القياس)
+    public function measurementIndicatorDetail(): BelongsTo
+    {
+        return $this->belongsTo(ConstantDetail::class, 'measurement_indicator_id');
+    }
+
+    // Relationships للثوابت - ثابت Master رقم 7 (الحالة الفنية)
+    public function technicalConditionDetail(): BelongsTo
+    {
+        return $this->belongsTo(ConstantDetail::class, 'technical_condition_id');
+    }
+
+    // Relationships للثوابت - ثابت Master رقم 8 (نوع لوحة التحكم)
+    public function controlPanelTypeDetail(): BelongsTo
+    {
+        return $this->belongsTo(ConstantDetail::class, 'control_panel_type_id');
+    }
+
+    // Relationships للثوابت - ثابت Master رقم 9 (حالة لوحة التحكم)
+    public function controlPanelStatusDetail(): BelongsTo
+    {
+        return $this->belongsTo(ConstantDetail::class, 'control_panel_status_id');
+    }
 
     public function operationLogs(): HasMany
     {

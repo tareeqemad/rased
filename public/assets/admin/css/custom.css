@@ -88,7 +88,8 @@ select[readonly]:hover,
 }
 
 /* Dark Mode Support for Cards and Tables */
-[data-theme-mode=dark] .card {
+[data-theme-mode=dark] .card,
+[data-theme-mode=dark] .card.custom-card {
     background-color: rgb(var(--body-bg-rgb)) !important;
     border-color: rgba(255, 255, 255, 0.1) !important;
     color: #eaecf3 !important;
@@ -174,4 +175,42 @@ select[readonly]:hover,
 [data-theme-mode=dark] .form-control[readonly]:hover,
 [data-theme-mode=dark] .form-select[readonly]:hover {
     background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+
+/* Dark Mode: استخدام نفس لون الـ content */
+[data-theme-mode=dark] .app-header {
+    background-color: rgb(42, 46, 63) !important;
+}
+
+[data-theme-mode=dark] .app-sidebar {
+    background-color: rgb(42, 46, 63) !important;
+}
+
+/* مكان اللوجو في الـ sidebar بنفس لون الـ sidebar */
+[data-theme-mode=dark] .app-sidebar .main-sidebar-header {
+    background-color: rgb(42, 46, 63) !important;
+}
+
+/* نص القائمة الجانبية أبيض في الوضع الداكن */
+[data-theme-mode=dark] .app-sidebar .side-menu__label,
+[data-theme-mode=dark] .app-sidebar .side-menu__item {
+    color: #ffffff !important;
+}
+
+[data-theme-mode=dark] .app-sidebar .side-menu__item:hover .side-menu__label,
+[data-theme-mode=dark] .app-sidebar .side-menu__item.active .side-menu__label,
+[data-theme-mode=dark] .app-sidebar .side-menu__item:hover,
+[data-theme-mode=dark] .app-sidebar .side-menu__item.active {
+    color: #ffffff !important;
+}
+
+[data-theme-mode=dark] .app-sidebar .side-menu__icon,
+[data-theme-mode=dark] .app-sidebar .side-menu__angle {
+    color: #ffffff !important;
+}
+
+[data-theme-mode=dark] .header-link,
+[data-theme-mode=dark] .header-link-icon {
+    color: #ffffff !important;
 }

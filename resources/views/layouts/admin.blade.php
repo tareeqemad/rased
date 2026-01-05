@@ -96,20 +96,14 @@
         [data-menu-styles=light] {
             --menu-bg: {{ str_starts_with($menuColor, '#') ? $menuColor : '#' . $menuColor }};
         }
+        
         /* Header background color for dark and color styles */
         [data-header-styles=dark] .app-header,
         [data-header-styles=color] .app-header {
             background-color: {{ str_starts_with($headerColor, '#') ? $headerColor : '#' . $headerColor }} !important;
         }
         
-        /* Fallback: apply header color if header_styles is dark or color from settings */
-        @if($headerStyles === 'dark' || $headerStyles === 'color')
-        html:not([data-header-styles="light"]) .app-header {
-            background-color: {{ str_starts_with($headerColor, '#') ? $headerColor : '#' . $headerColor }} !important;
-        }
-        @endif
-        
-        /* Apply header color to search input and button in header */
+        /* Apply header color to search input and button in header for dark and color styles */
         @if($headerStyles === 'dark' || $headerStyles === 'color')
         [data-header-styles=dark] .header-content-left .form-control,
         [data-header-styles=color] .header-content-left .form-control {
@@ -146,29 +140,6 @@
         }
         @endif
         
-        /* Dark Mode: جعل كل شيء أسود */
-        [data-theme-mode=dark] .app-header {
-            background-color: #000000 !important;
-        }
-        
-        [data-theme-mode=dark] .app-sidebar {
-            background-color: #000000 !important;
-        }
-        
-        [data-theme-mode=dark] .header-link,
-        [data-theme-mode=dark] .header-link-icon {
-            color: #ffffff !important;
-        }
-        
-        [data-theme-mode=dark] .layout-setting,
-        [data-theme-mode=dark] .layout-setting * {
-            color: #ffffff !important;
-        }
-        
-        [data-theme-mode=dark] .layout-setting .dark-layout,
-        [data-theme-mode=dark] .layout-setting .light-layout {
-            color: #ffffff !important;
-        }
     </style>
     
     <!-- Apply theme mode and menu styles from localStorage on page load (before main.js) -->

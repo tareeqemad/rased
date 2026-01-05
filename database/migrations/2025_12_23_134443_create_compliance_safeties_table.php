@@ -15,8 +15,10 @@ return new class extends Migration
             $table->id();
             $table->foreignId('operator_id')->constrained('operators')->cascadeOnDelete();
 
-            // شهادة السلامة
-            $table->string('safety_certificate_status'); // available, expired, not_available
+            // شهادة السلامة - تخزن ID من constant_details، ثابت Master رقم 13 (حالة شهادة السلامة)
+            $table->foreignId('safety_certificate_status_id')
+                ->constrained('constant_details')->cascadeOnDelete()
+                ->comment('ID من constant_details - ثابت Master رقم 13 (حالة شهادة السلامة)');
 
             // تاريخ آخر زيارة تفقدية
             $table->date('last_inspection_date')->nullable();

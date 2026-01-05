@@ -538,9 +538,10 @@ class ConstantSeeder extends Seeder
         );
 
         $environmentalComplianceStatusDetails = [
-            ['label' => 'متوافق', 'code' => 'COMPLIANT', 'value' => '1401', 'order' => 1],
-            ['label' => 'غير متوافق', 'code' => 'NON_COMPLIANT', 'value' => '1402', 'order' => 2],
-            ['label' => 'قيد المراجعة', 'code' => 'UNDER_REVIEW', 'value' => '1403', 'order' => 3],
+            ['label' => 'ملتزم', 'code' => 'COMPLIANT', 'value' => '1401', 'order' => 1],
+            ['label' => 'تحت المراقبة', 'code' => 'UNDER_MONITORING', 'value' => '1402', 'order' => 2],
+            ['label' => 'تحت التقييم', 'code' => 'UNDER_EVALUATION', 'value' => '1403', 'order' => 3],
+            ['label' => 'غير ملتزم', 'code' => 'NON_COMPLIANT', 'value' => '1404', 'order' => 4],
         ];
 
         // حذف التفاصيل القديمة
@@ -562,16 +563,15 @@ class ConstantSeeder extends Seeder
             ['constant_number' => 15],
             [
                 'constant_name' => 'حالة الوحدة',
-                'description' => 'حالة وحدة المشغل',
+                'description' => 'حالة وحدة التوليد (فعال/غير فعال)',
                 'is_active' => true,
                 'order' => 15,
             ]
         );
 
         $unitStatusDetails = [
-            ['label' => 'نشط', 'code' => 'ACTIVE', 'value' => '1501', 'order' => 1],
-            ['label' => 'متوقف', 'code' => 'INACTIVE', 'value' => '1502', 'order' => 2],
-            ['label' => 'قيد الصيانة', 'code' => 'MAINTENANCE', 'value' => '1503', 'order' => 3],
+            ['label' => 'فعال', 'code' => 'ACTIVE', 'value' => '1501', 'order' => 1],
+            ['label' => 'غير فعال', 'code' => 'INACTIVE', 'value' => '1502', 'order' => 2],
         ];
 
         // حذف التفاصيل القديمة
@@ -588,21 +588,51 @@ class ConstantSeeder extends Seeder
             ]);
         }
 
-        // 16. مقارنة كفاءة الوقود
-        $fuelEfficiencyComparison = ConstantMaster::updateOrCreate(
+        // 16. إمكانية المزامنة
+        $synchronizationAvailable = ConstantMaster::updateOrCreate(
             ['constant_number' => 16],
             [
-                'constant_name' => 'مقارنة كفاءة الوقود',
-                'description' => 'مقارنة كفاءة الوقود',
+                'constant_name' => 'إمكانية المزامنة',
+                'description' => 'إمكانية مزامنة المولدات',
                 'is_active' => true,
                 'order' => 16,
             ]
         );
 
+        $synchronizationAvailableDetails = [
+            ['label' => 'متوفرة', 'code' => 'AVAILABLE', 'value' => '1601', 'order' => 1],
+            ['label' => 'غير متوفرة', 'code' => 'NOT_AVAILABLE', 'value' => '1602', 'order' => 2],
+        ];
+
+        // حذف التفاصيل القديمة
+        ConstantDetail::where('constant_master_id', $synchronizationAvailable->id)->forceDelete();
+
+        foreach ($synchronizationAvailableDetails as $detail) {
+            ConstantDetail::create([
+                'constant_master_id' => $synchronizationAvailable->id,
+                'label' => $detail['label'],
+                'code' => $detail['code'],
+                'value' => $detail['value'],
+                'is_active' => true,
+                'order' => $detail['order'],
+            ]);
+        }
+
+        // 17. مقارنة كفاءة الوقود
+        $fuelEfficiencyComparison = ConstantMaster::updateOrCreate(
+            ['constant_number' => 17],
+            [
+                'constant_name' => 'مقارنة كفاءة الوقود',
+                'description' => 'مقارنة كفاءة الوقود',
+                'is_active' => true,
+                'order' => 17,
+            ]
+        );
+
         $fuelEfficiencyComparisonDetails = [
-            ['label' => 'ضمن المعدل', 'code' => 'WITHIN_RANGE', 'value' => '1601', 'order' => 1],
-            ['label' => 'اعلى من المعدل', 'code' => 'ABOVE_RANGE', 'value' => '1602', 'order' => 2],
-            ['label' => 'اقل من المعدل', 'code' => 'BELOW_RANGE', 'value' => '1603', 'order' => 3],
+            ['label' => 'ضمن المعدل', 'code' => 'WITHIN_RANGE', 'value' => '1701', 'order' => 1],
+            ['label' => 'اعلى من المعدل', 'code' => 'ABOVE_RANGE', 'value' => '1702', 'order' => 2],
+            ['label' => 'اقل من المعدل', 'code' => 'BELOW_RANGE', 'value' => '1703', 'order' => 3],
         ];
 
         // حذف التفاصيل القديمة
@@ -619,21 +649,21 @@ class ConstantSeeder extends Seeder
             ]);
         }
 
-        // 17. مقارنة كفاءة الطاقة
+        // 18. مقارنة كفاءة الطاقة
         $energyEfficiencyComparison = ConstantMaster::updateOrCreate(
-            ['constant_number' => 17],
+            ['constant_number' => 18],
             [
                 'constant_name' => 'مقارنة كفاءة الطاقة',
                 'description' => 'مقارنة كفاءة الطاقة',
                 'is_active' => true,
-                'order' => 17,
+                'order' => 18,
             ]
         );
 
         $energyEfficiencyComparisonDetails = [
-            ['label' => 'ضمن المعدل', 'code' => 'WITHIN_RANGE', 'value' => '1701', 'order' => 1],
-            ['label' => 'اعلى من المعدل', 'code' => 'ABOVE_RANGE', 'value' => '1702', 'order' => 2],
-            ['label' => 'اقل من المعدل', 'code' => 'BELOW_RANGE', 'value' => '1703', 'order' => 3],
+            ['label' => 'ضمن المعدل', 'code' => 'WITHIN_RANGE', 'value' => '1801', 'order' => 1],
+            ['label' => 'اعلى من المعدل', 'code' => 'ABOVE_RANGE', 'value' => '1802', 'order' => 2],
+            ['label' => 'اقل من المعدل', 'code' => 'BELOW_RANGE', 'value' => '1803', 'order' => 3],
         ];
 
         // حذف التفاصيل القديمة
@@ -650,40 +680,39 @@ class ConstantSeeder extends Seeder
             ]);
         }
 
-        // 18. موقع الخزان
-        $tankLocation = ConstantMaster::firstOrCreate(
-            ['constant_number' => 18],
+        // 21. موقع الخزان
+        $tankLocation = ConstantMaster::updateOrCreate(
+            ['constant_number' => 21],
             [
                 'constant_name' => 'موقع الخزان',
                 'description' => 'موقع خزان الوقود',
                 'is_active' => true,
-                'order' => 18,
+                'order' => 21,
             ]
         );
 
+        // حذف التفاصيل القديمة
+        ConstantDetail::where('constant_master_id', $tankLocation->id)->forceDelete();
+
         $tankLocationDetails = [
-            ['label' => 'أرضي', 'code' => 'GROUND', 'value' => '1801', 'order' => 1],
-            ['label' => 'علوي', 'code' => 'OVERHEAD', 'value' => '1802', 'order' => 2],
-            ['label' => 'تحت الأرض', 'code' => 'UNDERGROUND', 'value' => '1803', 'order' => 3],
+            ['label' => 'أرضي', 'code' => 'GROUND', 'value' => '2101', 'order' => 1],
+            ['label' => 'علوي', 'code' => 'OVERHEAD', 'value' => '2102', 'order' => 2],
+            ['label' => 'تحت الأرض', 'code' => 'UNDERGROUND', 'value' => '2103', 'order' => 3],
         ];
 
         foreach ($tankLocationDetails as $detail) {
-            ConstantDetail::firstOrCreate(
-                [
-                    'constant_master_id' => $tankLocation->id,
-                    'code' => $detail['code'],
-                ],
-                [
-                    'label' => $detail['label'],
-                    'value' => $detail['value'],
-                    'is_active' => true,
-                    'order' => $detail['order'],
-                ]
-            );
+            ConstantDetail::create([
+                'constant_master_id' => $tankLocation->id,
+                'label' => $detail['label'],
+                'code' => $detail['code'],
+                'value' => $detail['value'],
+                'is_active' => true,
+                'order' => $detail['order'],
+            ]);
         }
 
         // 19. طريقة القياس
-        $measurementMethod = ConstantMaster::firstOrCreate(
+        $measurementMethod = ConstantMaster::updateOrCreate(
             ['constant_number' => 19],
             [
                 'constant_name' => 'طريقة القياس',

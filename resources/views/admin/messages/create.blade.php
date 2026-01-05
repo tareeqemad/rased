@@ -14,55 +14,27 @@
 
 @push('styles')
     <link rel="stylesheet" href="{{ asset('assets/admin/libs/select2/select2.min.css') }}">
-    <link rel="stylesheet" href="{{ asset('assets/admin/css/permissions.css') }}">
-    <style>
-        .messages-page {
-            --perm-primary: #667eea;
-            --perm-secondary: #764ba2;
-        }
-        .messages-page .perm-card {
-            border: 1px solid #e5e7eb;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-        }
-        .messages-page .perm-card-header {
-            background: linear-gradient(135deg, var(--perm-primary) 0%, var(--perm-secondary) 100%);
-            color: white;
-            padding: 1.25rem 1.5rem;
-            border-bottom: none;
-        }
-        .messages-page .perm-title {
-            font-size: 1.35rem;
-            font-weight: 700;
-            margin-bottom: 0.25rem;
-            color: white;
-        }
-        .messages-page .perm-subtitle {
-            font-size: 0.9rem;
-            opacity: 0.95;
-            color: white;
-        }
-    </style>
+    <link rel="stylesheet" href="{{ asset('assets/admin/css/messages.css') }}">
 @endpush
 
 @section('content')
 <div class="messages-page">
     <div class="row g-3">
         <div class="col-12">
-            <div class="card perm-card">
-                <div class="perm-card-header">
-                    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
-                        <div>
-                            <div class="perm-title">
-                                <i class="bi bi-envelope-plus me-2"></i>
-                                إرسال رسالة جديدة
-                            </div>
-                            <div class="perm-subtitle">
-                                قم بإدخال بيانات الرسالة وإرسالها للمستلمين
-                            </div>
+            <div class="messages-card">
+                <div class="messages-card-header">
+                    <div>
+                        <h5 class="messages-title">
+                            <i class="bi bi-envelope-plus me-2"></i>
+                            إرسال رسالة جديدة
+                        </h5>
+                        <div class="messages-subtitle">
+                            قم بإدخال بيانات الرسالة وإرسالها للمستلمين
                         </div>
-                        <a href="{{ route('admin.messages.index') }}" class="btn btn-light">
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <a href="{{ route('admin.messages.index') }}" class="btn btn-outline-secondary">
                             <i class="bi bi-arrow-right me-2"></i>
                             العودة للقائمة
                         </a>

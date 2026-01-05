@@ -124,7 +124,9 @@ class PublicHomeController extends Controller
         $stats = [
             'total_operators' => Operator::where('status', 'active')->count(),
             'total_generators' => Generator::count(),
-            'active_generators' => Generator::where('status', 'active')->count(),
+            'active_generators' => Generator::whereHas('statusDetail', function($q) {
+                $q->where('code', 'ACTIVE');
+            })->count(),
             'total_capacity' => Operator::where('status', 'active')->sum('total_capacity') ?? 0,
             'operators_by_governorate' => Operator::where('status', 'active')
                 ->selectRaw('governorate, COUNT(*) as count')

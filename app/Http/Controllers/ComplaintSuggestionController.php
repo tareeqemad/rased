@@ -153,7 +153,9 @@ class ComplaintSuggestionController extends Controller
         $operatorId = (int) $request->operator_id;
 
         $generators = Generator::where('operator_id', $operatorId)
-            ->where('status', 'active')
+            ->whereHas('statusDetail', function($q) {
+                $q->where('code', 'ACTIVE');
+            })
             ->select('id', 'name', 'generator_number')
             ->orderBy('name')
             ->get();
@@ -187,9 +189,10 @@ class ComplaintSuggestionController extends Controller
         // البحث عن المولدات من خلال operators باستخدام join مباشرة
         // لتجنب مشاكل enum casting في whereHas
         $generators = Generator::join('operators', 'generators.operator_id', '=', 'operators.id')
+            ->join('constant_details as status_detail', 'generators.status_id', '=', 'status_detail.id')
             ->where('operators.governorate', $governorateValue)
             ->where('operators.status', 'active')
-            ->where('generators.status', 'active')
+            ->where('status_detail.code', 'ACTIVE')
             ->select('generators.id', 'generators.name', 'generators.generator_number', 'generators.operator_id', 'operators.name as operator_name')
             ->orderBy('generators.name')
             ->get();

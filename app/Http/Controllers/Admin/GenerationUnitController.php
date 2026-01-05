@@ -25,7 +25,7 @@ class GenerationUnitController extends Controller
         $this->authorize('viewAny', GenerationUnit::class);
 
         $user = auth()->user();
-        $query = GenerationUnit::with(['operator', 'generators'])->withCount('generators');
+        $query = GenerationUnit::with(['operator', 'generators', 'statusDetail', 'operationEntityDetail', 'synchronizationAvailableDetail', 'environmentalComplianceStatusDetail'])->withCount('generators');
 
         // فلترة حسب نوع المستخدم
         if ($user->isCompanyOwner()) {
@@ -50,14 +50,14 @@ class GenerationUnitController extends Controller
             });
         }
 
-        // فلترة حسب الحالة
-        $status = trim((string) $request->input('status', ''));
-        if ($status !== '' && in_array($status, ['active', 'inactive'], true)) {
-            $query->where('status', $status);
+        // فلترة حسب الحالة (استخدام status_id)
+        $statusId = (int) $request->input('status_id', 0);
+        if ($statusId > 0) {
+            $query->where('status_id', $statusId);
         }
 
-        // فلترة حسب المشغل (للسوبر أدمن فقط)
-        if ($user->isSuperAdmin()) {
+        // فلترة حسب المشغل (للسوبر أدمن و Admin)
+        if ($user->isSuperAdmin() || $user->isAdmin()) {
             $operatorId = (int) $request->input('operator_id', 0);
             if ($operatorId > 0) {
                 $query->where('operator_id', $operatorId);
@@ -76,7 +76,7 @@ class GenerationUnitController extends Controller
         }
 
         $operators = collect();
-        if ($user->isSuperAdmin()) {
+        if ($user->isSuperAdmin() || $user->isAdmin()) {
             $operators = Operator::select('id', 'name')
                 ->orderBy('name')
                 ->get();
@@ -106,19 +106,23 @@ class GenerationUnitController extends Controller
         // جلب المحافظات والمدن
         $governorates = ConstantsHelper::get(1);
         $cities = collect();
-        $selectedGovernorateCode = null;
+        $selectedGovernorateId = null;
 
         if ($operator && $operator->governorate) {
             $selectedGovernorateCode = $operator->governorate->code();
             $governorateDetail = ConstantsHelper::findByCode(1, $selectedGovernorateCode);
             if ($governorateDetail) {
+                $selectedGovernorateId = $governorateDetail->id;
                 $cities = ConstantsHelper::getCitiesByGovernorate($governorateDetail->id);
             }
         }
 
         $constants = [
-            'status' => ConstantsHelper::get(3),
-            'location' => ConstantsHelper::get(18), // موقع الخزان
+            'status' => ConstantsHelper::get(15), // حالة الوحدة
+            'operation_entity' => ConstantsHelper::get(2), // جهة التشغيل
+            'synchronization_available' => ConstantsHelper::get(16), // إمكانية المزامنة
+            'environmental_compliance_status' => ConstantsHelper::get(14), // حالة الامتثال البيئي
+            'location' => ConstantsHelper::get(21), // موقع الخزان (تم تحديثه من 18 إلى 21)
             'material' => ConstantsHelper::get(10), // مادة التصنيع
             'usage' => ConstantsHelper::get(11), // الاستخدام
             'measurement_method' => ConstantsHelper::get(19), // طريقة القياس
@@ -130,7 +134,7 @@ class GenerationUnitController extends Controller
             $allOperators = Operator::select('id', 'name')->orderBy('name')->get();
         }
 
-        return view('admin.generation-units.create', compact('operator', 'governorates', 'cities', 'selectedGovernorateCode', 'constants', 'allOperators'));
+        return view('admin.generation-units.create', compact('operator', 'governorates', 'cities', 'selectedGovernorateId', 'constants', 'allOperators'));
     }
 
     /**
@@ -158,24 +162,24 @@ class GenerationUnitController extends Controller
         }
 
         // إذا كان "نفس المالك"، جلب البيانات من المشغل
-        if (isset($data['operation_entity']) && $data['operation_entity'] === 'same_owner' && $operator) {
-            $data['owner_name'] = $operator->owner_name;
-            $data['owner_id_number'] = $operator->owner_id_number;
-            $data['operator_id_number'] = $operator->operator_id_number;
+        if (isset($data['operation_entity_id']) && $operator) {
+            // الحصول على ID ثابت "نفس المالك" من constant_master رقم 2
+            $sameOwnerConstant = ConstantsHelper::findByCode(2, 'SAME_OWNER');
+            if ($sameOwnerConstant && (int)$data['operation_entity_id'] === $sameOwnerConstant->id) {
+                $data['owner_name'] = $operator->owner_name;
+                $data['owner_id_number'] = $operator->owner_id_number;
+                $data['operator_id_number'] = $operator->operator_id_number;
+            }
         }
 
-        // تحويل governorate من code إلى enum value أولاً (قبل توليد unit_code)
+        // الحصول على governorate code و city code لتوليد unit_code
         $governorateCode = null;
         $cityCode = null;
-        if (isset($data['governorate'])) {
-            $governorateDetail = \App\Models\ConstantDetail::whereHas('master', function($q) {
-                $q->where('constant_number', 1);
-            })->where('code', $data['governorate'])->first();
-            
+        if (isset($data['governorate_id'])) {
+            $governorateDetail = \App\Models\ConstantDetail::find($data['governorate_id']);
             if ($governorateDetail && $governorateDetail->value) {
                 $governorateEnum = Governorate::fromValue((int) $governorateDetail->value);
                 $governorateCode = $governorateEnum->code();
-                $data['governorate'] = $governorateCode;
             }
         }
 
@@ -187,13 +191,30 @@ class GenerationUnitController extends Controller
             }
         }
 
+        // تعيين قيم افتراضية للحقول الاختيارية
+        if (!isset($data['generators_count']) || empty($data['generators_count'])) {
+            $data['generators_count'] = 1; // افتراضي: مولد واحد
+        }
+        
+        if (!isset($data['status_id']) || empty($data['status_id'])) {
+            // جلب حالة "فعال" من الثوابت
+            $activeStatus = \App\Models\ConstantDetail::whereHas('master', function($q) {
+                $q->where('constant_number', 15);
+            })->where('code', 'ACTIVE')->first();
+            
+            if ($activeStatus) {
+                $data['status_id'] = $activeStatus->id;
+            }
+        }
+
         // توليد رقم الوحدة وكود الوحدة تلقائياً
         if (!isset($data['unit_number']) || empty($data['unit_number'])) {
             // إذا كان governorate و city_id موجودان في الـ form، استخدمهما لتوليد unit_number
             if ($governorateCode && $cityCode) {
                 $data['unit_number'] = GenerationUnit::getNextUnitNumberByLocation($governorateCode, $cityCode);
             } else {
-                $data['unit_number'] = GenerationUnit::getNextUnitNumber($data['operator_id']);
+                // إذا لم يكن هناك operator_id، استخدم رقم افتراضي
+                $data['unit_number'] = GenerationUnit::getNextUnitNumber($data['operator_id'] ?? null);
             }
         }
 
@@ -214,11 +235,6 @@ class GenerationUnitController extends Controller
             return redirect()->back()
                 ->withInput()
                 ->with('error', 'فشل في توليد كود الوحدة. يرجى التأكد من إدخال المحافظة والمدينة بشكل صحيح.');
-        }
-
-        // boolean fields
-        if (isset($data['synchronization_available'])) {
-            $data['synchronization_available'] = (bool) $data['synchronization_available'];
         }
 
         // تتبع المستخدمين
@@ -242,12 +258,12 @@ class GenerationUnitController extends Controller
                     'generation_unit_id' => $generationUnit->id,
                     'tank_code' => $tankCode,
                     'capacity' => $tankData['capacity'] ?? null,
-                    'location' => $tankData['location'] ?? null,
+                    'location_id' => $tankData['location_id'] ?? null,
                     'filtration_system_available' => $tankData['filtration_system_available'] ?? false,
                     'condition' => $tankData['condition'] ?? null,
-                    'material' => $tankData['material'] ?? null,
-                    'usage' => $tankData['usage'] ?? null,
-                    'measurement_method' => $tankData['measurement_method'] ?? null,
+                    'material_id' => $tankData['material_id'] ?? null,
+                    'usage_id' => $tankData['usage_id'] ?? null,
+                    'measurement_method_id' => $tankData['measurement_method_id'] ?? null,
                     'order' => $index + 1,
                 ]);
             }
@@ -272,7 +288,7 @@ class GenerationUnitController extends Controller
     {
         $this->authorize('view', $generationUnit);
 
-        $generationUnit->load(['operator', 'generators', 'fuelTanks']);
+        $generationUnit->load(['operator', 'generators', 'fuelTanks', 'statusDetail', 'operationEntityDetail', 'synchronizationAvailableDetail', 'environmentalComplianceStatusDetail', 'city']);
 
         return view('admin.generation-units.show', compact('generationUnit'));
     }
@@ -289,27 +305,30 @@ class GenerationUnitController extends Controller
         // جلب المحافظات والمدن
         $governorates = ConstantsHelper::get(1);
         $cities = collect();
-        $selectedGovernorateCode = null;
+        $selectedGovernorateId = null;
 
-        if ($generationUnit->governorate) {
-            $selectedGovernorateCode = $generationUnit->governorate;
-            $governorateDetail = ConstantsHelper::findByCode(1, $selectedGovernorateCode);
+        if ($generationUnit->governorate_id) {
+            $selectedGovernorateId = $generationUnit->governorate_id;
+            $governorateDetail = \App\Models\ConstantDetail::find($generationUnit->governorate_id);
             if ($governorateDetail) {
                 $cities = ConstantsHelper::getCitiesByGovernorate($governorateDetail->id);
             }
         }
 
         $constants = [
-            'status' => ConstantsHelper::get(3),
-            'location' => ConstantsHelper::get(18), // موقع الخزان
+            'status' => ConstantsHelper::get(15), // حالة الوحدة
+            'operation_entity' => ConstantsHelper::get(2), // جهة التشغيل
+            'synchronization_available' => ConstantsHelper::get(16), // إمكانية المزامنة
+            'environmental_compliance_status' => ConstantsHelper::get(14), // حالة الامتثال البيئي
+            'location' => ConstantsHelper::get(21), // موقع الخزان (تم تحديثه من 18 إلى 21)
             'material' => ConstantsHelper::get(10), // مادة التصنيع
             'usage' => ConstantsHelper::get(11), // الاستخدام
             'measurement_method' => ConstantsHelper::get(19), // طريقة القياس
         ];
 
-        $generationUnit->load('fuelTanks');
+        $generationUnit->load(['fuelTanks', 'statusDetail', 'operationEntityDetail', 'synchronizationAvailableDetail', 'environmentalComplianceStatusDetail', 'governorateDetail', 'city']);
 
-        return view('admin.generation-units.edit', compact('generationUnit', 'operator', 'governorates', 'cities', 'selectedGovernorateCode', 'constants'));
+        return view('admin.generation-units.edit', compact('generationUnit', 'operator', 'governorates', 'cities', 'selectedGovernorateId', 'constants'));
     }
 
     /**
@@ -324,28 +343,55 @@ class GenerationUnitController extends Controller
 
         // إذا كان "نفس المالك"، جلب البيانات من المشغل
         $operator = $generationUnit->operator;
-        if (isset($data['operation_entity']) && $data['operation_entity'] === 'same_owner' && $operator) {
-            $data['owner_name'] = $operator->owner_name;
-            $data['owner_id_number'] = $operator->owner_id_number;
-            $data['operator_id_number'] = $operator->operator_id_number;
-        }
-
-        // تحويل governorate من code إلى enum value
-        if (isset($data['governorate'])) {
-            $governorateDetail = \App\Models\ConstantDetail::whereHas('master', function($q) {
-                $q->where('constant_number', 1);
-            })->where('code', $data['governorate'])->first();
-            
-            if ($governorateDetail && $governorateDetail->value) {
-                $governorateEnum = Governorate::fromValue((int) $governorateDetail->value);
-                $data['governorate'] = $governorateEnum->code();
+        if (isset($data['operation_entity_id']) && $operator) {
+            // الحصول على ID ثابت "نفس المالك" من constant_master رقم 2
+            $sameOwnerConstant = ConstantsHelper::findByCode(2, 'SAME_OWNER');
+            if ($sameOwnerConstant && (int)$data['operation_entity_id'] === $sameOwnerConstant->id) {
+                $data['owner_name'] = $operator->owner_name;
+                $data['owner_id_number'] = $operator->owner_id_number;
+                $data['operator_id_number'] = $operator->operator_id_number;
             }
         }
 
-        // boolean fields
-        if (isset($data['synchronization_available'])) {
-            $data['synchronization_available'] = (bool) $data['synchronization_available'];
+        // الحصول على governorate code و city code لتوليد unit_code (إذا تم تغييرهما)
+        $governorateCode = null;
+        $cityCode = null;
+        if (isset($data['governorate_id'])) {
+            $governorateDetail = \App\Models\ConstantDetail::find($data['governorate_id']);
+            if ($governorateDetail && $governorateDetail->value) {
+                $governorateEnum = Governorate::fromValue((int) $governorateDetail->value);
+                $governorateCode = $governorateEnum->code();
+            }
+        } elseif ($generationUnit->governorate_id) {
+            // إذا لم يتم تغيير المحافظة، استخدم القيمة الحالية
+            $governorateDetail = \App\Models\ConstantDetail::find($generationUnit->governorate_id);
+            if ($governorateDetail && $governorateDetail->value) {
+                $governorateEnum = Governorate::fromValue((int) $governorateDetail->value);
+                $governorateCode = $governorateEnum->code();
+            }
         }
+
+        if (isset($data['city_id'])) {
+            $cityDetail = \App\Models\ConstantDetail::find($data['city_id']);
+            if ($cityDetail && $cityDetail->code) {
+                $cityCode = $cityDetail->code;
+            }
+        } elseif ($generationUnit->city_id) {
+            $cityDetail = \App\Models\ConstantDetail::find($generationUnit->city_id);
+            if ($cityDetail && $cityDetail->code) {
+                $cityCode = $cityDetail->code;
+            }
+        }
+
+        // إذا تم تغيير المحافظة أو المدينة، إعادة توليد unit_code
+        if ($governorateCode && $cityCode && 
+            ($data['governorate_id'] != $generationUnit->governorate_id || 
+             (isset($data['city_id']) && $data['city_id'] != $generationUnit->city_id))) {
+            $data['unit_number'] = GenerationUnit::getNextUnitNumberByLocation($governorateCode, $cityCode);
+            $data['unit_code'] = GenerationUnit::generateUnitCodeByLocation($governorateCode, $cityCode, $data['unit_number']);
+        }
+
+        // لا حاجة لتحويل synchronization_available لأنه أصبح ID الآن
 
         // تتبع المستخدمين
         $data['last_updated_by'] = $user->id;
@@ -370,12 +416,12 @@ class GenerationUnitController extends Controller
                     'generation_unit_id' => $generationUnit->id,
                     'tank_code' => $tankCode,
                     'capacity' => $tankData['capacity'] ?? null,
-                    'location' => $tankData['location'] ?? null,
+                    'location_id' => $tankData['location_id'] ?? null,
                     'filtration_system_available' => $tankData['filtration_system_available'] ?? false,
                     'condition' => $tankData['condition'] ?? null,
-                    'material' => $tankData['material'] ?? null,
-                    'usage' => $tankData['usage'] ?? null,
-                    'measurement_method' => $tankData['measurement_method'] ?? null,
+                    'material_id' => $tankData['material_id'] ?? null,
+                    'usage_id' => $tankData['usage_id'] ?? null,
+                    'measurement_method_id' => $tankData['measurement_method_id'] ?? null,
                     'order' => $index + 1,
                 ]);
             }

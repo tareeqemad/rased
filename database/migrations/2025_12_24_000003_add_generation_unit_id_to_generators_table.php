@@ -12,11 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('generators', function (Blueprint $table) {
-            // إضافة عمود generation_unit_id
-            $table->foreignId('generation_unit_id')->nullable()->after('operator_id')->constrained('generation_units')->cascadeOnDelete();
-            
-            // إضافة فهرس
-            $table->index(['generation_unit_id', 'status'], 'idx_generators_unit_status');
+            $table->foreignId('generation_unit_id')->nullable()
+                ->constrained('generation_units')->cascadeOnDelete();
+            $table->index(['generation_unit_id', 'status_id'], 'idx_generators_unit_status');
         });
     }
 

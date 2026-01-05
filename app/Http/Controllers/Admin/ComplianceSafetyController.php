@@ -85,7 +85,7 @@ class ComplianceSafetyController extends Controller
 
         $operators = collect();
         
-        if ($user->isSuperAdmin()) {
+        if ($user->isSuperAdmin() || $user->isAdmin()) {
             $operators = Operator::select('id', 'name', 'unit_number')
                 ->orderBy('name')
                 ->get();
@@ -121,8 +121,13 @@ class ComplianceSafetyController extends Controller
         } elseif ($user->isEmployee()) {
             $operators = $user->operators;
         }
+        
+        // جلب ثوابت حالة شهادة السلامة
+        $constants = [
+            'safety_certificate_status' => \App\Helpers\ConstantsHelper::get(13), // حالة شهادة السلامة
+        ];
 
-        return view('admin.compliance-safeties.create', compact('operators'));
+        return view('admin.compliance-safeties.create', compact('operators', 'constants'));
     }
 
     /**
@@ -172,7 +177,10 @@ class ComplianceSafetyController extends Controller
     {
         $this->authorize('view', $complianceSafety);
 
-        $complianceSafety->load('operator');
+        $complianceSafety->load([
+            'operator',
+            'safetyCertificateStatusDetail'
+        ]);
 
         return view('admin.compliance-safeties.show', compact('complianceSafety'));
     }
@@ -197,8 +205,13 @@ class ComplianceSafetyController extends Controller
         } elseif ($user->isEmployee()) {
             $operators = $user->operators;
         }
+        
+        // جلب ثوابت حالة شهادة السلامة
+        $constants = [
+            'safety_certificate_status' => \App\Helpers\ConstantsHelper::get(13), // حالة شهادة السلامة
+        ];
 
-        return view('admin.compliance-safeties.edit', compact('complianceSafety', 'operators'));
+        return view('admin.compliance-safeties.edit', compact('complianceSafety', 'operators', 'constants'));
     }
 
     /**

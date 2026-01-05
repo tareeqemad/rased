@@ -21,9 +21,9 @@ class UpdateFuelEfficiencyRequest extends FormRequest
             'fuel_price_per_liter' => ['nullable', 'numeric', 'min:0'],
             'fuel_consumed' => ['nullable', 'numeric', 'min:0'],
             'fuel_efficiency_percentage' => ['nullable', 'numeric', 'min:0', 'max:100'],
-            'fuel_efficiency_comparison' => ['nullable', 'string', Rule::in(['within_standard', 'above', 'below'])],
+            'fuel_efficiency_comparison_id' => ['nullable', 'exists:constant_details,id'],
             'energy_distribution_efficiency' => ['nullable', 'numeric', 'min:0', 'max:100'],
-            'energy_efficiency_comparison' => ['nullable', 'string', Rule::in(['within_standard', 'above', 'below'])],
+            'energy_efficiency_comparison_id' => ['nullable', 'exists:constant_details,id'],
             'total_operating_cost' => ['nullable', 'numeric', 'min:0'],
         ];
     }
@@ -34,8 +34,8 @@ class UpdateFuelEfficiencyRequest extends FormRequest
             'generator_id.required' => 'المولد مطلوب.',
             'generator_id.exists' => 'المولد المحدد غير موجود.',
             'consumption_date.required' => 'تاريخ الاستهلاك مطلوب.',
-            'fuel_efficiency_comparison.in' => 'مقارنة كفاءة الوقود غير صحيحة.',
-            'energy_efficiency_comparison.in' => 'مقارنة كفاءة الطاقة غير صحيحة.',
+            'fuel_efficiency_comparison_id.exists' => 'مقارنة كفاءة الوقود غير صحيحة.',
+            'energy_efficiency_comparison_id.exists' => 'مقارنة كفاءة الطاقة غير صحيحة.',
         ];
     }
 }

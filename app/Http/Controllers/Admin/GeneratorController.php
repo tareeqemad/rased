@@ -25,7 +25,16 @@ class GeneratorController extends Controller
         $this->authorize('viewAny', Generator::class);
 
         $user = auth()->user();
-        $query = Generator::with('operator');
+        $query = Generator::with([
+            'operator',
+            'statusDetail',
+            'engineTypeDetail',
+            'injectionSystemDetail',
+            'measurementIndicatorDetail',
+            'technicalConditionDetail',
+            'controlPanelTypeDetail',
+            'controlPanelStatusDetail'
+        ]);
 
         if ($user->isCompanyOwner()) {
             $operator = $user->ownedOperators()->first();
@@ -48,9 +57,10 @@ class GeneratorController extends Controller
             });
         }
 
-        $status = trim((string) $request->input('status', ''));
-        if ($status !== '' && in_array($status, ['active', 'inactive'], true)) {
-            $query->where('status', $status);
+        // فلترة حسب الحالة (استخدام status_id)
+        $statusId = (int) $request->input('status_id', 0);
+        if ($statusId > 0) {
+            $query->where('status_id', $statusId);
         }
 
         if ($user->isSuperAdmin()) {
@@ -78,7 +88,10 @@ class GeneratorController extends Controller
                 ->get();
         }
 
-        return view('admin.generators.index', compact('generators', 'operators'));
+        // جلب ثوابت الحالة للفلترة
+        $statusConstants = ConstantsHelper::get(3); // حالة المولد
+
+        return view('admin.generators.index', compact('generators', 'operators', 'statusConstants'));
     }
 
     /**
@@ -256,7 +269,17 @@ class GeneratorController extends Controller
     {
         $this->authorize('view', $generator);
 
-        $generator->load(['operator', 'generationUnit']);
+        $generator->load([
+            'operator', 
+            'generationUnit',
+            'statusDetail',
+            'engineTypeDetail',
+            'injectionSystemDetail',
+            'measurementIndicatorDetail',
+            'technicalConditionDetail',
+            'controlPanelTypeDetail',
+            'controlPanelStatusDetail'
+        ]);
 
         return view('admin.generators.show', compact('generator'));
     }

@@ -22,6 +22,7 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class,
             OperatorsWithDataSeeder::class,
             ComplaintSuggestionSeeder::class,
+            MessageSeeder::class,
         ]);
     }
 }

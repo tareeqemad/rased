@@ -69,13 +69,16 @@
                                             <i class="bi bi-tag text-info me-1"></i>
                                             نوع الصيانة <span class="text-danger">*</span>
                                         </label>
-                                        <select name="maintenance_type" id="maintenance_type" 
-                                                class="form-select @error('maintenance_type') is-invalid @enderror">
+                                        <select name="maintenance_type_id" id="maintenance_type_id" 
+                                                class="form-select @error('maintenance_type_id') is-invalid @enderror">
                                             <option value="">اختر النوع</option>
-                                            <option value="periodic" {{ old('maintenance_type', $maintenanceRecord->maintenance_type) === 'periodic' ? 'selected' : '' }}>دورية</option>
-                                            <option value="emergency" {{ old('maintenance_type', $maintenanceRecord->maintenance_type) === 'emergency' ? 'selected' : '' }}>طارئة</option>
+                                            @foreach($constants['maintenance_type'] ?? [] as $type)
+                                                <option value="{{ $type->id }}" {{ old('maintenance_type_id', $maintenanceRecord->maintenance_type_id) == $type->id ? 'selected' : '' }}>
+                                                    {{ $type->label }}
+                                                </option>
+                                            @endforeach
                                         </select>
-                                        @error('maintenance_type')
+                                        @error('maintenance_type_id')
                                             <div class="invalid-feedback d-block">{{ $message }}</div>
                                         @enderror
                                     </div>

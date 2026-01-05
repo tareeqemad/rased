@@ -12,6 +12,8 @@ use App\Models\Generator;
 use App\Models\MaintenanceRecord;
 use App\Models\OperationLog;
 use App\Models\Operator;
+use App\Models\Permission;
+use App\Models\Role as RoleModel;
 use App\Models\User;
 use App\Role;
 use Illuminate\Database\Seeder;
@@ -111,15 +113,6 @@ class OperatorsWithDataSeeder extends Seeder
             'فني كهرباء 2',
         ];
 
-        // أنواع الصيانة
-        $maintenanceTypes = [
-            'صيانة دورية',
-            'صيانة وقائية',
-            'صيانة طارئة',
-            'صيانة كبرى',
-            'صيانة عادية',
-        ];
-
         // جمع جميع المولدات لاستخدامها في السجلات
         $allGenerators = collect();
         $allOperators = collect();
@@ -134,11 +127,36 @@ class OperatorsWithDataSeeder extends Seeder
         $technicalConditionConstants = ConstantsHelper::get(7); // الحالة الفنية
         $controlPanelTypeConstants = ConstantsHelper::get(8); // نوع لوحة التحكم
         $controlPanelStatusConstants = ConstantsHelper::get(9); // حالة لوحة التحكم
+        
+        // ثوابت إضافية
+        $maintenanceTypeConstants = ConstantsHelper::get(12); // نوع الصيانة
+        $fuelEfficiencyComparisonConstants = ConstantsHelper::get(17); // مقارنة كفاءة الوقود
+        $energyEfficiencyComparisonConstants = ConstantsHelper::get(18); // مقارنة كفاءة الطاقة
+        $safetyCertificateStatusConstants = ConstantsHelper::get(13); // حالة شهادة السلامة
+        $tankLocationConstants = ConstantsHelper::get(21); // موقع الخزان
+        $tankMaterialConstants = ConstantsHelper::get(10); // مادة التصنيع
+        $tankUsageConstants = ConstantsHelper::get(11); // الاستخدام
+        $tankMeasurementMethodConstants = ConstantsHelper::get(19); // طريقة القياس
+        
+        // الحصول على الأدوار النظامية
+        $companyOwnerRoleModel = RoleModel::where('name', 'company_owner')->first();
+        $employeeRoleModel = RoleModel::where('name', 'employee')->first();
+        $technicianRoleModel = RoleModel::where('name', 'technician')->first();
 
-        // دالة مساعدة للحصول على قيمة ثابت
-        $getConstantValue = function($collection, $default) {
-            return $collection->isNotEmpty() ? $collection->random()->value : $default;
+        // دالة مساعدة للحصول على ID الثابت بناءً على code
+        $getConstantId = function($collection, $code) {
+            $detail = $collection->where('code', $code)->first();
+            return $detail ? $detail->id : null;
         };
+        
+        // دالة مساعدة للحصول على ID عشوائي من مجموعة ثوابت
+        $getRandomConstantId = function($collection) {
+            return $collection->isNotEmpty() ? $collection->random()->id : null;
+        };
+        
+        // جلب IDs ثوابت نوع الصيانة
+        $maintenanceTypePeriodicId = $getConstantId($maintenanceTypeConstants, 'PERIODIC');
+        $maintenanceTypeEmergencyId = $getConstantId($maintenanceTypeConstants, 'EMERGENCY');
 
         // إنشاء مشغل المملوك أولاً
         $this->command->info('جاري إنشاء مشغل المملوك...');
@@ -165,6 +183,15 @@ class OperatorsWithDataSeeder extends Seeder
 
                 $allOperators->push($mmlukOperator);
 
+                // الحصول على IDs الثوابت للمولدات
+                $statusActiveId = $getConstantId($statusConstants, 'ACTIVE');
+                $engineTypePerkinsId = $getConstantId($engineTypeConstants, 'PERKINS');
+                $injectionSystemMechanicalId = $getConstantId($injectionSystemConstants, 'MECHANICAL');
+                $measurementIndicatorAvailableWorkingId = $getConstantId($measurementIndicatorConstants, 'AVAILABLE_WORKING');
+                $technicalConditionGoodId = $getConstantId($technicalConditionConstants, 'GOOD');
+                $controlPanelTypeDeepSeaId = $getConstantId($controlPanelTypeConstants, 'DEEP_SEA');
+                $controlPanelStatusWorkingId = $getConstantId($controlPanelStatusConstants, 'WORKING');
+                
                 // إنشاء 4 مولدات لمشغل المملوك
                 $mmlukGeneratorsData = [
                     [
@@ -174,21 +201,21 @@ class OperatorsWithDataSeeder extends Seeder
                         'power_factor' => 0.8,
                         'voltage' => 400,
                         'frequency' => 50,
-                        'engine_type' => $getConstantValue($engineTypeConstants, 'diesel'),
+                        'engine_type_id' => $engineTypePerkinsId,
                         'manufacturing_year' => 2020,
-                        'injection_system' => $getConstantValue($injectionSystemConstants, 'mechanical'),
+                        'injection_system_id' => $injectionSystemMechanicalId,
                         'fuel_consumption_rate' => 25.5,
                         'ideal_fuel_efficiency' => 0.5,
                         'internal_tank_capacity' => 200,
-                        'measurement_indicator' => $getConstantValue($measurementIndicatorConstants, 'mechanical'),
-                        'technical_condition' => $getConstantValue($technicalConditionConstants, 'good'),
+                        'measurement_indicator_id' => $measurementIndicatorAvailableWorkingId,
+                        'technical_condition_id' => $technicalConditionGoodId,
                         'control_panel_available' => true,
-                        'control_panel_type' => $getConstantValue($controlPanelTypeConstants, 'manual'),
-                        'control_panel_status' => $getConstantValue($controlPanelStatusConstants, 'active'),
+                        'control_panel_type_id' => $controlPanelTypeDeepSeaId,
+                        'control_panel_status_id' => $controlPanelStatusWorkingId,
                         'operating_hours' => 5000,
                         'external_fuel_tank' => true,
                         'fuel_tanks_count' => 2,
-                        'status' => $getConstantValue($statusConstants, 'active'),
+                        'status_id' => $statusActiveId,
                     ],
                     [
                         'name' => 'مولد المملوك 2',
@@ -197,21 +224,21 @@ class OperatorsWithDataSeeder extends Seeder
                         'power_factor' => 0.85,
                         'voltage' => 400,
                         'frequency' => 50,
-                        'engine_type' => $getConstantValue($engineTypeConstants, 'diesel'),
+                        'engine_type_id' => $engineTypePerkinsId,
                         'manufacturing_year' => 2021,
-                        'injection_system' => $getConstantValue($injectionSystemConstants, 'mechanical'),
+                        'injection_system_id' => $injectionSystemMechanicalId,
                         'fuel_consumption_rate' => 35.0,
                         'ideal_fuel_efficiency' => 0.55,
                         'internal_tank_capacity' => 300,
-                        'measurement_indicator' => $getConstantValue($measurementIndicatorConstants, 'mechanical'),
-                        'technical_condition' => $getConstantValue($technicalConditionConstants, 'good'),
+                        'measurement_indicator_id' => $measurementIndicatorAvailableWorkingId,
+                        'technical_condition_id' => $technicalConditionGoodId,
                         'control_panel_available' => true,
-                        'control_panel_type' => $getConstantValue($controlPanelTypeConstants, 'manual'),
-                        'control_panel_status' => $getConstantValue($controlPanelStatusConstants, 'active'),
+                        'control_panel_type_id' => $controlPanelTypeDeepSeaId,
+                        'control_panel_status_id' => $controlPanelStatusWorkingId,
                         'operating_hours' => 3500,
                         'external_fuel_tank' => true,
                         'fuel_tanks_count' => 2,
-                        'status' => $getConstantValue($statusConstants, 'active'),
+                        'status_id' => $statusActiveId,
                     ],
                     [
                         'name' => 'مولد المملوك 3',
@@ -220,21 +247,21 @@ class OperatorsWithDataSeeder extends Seeder
                         'power_factor' => 0.9,
                         'voltage' => 400,
                         'frequency' => 50,
-                        'engine_type' => $getConstantValue($engineTypeConstants, 'diesel'),
+                        'engine_type_id' => $engineTypePerkinsId,
                         'manufacturing_year' => 2019,
-                        'injection_system' => $getConstantValue($injectionSystemConstants, 'mechanical'),
+                        'injection_system_id' => $injectionSystemMechanicalId,
                         'fuel_consumption_rate' => 45.5,
                         'ideal_fuel_efficiency' => 0.48,
                         'internal_tank_capacity' => 400,
-                        'measurement_indicator' => $getConstantValue($measurementIndicatorConstants, 'mechanical'),
-                        'technical_condition' => $getConstantValue($technicalConditionConstants, 'good'),
+                        'measurement_indicator_id' => $measurementIndicatorAvailableWorkingId,
+                        'technical_condition_id' => $technicalConditionGoodId,
                         'control_panel_available' => true,
-                        'control_panel_type' => $getConstantValue($controlPanelTypeConstants, 'manual'),
-                        'control_panel_status' => $getConstantValue($controlPanelStatusConstants, 'active'),
+                        'control_panel_type_id' => $controlPanelTypeDeepSeaId,
+                        'control_panel_status_id' => $controlPanelStatusWorkingId,
                         'operating_hours' => 8000,
                         'external_fuel_tank' => true,
                         'fuel_tanks_count' => 2,
-                        'status' => $getConstantValue($statusConstants, 'active'),
+                        'status_id' => $statusActiveId,
                     ],
                     [
                         'name' => 'مولد المملوك 4',
@@ -243,21 +270,21 @@ class OperatorsWithDataSeeder extends Seeder
                         'power_factor' => 0.75,
                         'voltage' => 400,
                         'frequency' => 50,
-                        'engine_type' => $getConstantValue($engineTypeConstants, 'diesel'),
+                        'engine_type_id' => $engineTypePerkinsId,
                         'manufacturing_year' => 2022,
-                        'injection_system' => $getConstantValue($injectionSystemConstants, 'mechanical'),
+                        'injection_system_id' => $injectionSystemMechanicalId,
                         'fuel_consumption_rate' => 15.0,
                         'ideal_fuel_efficiency' => 0.52,
                         'internal_tank_capacity' => 150,
-                        'measurement_indicator' => $getConstantValue($measurementIndicatorConstants, 'mechanical'),
-                        'technical_condition' => $getConstantValue($technicalConditionConstants, 'good'),
+                        'measurement_indicator_id' => $measurementIndicatorAvailableWorkingId,
+                        'technical_condition_id' => $technicalConditionGoodId,
                         'control_panel_available' => true,
-                        'control_panel_type' => $getConstantValue($controlPanelTypeConstants, 'manual'),
-                        'control_panel_status' => $getConstantValue($controlPanelStatusConstants, 'active'),
+                        'control_panel_type_id' => $controlPanelTypeDeepSeaId,
+                        'control_panel_status_id' => $controlPanelStatusWorkingId,
                         'operating_hours' => 2000,
                         'external_fuel_tank' => false,
                         'fuel_tanks_count' => 0,
-                        'status' => $getConstantValue($statusConstants, 'active'),
+                        'status_id' => $statusActiveId,
                     ],
                 ];
 
@@ -267,35 +294,46 @@ class OperatorsWithDataSeeder extends Seeder
                 $unitNumber = GenerationUnit::getNextUnitNumberByLocation($governorateCode, $cityCode);
                 $unitCode = "GU-{$governorateCode}-{$cityCode}-{$unitNumber}";
                 
+                // الحصول على IDs من الثوابت
+                $statusConstants = ConstantsHelper::get(15); // حالة الوحدة
+                $operationEntityConstants = ConstantsHelper::get(2); // جهة التشغيل
+                $syncConstants = ConstantsHelper::get(16); // إمكانية المزامنة
+                $complianceConstants = ConstantsHelper::get(14); // حالة الامتثال البيئي
+                
+                $statusActiveId = $statusConstants->where('code', 'ACTIVE')->first()?->id;
+                $operationSameOwnerId = $operationEntityConstants->where('code', 'SAME_OWNER')->first()?->id;
+                $syncAvailableId = $syncConstants->where('code', 'AVAILABLE')->first()?->id;
+                $complianceCompliantId = $complianceConstants->where('code', 'COMPLIANT')->first()?->id;
+                
                 $generationUnit = GenerationUnit::create([
                     'operator_id' => $mmlukOperator->id,
                     'unit_code' => $unitCode,
                     'unit_number' => $unitNumber,
                     'name' => 'وحدة التوليد الرئيسية',
                     'generators_count' => 4,
-                    'status' => 'active',
+                    'status_id' => $statusActiveId,
                     // الملكية والتشغيل
                     'owner_name' => $mmlukOwner->name,
                     'owner_id_number' => str_pad(rand(100000000, 999999999), 9, '0', STR_PAD_LEFT),
-                    'operation_entity' => 'same_owner',
+                    'operation_entity_id' => $operationSameOwnerId,
                     'operator_id_number' => str_pad(rand(100000, 999999), 6, '0', STR_PAD_LEFT),
                     'phone' => '0599123456',
                     'phone_alt' => '0599123457',
                     'email' => 'info@mmluk.ps',
                     // الموقع
-                    'governorate' => $governorateEnum->code(),
+                    'governorate_id' => $gazaGovernorate->id,
                     'city_id' => $gazaCity->id,
                     'detailed_address' => 'غزة - شارع المملوك - مبنى رقم 5',
                     'latitude' => 31.3547,
                     'longitude' => 34.3088,
                     // القدرات الفنية
                     'total_capacity' => 500,
-                    'synchronization_available' => true,
+                    'synchronization_available_id' => $syncAvailableId,
                     'max_synchronization_capacity' => 400,
                     // المستفيدون والبيئة
                     'beneficiaries_count' => 150,
                     'beneficiaries_description' => 'سكان المنطقة والمؤسسات',
-                    'environmental_compliance_status' => 'compliant',
+                    'environmental_compliance_status_id' => $complianceCompliantId,
                 ]);
 
                 foreach ($mmlukGeneratorsData as $genData) {
@@ -321,19 +359,77 @@ class OperatorsWithDataSeeder extends Seeder
                                 'generation_unit_id' => $generator->generation_unit_id,
                                 'tank_code' => $tankCode,
                                 'capacity' => rand(100, 500),
-                                'location' => ['داخلي', 'خارجي', 'أرضي', 'علوي'][rand(0, 3)],
+                                'location_id' => $getRandomConstantId($tankLocationConstants),
                                 'filtration_system_available' => rand(0, 1) === 1,
                                 'condition' => ['جيد', 'ممتاز', 'مقبول'][rand(0, 2)],
-                                'material' => ['حديد', 'بلاستيك', 'فولاذ'][rand(0, 2)],
-                                'usage' => ['رئيسي', 'احتياطي', 'إضافي'][rand(0, 2)],
-                                'measurement_method' => ['ميكانيكي', 'إلكتروني', 'يدوي'][rand(0, 2)],
+                                'material_id' => $getRandomConstantId($tankMaterialConstants),
+                                'usage_id' => $getRandomConstantId($tankUsageConstants),
+                                'measurement_method_id' => $getRandomConstantId($tankMeasurementMethodConstants),
                                 'order' => $t + 1,
                             ]);
                         }
                     }
                 }
 
-                // ربط الموظفين الخمسة بالمشغل
+                // إنشاء أدوار خاصة لمشغل المملوك
+                $this->command->info("جاري إنشاء أدوار خاصة لمشغل المملوك...");
+                
+                // الحصول على الصلاحيات المتاحة (ما عدا صلاحيات النظام)
+                $allPermissions = Permission::all();
+                $systemPermissions = [
+                    'users.view', 'users.create', 'users.update', 'users.delete',
+                    'operators.view', 'operators.create', 'operators.update', 'operators.delete',
+                    'permissions.manage',
+                ];
+                $availablePermissions = $allPermissions->reject(function ($permission) use ($systemPermissions) {
+                    return in_array($permission->name, $systemPermissions);
+                });
+
+                // دور: فني صيانة متقدم
+                $mmlukAdvancedTechnicianRole = RoleModel::create([
+                    'name' => 'technician_advanced_mmluk',
+                    'label' => 'فني صيانة متقدم - مشغل المملوك',
+                    'description' => 'فني صيانة متقدم مع صلاحيات كاملة في الصيانة',
+                    'is_system' => false,
+                    'operator_id' => $mmlukOperator->id,
+                    'order' => 10,
+                ]);
+                $mmlukAdvancedTechnicianRole->permissions()->attach($availablePermissions->whereIn('name', [
+                    'generators.view',
+                    'maintenance_records.view',
+                    'maintenance_records.create',
+                    'maintenance_records.update',
+                ])->pluck('id'));
+
+                // دور: مشرف سجلات
+                $mmlukRecordsSupervisorRole = RoleModel::create([
+                    'name' => 'records_supervisor_mmluk',
+                    'label' => 'مشرف سجلات - مشغل المملوك',
+                    'description' => 'مشرف على جميع السجلات',
+                    'is_system' => false,
+                    'operator_id' => $mmlukOperator->id,
+                    'order' => 11,
+                ]);
+                $mmlukRecordsSupervisorRole->permissions()->attach($availablePermissions->whereIn('name', [
+                    'operation_logs.view',
+                    'operation_logs.create',
+                    'operation_logs.update',
+                    'fuel_efficiencies.view',
+                    'fuel_efficiencies.create',
+                    'fuel_efficiencies.update',
+                    'maintenance_records.view',
+                    'maintenance_records.create',
+                    'maintenance_records.update',
+                    'compliance_safeties.view',
+                    'compliance_safeties.create',
+                    'compliance_safeties.update',
+                ])->pluck('id'));
+
+                // الحصول على الأدوار النظامية
+                $employeeRoleModel = RoleModel::where('name', 'employee')->first();
+                $technicianRoleModel = RoleModel::where('name', 'technician')->first();
+
+                // ربط الموظفين الخمسة بالمشغل مع أدوار مختلفة
                 $employees = User::whereIn('username', [
                     'emp1_mmluk',
                     'emp2_mmluk',
@@ -342,11 +438,26 @@ class OperatorsWithDataSeeder extends Seeder
                     'emp5_mmluk',
                 ])->get();
 
+                // تحديث role_id لبعض الموظفين لاستخدام الأدوار الخاصة
+                if ($employees->count() >= 5) {
+                    // الموظف 3 - استخدام دور فني صيانة متقدم
+                    $emp3 = $employees->where('username', 'emp3_mmluk')->first();
+                    if ($emp3) {
+                        $emp3->update(['role_id' => $mmlukAdvancedTechnicianRole->id]);
+                    }
+                    
+                    // الموظف 4 - استخدام دور مشرف سجلات
+                    $emp4 = $employees->where('username', 'emp4_mmluk')->first();
+                    if ($emp4) {
+                        $emp4->update(['role_id' => $mmlukRecordsSupervisorRole->id]);
+                    }
+                }
+
                 foreach ($employees as $employee) {
                     $mmlukOperator->users()->attach($employee->id);
                 }
 
-                $this->command->info('✓ تم إنشاء مشغل المملوك مع 4 مولدات و ' . $employees->count() . ' موظف');
+                $this->command->info('✓ تم إنشاء مشغل المملوك مع 4 مولدات و ' . $employees->count() . ' موظف وأدوار خاصة');
             } else {
                 $this->command->info('مشغل المملوك موجود بالفعل، سيتم استخدامه');
                 $allOperators->push($existingOperator);
@@ -427,35 +538,49 @@ class OperatorsWithDataSeeder extends Seeder
                 $generatorsCount = rand(2, 4);
                 $operatorTotalGenerators += $generatorsCount;
                 
+                // الحصول على IDs من الثوابت
+                $statusConstants = ConstantsHelper::get(15); // حالة الوحدة
+                $operationEntityConstants = ConstantsHelper::get(2); // جهة التشغيل
+                $syncConstants = ConstantsHelper::get(16); // إمكانية المزامنة
+                $complianceConstants = ConstantsHelper::get(14); // حالة الامتثال البيئي
+                
+                $statusActiveId = $statusConstants->where('code', 'ACTIVE')->first()?->id;
+                $operationSameOwnerId = $operationEntityConstants->where('code', 'SAME_OWNER')->first()?->id;
+                $operationOtherPartyId = $operationEntityConstants->where('code', 'OTHER_PARTY')->first()?->id;
+                $syncAvailableId = $syncConstants->where('code', 'AVAILABLE')->first()?->id;
+                $syncNotAvailableId = $syncConstants->where('code', 'NOT_AVAILABLE')->first()?->id;
+                $complianceCompliantId = $complianceConstants->where('code', 'COMPLIANT')->first()?->id;
+                $complianceNonCompliantId = $complianceConstants->where('code', 'NON_COMPLIANT')->first()?->id;
+                
                 $generationUnit = GenerationUnit::create([
                     'operator_id' => $operator->id,
                     'unit_code' => $unitCode,
                     'unit_number' => $unitNumber,
                     'name' => 'وحدة التوليد ' . ($unitIndex + 1) . ' - ' . $operatorNames[$i],
                     'generators_count' => $generatorsCount,
-                    'status' => 'active',
+                    'status_id' => $statusActiveId,
                     // الملكية والتشغيل
                     'owner_name' => $owner->name,
                     'owner_id_number' => str_pad(rand(100000000, 999999999), 9, '0', STR_PAD_LEFT),
-                    'operation_entity' => rand(0, 1) === 1 ? 'same_owner' : 'other_party',
+                    'operation_entity_id' => rand(0, 1) === 1 ? $operationSameOwnerId : $operationOtherPartyId,
                     'operator_id_number' => str_pad(rand(100000, 999999), 6, '0', STR_PAD_LEFT),
                     'phone' => '059' . str_pad(rand(1000000, 9999999), 7, '0', STR_PAD_LEFT),
                     'phone_alt' => '056' . str_pad(rand(1000000, 9999999), 7, '0', STR_PAD_LEFT),
                     'email' => 'operator' . ($i + 1) . '_unit' . ($unitIndex + 1) . '@example.com',
                     // الموقع
-                    'governorate' => $governorateEnum->code(),
+                    'governorate_id' => $governorateData['id'],
                     'city_id' => $cityData['id'],
                     'detailed_address' => 'مبنى رقم ' . ($i + 1) . '-' . ($unitIndex + 1) . '، ' . $cityData['label'] . '، ' . $governorateData['name'],
                     'latitude' => $latitude + (rand(-10, 10) / 1000),
                     'longitude' => $longitude + (rand(-10, 10) / 1000),
                     // القدرات الفنية
                     'total_capacity' => rand(500, 2000),
-                    'synchronization_available' => rand(0, 1) === 1,
+                    'synchronization_available_id' => rand(0, 1) === 1 ? $syncAvailableId : $syncNotAvailableId,
                     'max_synchronization_capacity' => rand(300, 1500),
                     // المستفيدون والبيئة
                     'beneficiaries_count' => rand(50, 500),
                     'beneficiaries_description' => 'مستفيدون من خدمات الكهرباء في منطقة ' . $cityData['label'],
-                    'environmental_compliance_status' => rand(0, 1) === 1 ? 'compliant' : 'non_compliant',
+                    'environmental_compliance_status_id' => rand(0, 1) === 1 ? $complianceCompliantId : $complianceNonCompliantId,
                 ]);
 
                 // إنشاء المولدات تابعة لوحدة التوليد (لا يقل عن 2)
@@ -467,14 +592,14 @@ class OperatorsWithDataSeeder extends Seeder
                         break;
                     }
                     
-                    // اختيار قيم عشوائية من الثوابت
-                    $statusValue = $getConstantValue($statusConstants, 'active');
-                    $engineTypeValue = $getConstantValue($engineTypeConstants, 'diesel');
-                    $injectionSystemValue = $getConstantValue($injectionSystemConstants, 'mechanical');
-                    $measurementIndicatorValue = $getConstantValue($measurementIndicatorConstants, 'mechanical');
-                    $technicalConditionValue = $getConstantValue($technicalConditionConstants, 'good');
-                    $controlPanelTypeValue = $getConstantValue($controlPanelTypeConstants, 'manual');
-                    $controlPanelStatusValue = $getConstantValue($controlPanelStatusConstants, 'active');
+                    // اختيار IDs عشوائية من الثوابت
+                    $statusId = $getConstantId($statusConstants, 'ACTIVE') ?? $getRandomConstantId($statusConstants);
+                    $engineTypeId = $getRandomConstantId($engineTypeConstants);
+                    $injectionSystemId = $getRandomConstantId($injectionSystemConstants);
+                    $measurementIndicatorId = $getRandomConstantId($measurementIndicatorConstants);
+                    $technicalConditionId = $getRandomConstantId($technicalConditionConstants);
+                    $controlPanelTypeId = $getRandomConstantId($controlPanelTypeConstants);
+                    $controlPanelStatusId = $getRandomConstantId($controlPanelStatusConstants);
 
                     $generator = Generator::create([
                         'name' => $generatorNames[$j % count($generatorNames)] . ' - وحدة ' . ($unitIndex + 1),
@@ -482,23 +607,23 @@ class OperatorsWithDataSeeder extends Seeder
                         'operator_id' => $operator->id,
                         'generation_unit_id' => $generationUnit->id,
                         'description' => 'مولد كهربائي بقدرة ' . rand(50, 500) . ' KVA',
-                        'status' => $statusValue,
+                        'status_id' => $statusId,
                         'capacity_kva' => rand(50, 500),
                         'power_factor' => round(rand(80, 95) / 100, 2),
                         'voltage' => rand(220, 380),
                         'frequency' => 50,
-                        'engine_type' => $engineTypeValue,
+                        'engine_type_id' => $engineTypeId,
                         'manufacturing_year' => rand(2015, 2024),
-                        'injection_system' => $injectionSystemValue,
+                        'injection_system_id' => $injectionSystemId,
                         'fuel_consumption_rate' => round(rand(10, 50) + (rand(0, 99) / 100), 2),
                         'ideal_fuel_efficiency' => round(0.4 + (rand(0, 20) / 100), 3),
                         'internal_tank_capacity' => rand(100, 500),
-                        'measurement_indicator' => $measurementIndicatorValue,
-                        'technical_condition' => $technicalConditionValue,
+                        'measurement_indicator_id' => $measurementIndicatorId,
+                        'technical_condition_id' => $technicalConditionId,
                         'last_major_maintenance_date' => now()->subDays(rand(30, 365)),
                         'control_panel_available' => rand(0, 1) === 1,
-                        'control_panel_type' => $controlPanelTypeValue,
-                        'control_panel_status' => $controlPanelStatusValue,
+                        'control_panel_type_id' => $controlPanelTypeId,
+                        'control_panel_status_id' => $controlPanelStatusId,
                         'operating_hours' => rand(1000, 10000),
                         'external_fuel_tank' => rand(0, 1) === 1,
                         'fuel_tanks_count' => rand(0, 3),
@@ -516,12 +641,12 @@ class OperatorsWithDataSeeder extends Seeder
                                 'generation_unit_id' => $generator->generation_unit_id,
                                 'tank_code' => $tankCode,
                                 'capacity' => rand(100, 500),
-                                'location' => ['داخلي', 'خارجي', 'أرضي', 'علوي'][rand(0, 3)],
+                                'location_id' => $getRandomConstantId($tankLocationConstants),
                                 'filtration_system_available' => rand(0, 1) === 1,
                                 'condition' => ['جيد', 'ممتاز', 'مقبول'][rand(0, 2)],
-                                'material' => ['حديد', 'بلاستيك', 'فولاذ'][rand(0, 2)],
-                                'usage' => ['رئيسي', 'احتياطي', 'إضافي'][rand(0, 2)],
-                                'measurement_method' => ['ميكانيكي', 'إلكتروني', 'يدوي'][rand(0, 2)],
+                                'material_id' => $getRandomConstantId($tankMaterialConstants),
+                                'usage_id' => $getRandomConstantId($tankUsageConstants),
+                                'measurement_method_id' => $getRandomConstantId($tankMeasurementMethodConstants),
                                 'order' => $t + 1,
                             ]);
                         }
@@ -529,24 +654,99 @@ class OperatorsWithDataSeeder extends Seeder
                 }
             }
 
-            // إنشاء 6 موظفين لكل مشغل (3 موظفين + 3 فنيين)
-            $roles = [
-                Role::Employee,
-                Role::Employee,
-                Role::Employee,
-                Role::Technician,
-                Role::Technician,
-                Role::Technician,
+            // إنشاء أدوار خاصة لكل مشغل
+            $this->command->info("جاري إنشاء أدوار خاصة لمشغل: {$operator->name}");
+            
+            // الحصول على الصلاحيات المتاحة (ما عدا صلاحيات النظام)
+            $allPermissions = Permission::all();
+            $systemPermissions = [
+                'users.view', 'users.create', 'users.update', 'users.delete',
+                'operators.view', 'operators.create', 'operators.update', 'operators.delete',
+                'permissions.manage',
+            ];
+            $availablePermissions = $allPermissions->reject(function ($permission) use ($systemPermissions) {
+                return in_array($permission->name, $systemPermissions);
+            });
+
+            // دور: فني صيانة متقدم (له صلاحيات صيانة كاملة)
+            $advancedTechnicianRole = RoleModel::create([
+                'name' => 'technician_advanced_' . $operator->id,
+                'label' => 'فني صيانة متقدم - ' . $operator->name,
+                'description' => 'فني صيانة متقدم مع صلاحيات كاملة في الصيانة',
+                'is_system' => false,
+                'operator_id' => $operator->id,
+                'order' => 10,
+            ]);
+            $advancedTechnicianRole->permissions()->attach($availablePermissions->whereIn('name', [
+                'generators.view',
+                'maintenance_records.view',
+                'maintenance_records.create',
+                'maintenance_records.update',
+            ])->pluck('id'));
+
+            // دور: موظف مبيعات (صلاحيات عرض فقط)
+            $salesEmployeeRole = RoleModel::create([
+                'name' => 'sales_employee_' . $operator->id,
+                'label' => 'موظف مبيعات - ' . $operator->name,
+                'description' => 'موظف مبيعات مع صلاحيات عرض فقط',
+                'is_system' => false,
+                'operator_id' => $operator->id,
+                'order' => 11,
+            ]);
+            $salesEmployeeRole->permissions()->attach($availablePermissions->whereIn('name', [
+                'generators.view',
+                'generation_units.view',
+                'operation_logs.view',
+            ])->pluck('id'));
+
+            // دور: مشرف سجلات (صلاحيات على السجلات)
+            $recordsSupervisorRole = RoleModel::create([
+                'name' => 'records_supervisor_' . $operator->id,
+                'label' => 'مشرف سجلات - ' . $operator->name,
+                'description' => 'مشرف على جميع السجلات',
+                'is_system' => false,
+                'operator_id' => $operator->id,
+                'order' => 12,
+            ]);
+            $recordsSupervisorRole->permissions()->attach($availablePermissions->whereIn('name', [
+                'operation_logs.view',
+                'operation_logs.create',
+                'operation_logs.update',
+                'fuel_efficiencies.view',
+                'fuel_efficiencies.create',
+                'fuel_efficiencies.update',
+                'maintenance_records.view',
+                'maintenance_records.create',
+                'maintenance_records.update',
+                'compliance_safeties.view',
+                'compliance_safeties.create',
+                'compliance_safeties.update',
+            ])->pluck('id'));
+
+            // إنشاء 6 موظفين لكل مشغل
+            // 2 موظفين بنظام Employee
+            // 2 فنيين بنظام Technician
+            // 1 فني صيانة متقدم (دور خاص)
+            // 1 مشرف سجلات (دور خاص)
+            $usersRoles = [
+                ['role' => Role::Employee, 'roleModel' => $employeeRoleModel, 'name' => 'موظف عادي'],
+                ['role' => Role::Employee, 'roleModel' => $employeeRoleModel, 'name' => 'موظف عادي'],
+                ['role' => Role::Technician, 'roleModel' => $technicianRoleModel, 'name' => 'فني'],
+                ['role' => Role::Technician, 'roleModel' => $technicianRoleModel, 'name' => 'فني'],
+                ['role' => Role::Employee, 'roleModel' => $advancedTechnicianRole, 'name' => 'فني صيانة متقدم'], // استخدام دور خاص
+                ['role' => Role::Employee, 'roleModel' => $recordsSupervisorRole, 'name' => 'مشرف سجلات'], // استخدام دور خاص
             ];
 
             for ($k = 0; $k < 6; $k++) {
+                $userRoleData = $usersRoles[$k];
                 $employee = User::firstOrCreate(
                     ['email' => 'user' . ($i + 1) . '_' . ($k + 1) . '@example.com'],
                     [
-                        'name' => $employeeNames[$k],
+                        'name' => $employeeNames[$k] . ' (' . $userRoleData['name'] . ')',
                         'username' => 'user_' . ($i + 1) . '_' . ($k + 1),
                         'password' => Hash::make('password'),
-                        'role' => $roles[$k],
+                        'role' => $userRoleData['role'],
+                        'role_id' => $userRoleData['roleModel']?->id,
                         'status' => 'active',
                     ]
                 );
@@ -721,14 +921,16 @@ class OperatorsWithDataSeeder extends Seeder
                 $laborCost = round($laborHours * $laborRatePerHour, 2);
                 $maintenanceCost = round($partsCost + $laborCost, 2);
 
+                $maintenanceTypeId = rand(0, 1) === 1 ? $maintenanceTypePeriodicId : $maintenanceTypeEmergencyId;
+                
                 MaintenanceRecord::create([
                     'generator_id' => $generator->id,
-                    'maintenance_type' => $maintenanceTypes[rand(0, count($maintenanceTypes) - 1)],
+                    'maintenance_type_id' => $maintenanceTypeId,
                     'maintenance_date' => $maintenanceDate,
                     'start_time' => $startTime,
                     'end_time' => $endTime,
                     'technician_name' => $technicianNames[rand(0, count($technicianNames) - 1)],
-                    'work_performed' => 'تم إجراء ' . $maintenanceTypes[rand(0, count($maintenanceTypes) - 1)] . ' على المولد',
+                    'work_performed' => 'تم إجراء صيانة على المولد',
                     'downtime_hours' => round(rand(1, 24) + (rand(0, 99) / 100), 2),
                     'parts_cost' => $partsCost,
                     'labor_hours' => $laborHours,
@@ -766,14 +968,16 @@ class OperatorsWithDataSeeder extends Seeder
             $laborCost = round($laborHours * $laborRatePerHour, 2);
             $maintenanceCost = round($partsCost + $laborCost, 2);
 
+            $maintenanceTypeId = rand(0, 1) === 1 ? $maintenanceTypePeriodicId : $maintenanceTypeEmergencyId;
+            
             MaintenanceRecord::create([
                 'generator_id' => $generator->id,
-                'maintenance_type' => $maintenanceTypes[rand(0, count($maintenanceTypes) - 1)],
+                'maintenance_type_id' => $maintenanceTypeId,
                 'maintenance_date' => $maintenanceDate,
                 'start_time' => $startTime,
                 'end_time' => $endTime,
                 'technician_name' => $technicianNames[rand(0, count($technicianNames) - 1)],
-                'work_performed' => 'تم إجراء ' . $maintenanceTypes[rand(0, count($maintenanceTypes) - 1)] . ' على المولد',
+                'work_performed' => 'تم إجراء صيانة على المولد',
                 'downtime_hours' => round(rand(1, 24) + (rand(0, 99) / 100), 2),
                 'parts_cost' => $partsCost,
                 'labor_hours' => $laborHours,
@@ -796,6 +1000,9 @@ class OperatorsWithDataSeeder extends Seeder
             $energyDistributionEfficiency = round(rand(75, 98) + (rand(0, 99) / 100), 2);
             $totalOperatingCost = round($fuelConsumed * $fuelPricePerLiter, 2);
 
+            $fuelEfficiencyComparisonId = $getRandomConstantId($fuelEfficiencyComparisonConstants);
+            $energyEfficiencyComparisonId = $getRandomConstantId($energyEfficiencyComparisonConstants);
+            
             FuelEfficiency::create([
                 'generator_id' => $generator->id,
                 'consumption_date' => $consumptionDate,
@@ -803,9 +1010,9 @@ class OperatorsWithDataSeeder extends Seeder
                 'fuel_price_per_liter' => $fuelPricePerLiter,
                 'fuel_consumed' => $fuelConsumed,
                 'fuel_efficiency_percentage' => $fuelEfficiencyPercentage,
-                'fuel_efficiency_comparison' => round($fuelEfficiencyPercentage + rand(-5, 5) + (rand(0, 99) / 100), 2),
+                'fuel_efficiency_comparison_id' => $fuelEfficiencyComparisonId,
                 'energy_distribution_efficiency' => $energyDistributionEfficiency,
-                'energy_efficiency_comparison' => round($energyDistributionEfficiency + rand(-3, 3) + (rand(0, 99) / 100), 2),
+                'energy_efficiency_comparison_id' => $energyEfficiencyComparisonId,
                 'total_operating_cost' => $totalOperatingCost,
             ]);
         }
@@ -816,16 +1023,16 @@ class OperatorsWithDataSeeder extends Seeder
             $this->command->info('جاري إنشاء سجلات امتثال وسلامة لمشغل المملوك...');
             $mmlukComplianceCount = 110;
             
-            $safetyStatuses = ['compliant', 'non_compliant', 'pending'];
             $inspectionAuthorities = ['وزارة البيئة', 'البلدية', 'الدفاع المدني', 'جهة مختصة'];
             $inspectionResults = ['ممتاز', 'جيد', 'مقبول', 'يحتاج تحسين'];
             
             for ($i = 0; $i < $mmlukComplianceCount; $i++) {
                 $inspectionDate = now()->subDays(rand(0, 365));
+                $safetyCertificateStatusId = $getRandomConstantId($safetyCertificateStatusConstants);
 
                 ComplianceSafety::create([
                     'operator_id' => $mmlukOperator->id,
-                    'safety_certificate_status' => $safetyStatuses[rand(0, count($safetyStatuses) - 1)],
+                    'safety_certificate_status_id' => $safetyCertificateStatusId,
                     'last_inspection_date' => $inspectionDate,
                     'inspection_authority' => $inspectionAuthorities[rand(0, count($inspectionAuthorities) - 1)],
                     'inspection_result' => $inspectionResults[rand(0, count($inspectionResults) - 1)],
@@ -840,17 +1047,17 @@ class OperatorsWithDataSeeder extends Seeder
         $otherOperators = $allOperators->filter(function($op) use ($mmlukOperator) {
             return $mmlukOperator && $op->id != $mmlukOperator->id;
         });
-        $safetyStatuses = ['compliant', 'non_compliant', 'pending'];
         $inspectionAuthorities = ['وزارة البيئة', 'البلدية', 'الدفاع المدني', 'جهة مختصة'];
         $inspectionResults = ['ممتاز', 'جيد', 'مقبول', 'يحتاج تحسين'];
         
         for ($i = 0; $i < 100; $i++) {
             $operator = $otherOperators->random();
             $inspectionDate = now()->subDays(rand(0, 365));
+            $safetyCertificateStatusId = $getRandomConstantId($safetyCertificateStatusConstants);
 
             ComplianceSafety::create([
                 'operator_id' => $operator->id,
-                'safety_certificate_status' => $safetyStatuses[rand(0, count($safetyStatuses) - 1)],
+                'safety_certificate_status_id' => $safetyCertificateStatusId,
                 'last_inspection_date' => $inspectionDate,
                 'inspection_authority' => $inspectionAuthorities[rand(0, count($inspectionAuthorities) - 1)],
                 'inspection_result' => $inspectionResults[rand(0, count($inspectionResults) - 1)],

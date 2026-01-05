@@ -31,6 +31,10 @@ return new class extends Migration
 
             // الموقع
             $table->integer('governorate')->nullable();
+            // المدينة - تخزن ID من constant_details، ثابت Master رقم 20
+            $table->foreignId('city_id')->nullable()
+                ->constrained('constant_details')->nullOnDelete()
+                ->comment('ID من constant_details - ثابت Master رقم 20 (المدن)');
             $table->string('city')->nullable();
             $table->text('detailed_address')->nullable();
             $table->decimal('latitude', 10, 8)->nullable();

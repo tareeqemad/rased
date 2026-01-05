@@ -9,30 +9,7 @@
             @endif
         </td>
         <td>
-            @php
-                $maintenanceTypes = [
-                    'periodic' => 'دورية',
-                    'preventive' => 'وقائية',
-                    'emergency' => 'طارئة',
-                    'major' => 'كبرى',
-                    'regular' => 'عادية',
-                    'صيانة دورية' => 'دورية',
-                    'صيانة وقائية' => 'وقائية',
-                    'صيانة طارئة' => 'طارئة',
-                    'صيانة كبرى' => 'كبرى',
-                    'صيانة عادية' => 'عادية',
-                ];
-                $maintenanceTypeAr = $maintenanceTypes[$record->maintenance_type] ?? $record->maintenance_type;
-                $badgeColor = 'info';
-                if (in_array($record->maintenance_type, ['emergency', 'طارئة', 'صيانة طارئة'])) {
-                    $badgeColor = 'danger';
-                } elseif (in_array($record->maintenance_type, ['periodic', 'دورية', 'صيانة دورية'])) {
-                    $badgeColor = 'info';
-                } else {
-                    $badgeColor = 'warning';
-                }
-            @endphp
-            <span class="badge bg-{{ $badgeColor }}">{{ $maintenanceTypeAr }}</span>
+            <span class="badge bg-{{ $record->maintenanceTypeDetail?->getBadgeColor() ?? 'secondary' }}">{{ $record->maintenanceTypeDetail?->label ?? '-' }}</span>
         </td>
         <td>{{ $record->maintenance_date->format('Y-m-d') }}</td>
         <td>{{ $record->technician_name ?? '-' }}</td>

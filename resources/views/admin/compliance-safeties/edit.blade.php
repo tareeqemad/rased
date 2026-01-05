@@ -72,13 +72,15 @@
                                             <i class="bi bi-shield-check text-success me-1"></i>
                                             حالة شهادة السلامة <span class="text-danger">*</span>
                                         </label>
-                                        <select name="safety_certificate_status" class="form-select @error('safety_certificate_status') is-invalid @enderror">
+                                        <select name="safety_certificate_status_id" class="form-select @error('safety_certificate_status_id') is-invalid @enderror">
                                             <option value="">اختر الحالة</option>
-                                            <option value="available" {{ old('safety_certificate_status', $complianceSafety->safety_certificate_status) === 'available' ? 'selected' : '' }}>متوفرة</option>
-                                            <option value="expired" {{ old('safety_certificate_status', $complianceSafety->safety_certificate_status) === 'expired' ? 'selected' : '' }}>منتهية</option>
-                                            <option value="not_available" {{ old('safety_certificate_status', $complianceSafety->safety_certificate_status) === 'not_available' ? 'selected' : '' }}>غير متوفرة</option>
+                                            @foreach($constants['safety_certificate_status'] ?? [] as $status)
+                                                <option value="{{ $status->id }}" {{ old('safety_certificate_status_id', $complianceSafety->safety_certificate_status_id) == $status->id ? 'selected' : '' }}>
+                                                    {{ $status->label }}
+                                                </option>
+                                            @endforeach
                                         </select>
-                                        @error('safety_certificate_status')
+                                        @error('safety_certificate_status_id')
                                             <div class="invalid-feedback d-block">{{ $message }}</div>
                                         @enderror
                                     </div>

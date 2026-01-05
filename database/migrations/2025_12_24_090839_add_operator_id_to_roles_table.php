@@ -12,7 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('roles', function (Blueprint $table) {
-            $table->foreignId('operator_id')->nullable()->after('is_system')->constrained('operators')->nullOnDelete();
+            $table->foreignId('operator_id')->nullable()
+                ->constrained('operators')->nullOnDelete();
             $table->index('operator_id');
         });
     }
@@ -29,7 +30,4 @@ return new class extends Migration
         });
     }
 };
-
-
-
 

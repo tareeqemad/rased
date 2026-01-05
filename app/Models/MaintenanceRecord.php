@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\ConstantDetail;
 
 class MaintenanceRecord extends Model
 {
@@ -12,7 +13,7 @@ class MaintenanceRecord extends Model
 
     protected $fillable = [
         'generator_id',
-        'maintenance_type',
+        'maintenance_type_id', // ID من constant_details - ثابت Master رقم 12 (نوع الصيانة)
         'maintenance_date',
         'start_time',
         'end_time',
@@ -23,6 +24,7 @@ class MaintenanceRecord extends Model
         'labor_hours',
         'labor_rate_per_hour',
         'maintenance_cost',
+        'next_maintenance_type_id', // ID من constant_details - ثابت Master رقم 12 (نوع الصيانة)
     ];
 
     protected function casts(): array
@@ -42,5 +44,17 @@ class MaintenanceRecord extends Model
     public function generator(): BelongsTo
     {
         return $this->belongsTo(Generator::class);
+    }
+
+    // Relationships للثوابت - ثابت Master رقم 12 (نوع الصيانة)
+    public function maintenanceTypeDetail(): BelongsTo
+    {
+        return $this->belongsTo(ConstantDetail::class, 'maintenance_type_id');
+    }
+
+    // Relationships للثوابت - ثابت Master رقم 12 (نوع الصيانة القادمة)
+    public function nextMaintenanceTypeDetail(): BelongsTo
+    {
+        return $this->belongsTo(ConstantDetail::class, 'next_maintenance_type_id');
     }
 }

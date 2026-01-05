@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\ConstantDetail;
 
 class FuelEfficiency extends Model
 {
@@ -17,9 +18,9 @@ class FuelEfficiency extends Model
         'fuel_price_per_liter',
         'fuel_consumed',
         'fuel_efficiency_percentage',
-        'fuel_efficiency_comparison',
+        'fuel_efficiency_comparison_id', // ID من constant_details - ثابت Master رقم 17 (مقارنة كفاءة الوقود)
         'energy_distribution_efficiency',
-        'energy_efficiency_comparison',
+        'energy_efficiency_comparison_id', // ID من constant_details - ثابت Master رقم 18 (مقارنة كفاءة الطاقة)
         'total_operating_cost',
     ];
 
@@ -39,5 +40,17 @@ class FuelEfficiency extends Model
     public function generator(): BelongsTo
     {
         return $this->belongsTo(Generator::class);
+    }
+
+    // Relationships للثوابت - ثابت Master رقم 17 (مقارنة كفاءة الوقود)
+    public function fuelEfficiencyComparisonDetail(): BelongsTo
+    {
+        return $this->belongsTo(ConstantDetail::class, 'fuel_efficiency_comparison_id');
+    }
+
+    // Relationships للثوابت - ثابت Master رقم 18 (مقارنة كفاءة الطاقة)
+    public function energyEfficiencyComparisonDetail(): BelongsTo
+    {
+        return $this->belongsTo(ConstantDetail::class, 'energy_efficiency_comparison_id');
     }
 }

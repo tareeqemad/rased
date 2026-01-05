@@ -37,11 +37,8 @@ class MaintenanceRecordPolicy
 
     public function create(User $user): bool
     {
-        if ($user->isAdmin()) {
-            return false;
-        }
-
-        if ($user->isSuperAdmin()) {
+        // Admin (سلطة الطاقة) يمكنه إنشاء سجلات الصيانة
+        if ($user->isAdmin() || $user->isSuperAdmin()) {
             return true;
         }
 
@@ -54,8 +51,9 @@ class MaintenanceRecordPolicy
 
     public function update(User $user, MaintenanceRecord $maintenanceRecord): bool
     {
-        if ($user->isAdmin()) {
-            return false;
+        // Admin (سلطة الطاقة) يمكنه تحديث سجلات الصيانة
+        if ($user->isAdmin() || $user->isSuperAdmin()) {
+            return true;
         }
 
         if ($user->isSuperAdmin()) {

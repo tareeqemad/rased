@@ -87,12 +87,12 @@
     // Search functionality
     const runSearch = debounce(function () {
         const term = ($searchInput.val() || '').trim();
-        const status = $statusFilter.length ? $statusFilter.val() : '';
+        const statusId = $statusFilter.length ? $statusFilter.val() : '';
         const operatorId = $operatorFilter.length ? $operatorFilter.val() : '';
 
         const params = {};
         if (term) params.q = term;
-        if (status) params.status = status;
+        if (statusId) params.status_id = statusId;
         if (operatorId) params.operator_id = operatorId;
 
         loadGenerators(params);
@@ -168,12 +168,12 @@
                 
                 // Reload the list
                 const term = ($searchInput.val() || '').trim();
-                const status = $statusFilter.length ? $statusFilter.val() : '';
+                const statusId = $statusFilter.length ? $statusFilter.val() : '';
                 const operatorId = $operatorFilter.length ? $operatorFilter.val() : '';
 
                 const params = {};
                 if (term) params.q = term;
-                if (status) params.status = status;
+                if (statusId) params.status_id = statusId;
                 if (operatorId) params.operator_id = operatorId;
 
                 loadGenerators(params);

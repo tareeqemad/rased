@@ -49,9 +49,18 @@
                         </button>
                     </li>
                     @endif
+                    @if(isset($expiringCompliance) && $expiringCompliance->count() > 0)
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link {{ ((!isset($generatorsNeedingMaintenance) || $generatorsNeedingMaintenance->count() == 0) && (!isset($recentOperationLogs) || $recentOperationLogs->count() == 0) && (!isset($recentGenerators) || $recentGenerators->count() == 0) && (!(auth()->user()->isSuperAdmin() || auth()->user()->isAdmin()) || !isset($recentOperators) || $recentOperators->count() == 0)) ? 'active' : '' }}" id="expiring-compliance-tab" data-bs-toggle="tab" data-bs-target="#expiring-compliance-content" type="button" role="tab">
+                            <i class="bi bi-shield-exclamation me-1"></i>
+                            شهادات منتهية أو قريبة من الانتهاء
+                            <span class="badge bg-danger ms-1">{{ $expiringCompliance->count() }}</span>
+                        </button>
+                    </li>
+                    @endif
                     @if(isset($unansweredComplaints) && $unansweredComplaints->count() > 0)
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link {{ ((!isset($generatorsNeedingMaintenance) || $generatorsNeedingMaintenance->count() == 0) && (!isset($recentOperationLogs) || $recentOperationLogs->count() == 0) && (!isset($recentGenerators) || $recentGenerators->count() == 0) && (!(auth()->user()->isSuperAdmin() || auth()->user()->isAdmin()) || !isset($recentOperators) || $recentOperators->count() == 0)) ? 'active' : '' }}" id="unanswered-complaints-tab" data-bs-toggle="tab" data-bs-target="#unanswered-complaints-content" type="button" role="tab">
+                        <button class="nav-link {{ ((!isset($generatorsNeedingMaintenance) || $generatorsNeedingMaintenance->count() == 0) && (!isset($recentOperationLogs) || $recentOperationLogs->count() == 0) && (!isset($recentGenerators) || $recentGenerators->count() == 0) && (!(auth()->user()->isSuperAdmin() || auth()->user()->isAdmin()) || !isset($recentOperators) || $recentOperators->count() == 0) && (!isset($expiringCompliance) || $expiringCompliance->count() == 0)) ? 'active' : '' }}" id="unanswered-complaints-tab" data-bs-toggle="tab" data-bs-target="#unanswered-complaints-content" type="button" role="tab">
                             <i class="bi bi-chat-left-text me-1"></i>
                             شكاوى ومقترحات غير م responded عليها
                             <span class="badge bg-warning ms-1">{{ $unansweredComplaints->count() }}</span>
@@ -228,9 +237,62 @@
                     </div>
                     @endif
 
+                    @if(isset($expiringCompliance) && $expiringCompliance->count() > 0)
+                    <!-- Expiring Compliance Tab -->
+                    <div class="tab-pane fade {{ ((!isset($generatorsNeedingMaintenance) || $generatorsNeedingMaintenance->count() == 0) && (!isset($recentOperationLogs) || $recentOperationLogs->count() == 0) && (!isset($recentGenerators) || $recentGenerators->count() == 0) && (!(auth()->user()->isSuperAdmin() || auth()->user()->isAdmin()) || !isset($recentOperators) || $recentOperators->count() == 0)) ? 'show active' : '' }}" id="expiring-compliance-content" role="tabpanel">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <p class="text-muted mb-0">شهادات تحتاج إلى متابعة فورية</p>
+                            <a href="{{ route('admin.compliance-safeties.index') }}" class="btn btn-outline-danger btn-sm">
+                                عرض الكل <i class="bi bi-arrow-left ms-1"></i>
+                            </a>
+                        </div>
+                        <div class="dashboard-list-container">
+                            @foreach($expiringCompliance as $compliance)
+                                <div class="dashboard-list-item">
+                                    <div class="dashboard-list-item-icon">
+                                        <i class="bi bi-shield-exclamation text-danger"></i>
+                                    </div>
+                                    <div class="dashboard-list-item-content">
+                                        <h6 class="dashboard-list-item-title">{{ $compliance->operator->name ?? '-' }}</h6>
+                                        <div class="dashboard-list-item-meta">
+                                            @php
+                                                $statusCode = $compliance->safetyCertificateStatusDetail->code ?? '';
+                                                $isExpired = $statusCode === 'EXPIRED';
+                                            @endphp
+                                            <span class="badge badge-{{ $isExpired ? 'danger' : 'warning' }}">
+                                                {{ $isExpired ? 'منتهية' : 'قريبة من الانتهاء' }}
+                                            </span>
+                                            @if($compliance->inspection_authority)
+                                                <span class="dashboard-list-item-text">
+                                                    <i class="bi bi-building me-1"></i>
+                                                    {{ $compliance->inspection_authority }}
+                                                </span>
+                                            @endif
+                                        </div>
+                                        <small class="dashboard-list-item-time">
+                                            @if($compliance->last_inspection_date)
+                                                <i class="bi bi-calendar-x me-1"></i>
+                                                آخر فحص: {{ $compliance->last_inspection_date->format('Y-m-d') }}
+                                                @if($compliance->last_inspection_date->lt(now()->subMonths(6)))
+                                                    <span class="text-danger ms-2">(منذ {{ $compliance->last_inspection_date->diffForHumans() }})</span>
+                                                @endif
+                                            @else
+                                                <span class="text-danger">
+                                                    <i class="bi bi-exclamation-circle me-1"></i>
+                                                    لم يتم تسجيل فحص
+                                                </span>
+                                            @endif
+                                        </small>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                    @endif
+
                     @if(isset($unansweredComplaints) && $unansweredComplaints->count() > 0)
                     <!-- Unanswered Complaints Tab -->
-                    <div class="tab-pane fade {{ ((!isset($generatorsNeedingMaintenance) || $generatorsNeedingMaintenance->count() == 0) && (!isset($recentOperationLogs) || $recentOperationLogs->count() == 0) && (!isset($recentGenerators) || $recentGenerators->count() == 0) && (!(auth()->user()->isSuperAdmin() || auth()->user()->isAdmin()) || !isset($recentOperators) || $recentOperators->count() == 0)) ? 'show active' : '' }}" id="unanswered-complaints-content" role="tabpanel">
+                    <div class="tab-pane fade {{ ((!isset($generatorsNeedingMaintenance) || $generatorsNeedingMaintenance->count() == 0) && (!isset($recentOperationLogs) || $recentOperationLogs->count() == 0) && (!isset($recentGenerators) || $recentGenerators->count() == 0) && (!(auth()->user()->isSuperAdmin() || auth()->user()->isAdmin()) || !isset($recentOperators) || $recentOperators->count() == 0) && (!isset($expiringCompliance) || $expiringCompliance->count() == 0)) ? 'show active' : '' }}" id="unanswered-complaints-content" role="tabpanel">
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <p class="text-muted mb-0">طلبات تحتاج إلى متابعة</p>
                             <a href="{{ route('admin.complaints-suggestions.index') }}" class="btn btn-outline-info btn-sm">
@@ -302,15 +364,19 @@
                                 <div class="dashboard-list-item-content">
                                     <h6 class="dashboard-list-item-title">{{ $compliance->operator->name }}</h6>
                                     <div class="dashboard-list-item-meta">
-                                        <span class="badge badge-{{ $compliance->safety_certificate_status === 'expired' ? 'danger' : 'warning' }}">
-                                            {{ $compliance->safety_certificate_status === 'expired' ? 'منتهية' : 'قريبة من الانتهاء' }}
+                                        @php
+                                            $statusCode = $compliance->safetyCertificateStatusDetail->code ?? '';
+                                            $isExpired = $statusCode === 'EXPIRED';
+                                        @endphp
+                                        <span class="badge badge-{{ $isExpired ? 'danger' : 'warning' }}">
+                                            {{ $isExpired ? 'منتهية' : 'قريبة من الانتهاء' }}
                                         </span>
                                     </div>
                                     <small class="dashboard-list-item-time">
                                         @if($compliance->last_inspection_date)
                                             <i class="bi bi-calendar-x me-1"></i>
                                             آخر فحص: {{ $compliance->last_inspection_date->format('Y-m-d') }}
-                                            @if($compliance->last_inspection_date->lt(Carbon::now()->subMonths(6)))
+                                            @if($compliance->last_inspection_date->lt(now()->subMonths(6)))
                                                 <span class="text-danger ms-2">(منذ {{ $compliance->last_inspection_date->diffForHumans() }})</span>
                                             @endif
                                         @else

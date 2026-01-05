@@ -23,134 +23,160 @@ class UserSeeder extends Seeder
         $employeeRole = RoleModel::where('name', 'employee')->first();
 
         // Super Admins - 5 super admins
-        User::create([
-            'name' => 'طارق',
-            'username' => 'tareeqemad',
-            'email' => 'tareq@rased.ps',
-            'password' => Hash::make('tareq123'),
-            'role' => Role::SuperAdmin,
-            'role_id' => $superAdminRole?->id,
-            'status' => 'active',
-        ]);
+        User::firstOrCreate(
+            ['email' => 'tareq@rased.ps'],
+            [
+                'name' => 'طارق',
+                'username' => 'tareeqemad',
+                'password' => Hash::make('tareq123'),
+                'role' => Role::SuperAdmin,
+                'role_id' => $superAdminRole?->id,
+                'status' => 'active',
+            ]
+        );
 
-        User::create([
-            'name' => 'فهيم',
-            'username' => 'faheem',
-            'email' => 'faheem@rased.ps',
-            'password' => Hash::make('tareq123'),
-            'role' => Role::SuperAdmin,
-            'role_id' => $superAdminRole?->id,
-            'status' => 'active',
-        ]);
+        User::firstOrCreate(
+            ['email' => 'faheem@rased.ps'],
+            [
+                'name' => 'فهيم',
+                'username' => 'faheem',
+                'password' => Hash::make('tareq123'),
+                'role' => Role::SuperAdmin,
+                'role_id' => $superAdminRole?->id,
+                'status' => 'active',
+            ]
+        );
 
-        User::create([
-            'name' => 'أدهم',
-            'username' => 'adham',
-            'email' => 'adham@rased.ps',
-            'password' => Hash::make('tareq123'),
-            'role' => Role::SuperAdmin,
-            'role_id' => $superAdminRole?->id,
-            'status' => 'active',
-        ]);
+        User::firstOrCreate(
+            ['email' => 'adham@rased.ps'],
+            [
+                'name' => 'أدهم',
+                'username' => 'adham',
+                'password' => Hash::make('tareq123'),
+                'role' => Role::SuperAdmin,
+                'role_id' => $superAdminRole?->id,
+                'status' => 'active',
+            ]
+        );
 
-        User::create([
-            'name' => 'أدمن',
-            'username' => 'admin',
-            'email' => 'admin@rased.ps',
-            'password' => Hash::make('tareq123'),
-            'role' => Role::SuperAdmin,
-            'role_id' => $superAdminRole?->id,
-            'status' => 'active',
-        ]);
+        User::firstOrCreate(
+            ['email' => 'admin@rased.ps'],
+            [
+                'name' => 'أدمن',
+                'username' => 'admin',
+                'password' => Hash::make('tareq123'),
+                'role' => Role::SuperAdmin,
+                'role_id' => $superAdminRole?->id,
+                'status' => 'active',
+            ]
+        );
 
-        User::create([
-            'name' => 'خالد',
-            'username' => 'khalid',
-            'email' => 'khalid@rased.ps',
-            'password' => Hash::make('tareq123'),
-            'role' => Role::SuperAdmin,
-            'role_id' => $superAdminRole?->id,
-            'status' => 'active',
-        ]);
+        User::firstOrCreate(
+            ['email' => 'khalid@rased.ps'],
+            [
+                'name' => 'خالد',
+                'username' => 'khalid',
+                'password' => Hash::make('tareq123'),
+                'role' => Role::SuperAdmin,
+                'role_id' => $superAdminRole?->id,
+                'status' => 'active',
+            ]
+        );
 
         // Admin (سلطة الطاقة)
-        User::create([
-            'name' => 'مدير سلطة الطاقة',
-            'username' => 'admin_power',
-            'email' => 'admin@power.ps',
-            'password' => Hash::make('password'),
-            'role' => Role::Admin,
-            'role_id' => $adminRole?->id,
-            'status' => 'active',
-        ]);
+        User::firstOrCreate(
+            ['email' => 'admin@power.ps'],
+            [
+                'name' => 'مدير سلطة الطاقة',
+                'username' => 'admin_power',
+                'password' => Hash::make('password'),
+                'role' => Role::Admin,
+                'role_id' => $adminRole?->id,
+                'status' => 'active',
+            ]
+        );
 
         // Company Owner - mmluk
-        $mmlukOwner = User::create([
-            'name' => 'مشغل المملوك',
-            'username' => 'mmluk',
-            'email' => 'mmluk@operator.ps',
-            'password' => Hash::make('tareq123'),
-            'role' => Role::CompanyOwner,
-            'role_id' => $companyOwnerRole?->id,
-            'status' => 'active',
-        ]);
+        $mmlukOwner = User::firstOrCreate(
+            ['email' => 'mmluk@operator.ps'],
+            [
+                'name' => 'مشغل المملوك',
+                'username' => 'mmluk',
+                'password' => Hash::make('tareq123'),
+                'role' => Role::CompanyOwner,
+                'role_id' => $companyOwnerRole?->id,
+                'status' => 'active',
+            ]
+        );
+
+        // إنشاء أدوار خاصة لمشغل المملوك (سيتم إنشاؤها في OperatorsWithDataSeeder)
 
         // 5 Employees for mmluk with different permissions
-        $employee1 = User::create([
-            'name' => 'موظف 1 - عرض فقط',
-            'username' => 'emp1_mmluk',
-            'email' => 'emp1@mmluk.ps',
-            'password' => Hash::make('password'),
-            'role' => Role::Employee,
-            'role_id' => $employeeRole?->id,
-            'status' => 'active',
-        ]);
+        $employee1 = User::firstOrCreate(
+            ['email' => 'emp1@mmluk.ps'],
+            [
+                'name' => 'موظف 1 - عرض فقط',
+                'username' => 'emp1_mmluk',
+                'password' => Hash::make('password'),
+                'role' => Role::Employee,
+                'role_id' => $employeeRole?->id,
+                'status' => 'active',
+            ]
+        );
 
-        $employee2 = User::create([
-            'name' => 'موظف 2 - عرض وتحديث',
-            'username' => 'emp2_mmluk',
-            'email' => 'emp2@mmluk.ps',
-            'password' => Hash::make('password'),
-            'role' => Role::Employee,
-            'role_id' => $employeeRole?->id,
-            'status' => 'active',
-        ]);
+        $employee2 = User::firstOrCreate(
+            ['email' => 'emp2@mmluk.ps'],
+            [
+                'name' => 'موظف 2 - عرض وتحديث',
+                'username' => 'emp2_mmluk',
+                'password' => Hash::make('password'),
+                'role' => Role::Employee,
+                'role_id' => $employeeRole?->id,
+                'status' => 'active',
+            ]
+        );
 
-        $employee3 = User::create([
-            'name' => 'موظف 3 - كامل الصلاحيات',
-            'username' => 'emp3_mmluk',
-            'email' => 'emp3@mmluk.ps',
-            'password' => Hash::make('password'),
-            'role' => Role::Employee,
-            'role_id' => $employeeRole?->id,
-            'status' => 'active',
-        ]);
+        $employee3 = User::firstOrCreate(
+            ['email' => 'emp3@mmluk.ps'],
+            [
+                'name' => 'موظف 3 - كامل الصلاحيات',
+                'username' => 'emp3_mmluk',
+                'password' => Hash::make('password'),
+                'role' => Role::Employee,
+                'role_id' => $employeeRole?->id,
+                'status' => 'active',
+            ]
+        );
 
-        $employee4 = User::create([
-            'name' => 'موظف 4 - سجلات فقط',
-            'username' => 'emp4_mmluk',
-            'email' => 'emp4@mmluk.ps',
-            'password' => Hash::make('password'),
-            'role' => Role::Employee,
-            'role_id' => $employeeRole?->id,
-            'status' => 'active',
-        ]);
+        $employee4 = User::firstOrCreate(
+            ['email' => 'emp4@mmluk.ps'],
+            [
+                'name' => 'موظف 4 - سجلات فقط',
+                'username' => 'emp4_mmluk',
+                'password' => Hash::make('password'),
+                'role' => Role::Employee,
+                'role_id' => $employeeRole?->id,
+                'status' => 'active',
+            ]
+        );
 
-        $employee5 = User::create([
-            'name' => 'موظف 5 - مولدات فقط',
-            'username' => 'emp5_mmluk',
-            'email' => 'emp5@mmluk.ps',
-            'password' => Hash::make('password'),
-            'role' => Role::Employee,
-            'role_id' => $employeeRole?->id,
-            'status' => 'active',
-        ]);
+        $employee5 = User::firstOrCreate(
+            ['email' => 'emp5@mmluk.ps'],
+            [
+                'name' => 'موظف 5 - مولدات فقط',
+                'username' => 'emp5_mmluk',
+                'password' => Hash::make('password'),
+                'role' => Role::Employee,
+                'role_id' => $employeeRole?->id,
+                'status' => 'active',
+            ]
+        );
 
         // منح صلاحيات مختلفة للموظفين
         $permissions = Permission::all();
 
         // Employee 1: عرض فقط
-        $employee1->permissions()->attach($permissions->whereIn('name', [
+        $employee1->permissions()->sync($permissions->whereIn('name', [
             'generators.view',
             'operation_logs.view',
             'fuel_efficiencies.view',
@@ -159,7 +185,7 @@ class UserSeeder extends Seeder
         ])->pluck('id'));
 
         // Employee 2: عرض وتحديث
-        $employee2->permissions()->attach($permissions->whereIn('name', [
+        $employee2->permissions()->sync($permissions->whereIn('name', [
             'generators.view',
             'generators.update',
             'operation_logs.view',
@@ -174,7 +200,7 @@ class UserSeeder extends Seeder
         ])->pluck('id'));
 
         // Employee 3: كامل الصلاحيات (ما عدا الحذف)
-        $employee3->permissions()->attach($permissions->whereIn('name', [
+        $employee3->permissions()->sync($permissions->whereIn('name', [
             'generators.view',
             'generators.create',
             'generators.update',
@@ -193,7 +219,7 @@ class UserSeeder extends Seeder
         ])->pluck('id'));
 
         // Employee 4: سجلات فقط
-        $employee4->permissions()->attach($permissions->whereIn('name', [
+        $employee4->permissions()->sync($permissions->whereIn('name', [
             'operation_logs.view',
             'operation_logs.create',
             'operation_logs.update',
@@ -206,7 +232,7 @@ class UserSeeder extends Seeder
         ])->pluck('id'));
 
         // Employee 5: مولدات فقط
-        $employee5->permissions()->attach($permissions->whereIn('name', [
+        $employee5->permissions()->sync($permissions->whereIn('name', [
             'generators.view',
             'generators.create',
             'generators.update',

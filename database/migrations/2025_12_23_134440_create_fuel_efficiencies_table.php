@@ -24,14 +24,21 @@ return new class extends Migration
 
             // سعر الوقود
             $table->decimal('fuel_price_per_liter', 10, 2)->nullable(); // سعر الوقود (للتر)
+            $table->decimal('fuel_consumed', 10, 2)->nullable();
 
             // كفاءة استهلاك الوقود
             $table->decimal('fuel_efficiency_percentage', 5, 2)->nullable(); // كفاءة استهلاك الوقود (%)
-            $table->string('fuel_efficiency_comparison')->nullable(); // مقارنة مع المعيار (within_standard, above, below)
+            // مقارنة كفاءة الوقود - تخزن ID من constant_details، ثابت Master رقم 17 (مقارنة كفاءة الوقود)
+            $table->foreignId('fuel_efficiency_comparison_id')->nullable()
+                ->constrained('constant_details')->nullOnDelete()
+                ->comment('ID من constant_details - ثابت Master رقم 17 (مقارنة كفاءة الوقود)');
 
             // كفاءة توزيع الطاقة
             $table->decimal('energy_distribution_efficiency', 5, 2)->nullable(); // كفاءة توزيع الطاقة (%)
-            $table->string('energy_efficiency_comparison')->nullable(); // مقارنة مع المعيار (within_standard, above, below)
+            // مقارنة كفاءة الطاقة - تخزن ID من constant_details، ثابت Master رقم 18 (مقارنة كفاءة الطاقة)
+            $table->foreignId('energy_efficiency_comparison_id')->nullable()
+                ->constrained('constant_details')->nullOnDelete()
+                ->comment('ID من constant_details - ثابت Master رقم 18 (مقارنة كفاءة الطاقة)');
 
             // تكلفة التشغيل
             $table->decimal('total_operating_cost', 12, 2)->nullable(); // حساب تكلفة التشغيل الإجمالية

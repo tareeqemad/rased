@@ -25,7 +25,14 @@ class RoleController extends Controller
         $query = Role::withCount(['users', 'permissions'])->with('operator');
 
         // فلترة الأدوار حسب المستخدم
-        if ($user->isCompanyOwner()) {
+        if ($user->isAdmin()) {
+            // Admin يشوف جميع الأدوار النظامية والأدوار العامة (operator_id = null)
+            // ولا يشوف الأدوار الخاصة بمشغلين محددين
+            $query->where(function ($q) {
+                $q->where('is_system', true)
+                  ->orWhereNull('operator_id');
+            });
+        } elseif ($user->isCompanyOwner()) {
             $operator = $user->ownedOperators()->first();
             if ($operator) {
                 // المشغل يشوف أدواره فقط + الأدوار النظامية (لا يشوف الأدوار العامة أو أدوار مشغلين آخرين)
@@ -72,7 +79,13 @@ class RoleController extends Controller
         // الحصول على الصلاحيات المتاحة
         $permissions = Permission::orderBy('group')->orderBy('order')->get();
         
-        if ($user->isCompanyOwner()) {
+        if ($user->isAdmin()) {
+            // Admin: لا يمكنه منح صلاحيات إعدادات النظام (users, operators, permissions)
+            $systemPermissions = $this->getSystemPermissions();
+            $permissions = $permissions->reject(function ($permission) use ($systemPermissions) {
+                return in_array($permission->name, $systemPermissions);
+            });
+        } elseif ($user->isCompanyOwner()) {
             // فلترة الصلاحيات - إزالة صلاحيات النظام
             $systemPermissions = $this->getSystemPermissions();
             $permissions = $permissions->reject(function ($permission) use ($systemPermissions) {
@@ -82,7 +95,7 @@ class RoleController extends Controller
         
         $permissions = $permissions->groupBy('group');
 
-        // الحصول على المشغلين (للسوبر أدمن فقط)
+        // الحصول على المشغلين (للسوبر أدمن فقط - Admin لا يحتاج لأنه ينشئ أدوار عامة)
         $operators = collect();
         if ($user->isSuperAdmin()) {
             $operators = \App\Models\Operator::orderBy('name')->get(['id', 'name', 'unit_number']);
@@ -99,8 +112,10 @@ class RoleController extends Controller
         $user = auth()->user();
         $operatorId = null;
         
-        // إذا كان المشغل، ربط الدور بمشغله
-        if ($user->isCompanyOwner()) {
+        // Admin يمكنه إنشاء أدوار عامة (operator_id = null) فقط
+        if ($user->isAdmin()) {
+            $operatorId = null; // أدوار عامة فقط
+        } elseif ($user->isCompanyOwner()) {
             $operator = $user->ownedOperators()->first();
             if (!$operator) {
                 return redirect()->back()
@@ -116,9 +131,9 @@ class RoleController extends Controller
             }
         }
 
-        // التحقق من الصلاحيات - منع منح صلاحيات النظام للمشغل
+        // التحقق من الصلاحيات - منع منح صلاحيات النظام
         $permissionIds = $request->validated('permissions', []);
-        if ($user->isCompanyOwner() && !empty($permissionIds)) {
+        if (($user->isAdmin() || $user->isCompanyOwner()) && !empty($permissionIds)) {
             $systemPermissions = $this->getSystemPermissions();
             $systemPermissionIds = Permission::whereIn('name', $systemPermissions)->pluck('id')->toArray();
             $permissionIds = array_diff($permissionIds, $systemPermissionIds);
@@ -221,11 +236,18 @@ class RoleController extends Controller
         if ($request->has('permissions')) {
             $permissionIds = $request->validated('permissions');
             
-            // التحقق من الصلاحيات - منع منح صلاحيات النظام للمشغل
-            if ($user->isCompanyOwner() && !empty($permissionIds)) {
+            // التحقق من الصلاحيات - منع منح صلاحيات النظام
+            if (($user->isAdmin() || $user->isCompanyOwner()) && !empty($permissionIds)) {
                 $systemPermissions = $this->getSystemPermissions();
                 $systemPermissionIds = Permission::whereIn('name', $systemPermissions)->pluck('id')->toArray();
                 $permissionIds = array_diff($permissionIds, $systemPermissionIds);
+            }
+            
+            // Admin لا يمكنه تحديث الأدوار النظامية
+            if ($user->isAdmin() && $role->is_system) {
+                return redirect()->back()
+                    ->withInput()
+                    ->with('error', 'لا يمكنك تحديث الأدوار النظامية.');
             }
             
             $role->permissions()->sync($permissionIds);

@@ -9,26 +9,8 @@
             @endif
         </td>
         <td>
-            @php
-                $statusColors = [
-                    'compliant' => 'success',
-                    'non_compliant' => 'danger',
-                    'pending' => 'warning',
-                    'available' => 'success',
-                    'expired' => 'warning',
-                    'not_available' => 'danger'
-                ];
-                $statusLabels = [
-                    'compliant' => 'متوافق',
-                    'non_compliant' => 'غير متوافق',
-                    'pending' => 'قيد الانتظار',
-                    'available' => 'متوفرة',
-                    'expired' => 'منتهية',
-                    'not_available' => 'غير متوفرة'
-                ];
-            @endphp
-            <span class="badge bg-{{ $statusColors[$compliance->safety_certificate_status] ?? 'secondary' }}">
-                {{ $statusLabels[$compliance->safety_certificate_status] ?? $compliance->safety_certificate_status }}
+            <span class="badge bg-{{ $compliance->safetyCertificateStatusDetail?->getBadgeColor() ?? 'secondary' }}">
+                {{ $compliance->safetyCertificateStatusDetail?->label ?? '-' }}
             </span>
         </td>
         <td>

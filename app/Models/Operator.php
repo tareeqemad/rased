@@ -91,6 +91,10 @@ class Operator extends Model
         return $this->hasMany(ElectricityTariffPrice::class);
     }
 
+    /**
+     * علاقة مع ثابت المدينة (city_id)
+     * يستخدم: ConstantsHelper::get(20) - ثابت Master رقم 20
+     */
     public function cityDetail(): BelongsTo
     {
         return $this->belongsTo(ConstantDetail::class, 'city_id');

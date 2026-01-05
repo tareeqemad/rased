@@ -184,7 +184,9 @@ class DashboardController extends Controller
             ],
             'generators' => [
                 'total' => Generator::count(),
-                'active' => Generator::where('status', 'active')->count(),
+                'active' => Generator::whereHas('statusDetail', function($q) {
+                    $q->where('code', 'ACTIVE');
+                })->count(),
             ],
         ];
     }
@@ -198,7 +200,9 @@ class DashboardController extends Controller
             ],
             'generators' => [
                 'total' => Generator::count(),
-                'active' => Generator::where('status', 'active')->count(),
+                'active' => Generator::whereHas('statusDetail', function($q) {
+                    $q->where('code', 'ACTIVE');
+                })->count(),
             ],
             'company_owners' => [
                 'total' => User::where('role', Role::CompanyOwner)->count(),
@@ -218,7 +222,9 @@ class DashboardController extends Controller
             'generators' => [
                 'total' => Generator::whereIn('operator_id', $ownedOperators->pluck('id'))->count(),
                 'active' => Generator::whereIn('operator_id', $ownedOperators->pluck('id'))
-                    ->where('status', 'active')->count(),
+                    ->whereHas('statusDetail', function($q) {
+                        $q->where('code', 'ACTIVE');
+                    })->count(),
             ],
             'employees' => [
                 'total' => User::whereHas('operators', function ($query) use ($ownedOperators) {
@@ -239,7 +245,9 @@ class DashboardController extends Controller
             'generators' => [
                 'total' => Generator::whereIn('operator_id', $userOperators->pluck('id'))->count(),
                 'active' => Generator::whereIn('operator_id', $userOperators->pluck('id'))
-                    ->where('status', 'active')->count(),
+                    ->whereHas('statusDetail', function($q) {
+                        $q->where('code', 'ACTIVE');
+                    })->count(),
             ],
         ];
     }
@@ -600,9 +608,15 @@ class DashboardController extends Controller
         };
 
         $total = $baseQuery()->count();
-        $valid = (clone $baseQuery())->where('safety_certificate_status', 'valid')->count();
-        $expired = (clone $baseQuery())->where('safety_certificate_status', 'expired')->count();
-        $pending = (clone $baseQuery())->where('safety_certificate_status', 'pending')->count();
+        $valid = (clone $baseQuery())->whereHas('safetyCertificateStatusDetail', function($q) {
+            $q->where('code', 'VALID');
+        })->count();
+        $expired = (clone $baseQuery())->whereHas('safetyCertificateStatusDetail', function($q) {
+            $q->where('code', 'EXPIRED');
+        })->count();
+        $pending = (clone $baseQuery())->whereHas('safetyCertificateStatusDetail', function($q) {
+            $q->where('code', 'PENDING');
+        })->count();
 
         return [
             'total' => $total,
@@ -660,25 +674,40 @@ class DashboardController extends Controller
     private function getExpiringCompliance(?array $operatorIds)
     {
         // الحصول على الشهادات المنتهية أو التي تحتاج متابعة
-        $query = ComplianceSafety::with('operator');
+        $query = ComplianceSafety::with(['operator', 'safetyCertificateStatusDetail']);
         
         if ($operatorIds) {
             $query->whereIn('operator_id', $operatorIds);
         }
         
-        return $query->where(function ($q) {
+        // الحصول على IDs الثوابت
+        $expiredStatusId = \App\Models\ConstantDetail::whereHas('master', function($q) {
+            $q->where('constant_number', 13);
+        })->where('code', 'EXPIRED')->value('id');
+        
+        $validStatusId = \App\Models\ConstantDetail::whereHas('master', function($q) {
+            $q->where('constant_number', 13);
+        })->where('code', 'VALID')->value('id');
+        
+        return $query->where(function ($q) use ($expiredStatusId, $validStatusId) {
                 // الشهادات المنتهية
-                $q->where('safety_certificate_status', 'expired')
-                    // أو الشهادات السارية التي لم يتم فحصها منذ أكثر من 6 أشهر
-                    ->orWhere(function ($subQuery) {
-                        $subQuery->where('safety_certificate_status', 'valid')
+                if ($expiredStatusId) {
+                    $q->where('safety_certificate_status_id', $expiredStatusId);
+                }
+                // أو الشهادات السارية التي لم يتم فحصها منذ أكثر من 6 أشهر
+                if ($validStatusId) {
+                    $q->orWhere(function ($subQuery) use ($validStatusId) {
+                        $subQuery->where('safety_certificate_status_id', $validStatusId)
                             ->where(function ($dateQuery) {
                                 $dateQuery->whereNull('last_inspection_date')
                                     ->orWhere('last_inspection_date', '<', Carbon::now()->subMonths(6));
                             });
                     });
+                }
             })
-            ->orderByRaw("CASE WHEN safety_certificate_status = 'expired' THEN 0 ELSE 1 END")
+            ->when($expiredStatusId, function($q) use ($expiredStatusId) {
+                $q->orderByRaw("CASE WHEN safety_certificate_status_id = {$expiredStatusId} THEN 0 ELSE 1 END");
+            })
             ->latest('last_inspection_date')
             ->limit(5)
             ->get();

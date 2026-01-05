@@ -21,31 +21,31 @@ class GenerationUnit extends Model
         'unit_number',
         'name',
         'generators_count',
-        'status',
+        'status_id', // تم تغييره من status
         'created_by',
         'last_updated_by',
         // الملكية والتشغيل
         'owner_name',
         'owner_id_number',
-        'operation_entity',
+        'operation_entity_id', // تم تغييره من operation_entity
         'operator_id_number',
         'phone',
         'phone_alt',
         'email',
         // الموقع
-        'governorate',
+        'governorate_id', // ID من constant_details - ثابت Master رقم 1 (المحافظات)
         'city_id',
         'detailed_address',
         'latitude',
         'longitude',
         // القدرات الفنية
         'total_capacity',
-        'synchronization_available',
+        'synchronization_available_id', // تم تغييره من synchronization_available
         'max_synchronization_capacity',
         // المستفيدون والبيئة
         'beneficiaries_count',
         'beneficiaries_description',
-        'environmental_compliance_status',
+        'environmental_compliance_status_id', // تم تغييره من environmental_compliance_status
     ];
 
     protected function casts(): array
@@ -55,7 +55,6 @@ class GenerationUnit extends Model
             'longitude' => 'decimal:8',
             'total_capacity' => 'decimal:2',
             'max_synchronization_capacity' => 'decimal:2',
-            'synchronization_available' => 'boolean',
             'beneficiaries_count' => 'integer',
         ];
     }
@@ -75,9 +74,66 @@ class GenerationUnit extends Model
         return $this->hasMany(FuelTank::class)->orderBy('order');
     }
 
+    /**
+     * علاقة مع ثابت المحافظة (governorate_id)
+     * يستخدم: ConstantsHelper::get(1) - ثابت Master رقم 1
+     */
+    public function governorateDetail(): BelongsTo
+    {
+        return $this->belongsTo(ConstantDetail::class, 'governorate_id');
+    }
+
+    /**
+     * علاقة مع ثابت المدينة (city_id)
+     * يستخدم: ConstantsHelper::get(20) - ثابت Master رقم 20
+     */
     public function city(): BelongsTo
     {
         return $this->belongsTo(\App\Models\ConstantDetail::class, 'city_id');
+    }
+
+    /**
+     * علاقة مع ثابت حالة الوحدة (status_id)
+     * يستخدم: ConstantsHelper::get(15) - ثابت Master رقم 15
+     */
+    public function statusDetail(): BelongsTo
+    {
+        return $this->belongsTo(ConstantDetail::class, 'status_id');
+    }
+
+    /**
+     * علاقة مع ثابت جهة التشغيل (operation_entity_id)
+     * يستخدم: ConstantsHelper::get(2) - ثابت Master رقم 2
+     */
+    public function operationEntityDetail(): BelongsTo
+    {
+        return $this->belongsTo(ConstantDetail::class, 'operation_entity_id');
+    }
+
+    /**
+     * علاقة مع ثابت إمكانية المزامنة (synchronization_available_id)
+     * يستخدم: ConstantsHelper::get(16) - ثابت Master رقم 16
+     */
+    public function synchronizationAvailableDetail(): BelongsTo
+    {
+        return $this->belongsTo(ConstantDetail::class, 'synchronization_available_id');
+    }
+
+    /**
+     * علاقة مع ثابت حالة الامتثال البيئي (environmental_compliance_status_id)
+     * يستخدم: ConstantsHelper::get(14) - ثابت Master رقم 14
+     */
+    public function environmentalComplianceStatusDetail(): BelongsTo
+    {
+        return $this->belongsTo(ConstantDetail::class, 'environmental_compliance_status_id');
+    }
+
+    /**
+     * الحصول على اسم المشغل من العلاقة
+     */
+    public function getOperatorNameAttribute(): ?string
+    {
+        return $this->operator?->name;
     }
 
     /**

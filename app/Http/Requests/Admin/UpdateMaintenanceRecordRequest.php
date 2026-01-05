@@ -16,7 +16,8 @@ class UpdateMaintenanceRecordRequest extends FormRequest
     {
         return [
             'generator_id' => ['required', 'exists:generators,id'],
-            'maintenance_type' => ['required', 'string', Rule::in(['periodic', 'emergency'])],
+            'maintenance_type_id' => ['required', 'exists:constant_details,id'],
+            'next_maintenance_type_id' => ['nullable', 'exists:constant_details,id'],
             'maintenance_date' => ['required', 'date'],
             'start_time' => ['nullable', 'date_format:H:i'],
             'end_time' => ['nullable', 'date_format:H:i'],
@@ -35,8 +36,9 @@ class UpdateMaintenanceRecordRequest extends FormRequest
         return [
             'generator_id.required' => 'المولد مطلوب.',
             'generator_id.exists' => 'المولد المحدد غير موجود.',
-            'maintenance_type.required' => 'نوع الصيانة مطلوب.',
-            'maintenance_type.in' => 'نوع الصيانة يجب أن يكون دورية أو طارئة.',
+            'maintenance_type_id.required' => 'نوع الصيانة مطلوب.',
+            'maintenance_type_id.exists' => 'نوع الصيانة المحدد غير صحيح.',
+            'next_maintenance_type_id.exists' => 'نوع الصيانة القادمة المحدد غير صحيح.',
             'maintenance_date.required' => 'تاريخ الصيانة مطلوب.',
         ];
     }

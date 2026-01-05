@@ -35,11 +35,8 @@ class ComplianceSafetyPolicy
 
     public function create(User $user): bool
     {
-        if ($user->isAdmin()) {
-            return false;
-        }
-
-        if ($user->isSuperAdmin()) {
+        // Admin (سلطة الطاقة) يمكنه إنشاء سجلات الامتثال والسلامة
+        if ($user->isAdmin() || $user->isSuperAdmin()) {
             return true;
         }
 
@@ -52,8 +49,9 @@ class ComplianceSafetyPolicy
 
     public function update(User $user, ComplianceSafety $complianceSafety): bool
     {
-        if ($user->isAdmin()) {
-            return false;
+        // Admin (سلطة الطاقة) يمكنه تحديث سجلات الامتثال والسلامة
+        if ($user->isAdmin() || $user->isSuperAdmin()) {
+            return true;
         }
 
         if ($user->isSuperAdmin()) {

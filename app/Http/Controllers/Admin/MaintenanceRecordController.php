@@ -51,7 +51,8 @@ class MaintenanceRecordController extends Controller
             ->orWhere('work_performed', 'like', "%{$q}%");
         }
 
-        if ($user->isSuperAdmin()) {
+        // فلترة حسب المشغل (للسوبر أدمن و Admin)
+        if ($user->isSuperAdmin() || $user->isAdmin()) {
             $operatorId = (int) $request->input('operator_id', 0);
             if ($operatorId > 0) {
                 $query->whereHas('generator', function ($q) use ($operatorId) {
@@ -100,7 +101,7 @@ class MaintenanceRecordController extends Controller
         $operators = collect();
         $generators = collect();
         
-        if ($user->isSuperAdmin()) {
+        if ($user->isSuperAdmin() || $user->isAdmin()) {
             $operators = Operator::select('id', 'name', 'unit_number')
                 ->orderBy('name')
                 ->get();
@@ -158,8 +159,13 @@ class MaintenanceRecordController extends Controller
         }
 
         $selectedGeneratorId = $request->input('generator_id');
+        
+        // جلب ثوابت نوع الصيانة
+        $constants = [
+            'maintenance_type' => \App\Helpers\ConstantsHelper::get(12), // نوع الصيانة
+        ];
 
-        return view('admin.maintenance-records.create', compact('generators', 'selectedGeneratorId'));
+        return view('admin.maintenance-records.create', compact('generators', 'selectedGeneratorId', 'constants'));
     }
 
     /**
@@ -203,12 +209,16 @@ class MaintenanceRecordController extends Controller
 
         $maintenanceRecord = MaintenanceRecord::create($data);
 
-        // Update generator's last maintenance date if it's a periodic or major maintenance
+        // Update generator's last maintenance date if it's a periodic maintenance
         $generator = Generator::find($maintenanceRecord->generator_id);
-        if ($generator && in_array($maintenanceRecord->maintenance_type, ['periodic', 'major'])) {
-            $generator->update([
-                'last_major_maintenance_date' => $maintenanceRecord->maintenance_date
-            ]);
+        if ($generator && $maintenanceRecord->maintenance_type_id) {
+            // الحصول على ID ثابت "دوري" من constant_master رقم 12
+            $periodicConstant = \App\Helpers\ConstantsHelper::findByCode(12, 'PERIODIC');
+            if ($periodicConstant && (int)$maintenanceRecord->maintenance_type_id === $periodicConstant->id) {
+                $generator->update([
+                    'last_major_maintenance_date' => $maintenanceRecord->maintenance_date
+                ]);
+            }
         }
 
         $generator->load('operator');
@@ -240,7 +250,11 @@ class MaintenanceRecordController extends Controller
     {
         $this->authorize('view', $maintenanceRecord);
 
-        $maintenanceRecord->load('generator.operator');
+        $maintenanceRecord->load([
+            'generator.operator',
+            'maintenanceTypeDetail',
+            'nextMaintenanceTypeDetail'
+        ]);
 
         return view('admin.maintenance-records.show', compact('maintenanceRecord'));
     }
@@ -266,8 +280,13 @@ class MaintenanceRecordController extends Controller
             $operators = $user->operators;
             $generators = Generator::whereIn('operator_id', $operators->pluck('id'))->get();
         }
+        
+        // جلب ثوابت نوع الصيانة
+        $constants = [
+            'maintenance_type' => \App\Helpers\ConstantsHelper::get(12), // نوع الصيانة
+        ];
 
-        return view('admin.maintenance-records.edit', compact('maintenanceRecord', 'generators'));
+        return view('admin.maintenance-records.edit', compact('maintenanceRecord', 'generators', 'constants'));
     }
 
     /**
@@ -312,12 +331,16 @@ class MaintenanceRecordController extends Controller
 
         $maintenanceRecord->update($data);
 
-        // Update generator's last maintenance date if it's a periodic or major maintenance
+        // Update generator's last maintenance date if it's a periodic maintenance
         $maintenanceRecord->load('generator');
-        if ($maintenanceRecord->generator && in_array($maintenanceRecord->maintenance_type, ['periodic', 'major'])) {
-            $maintenanceRecord->generator->update([
-                'last_major_maintenance_date' => $maintenanceRecord->maintenance_date
-            ]);
+        if ($maintenanceRecord->generator && $maintenanceRecord->maintenance_type_id) {
+            // الحصول على ID ثابت "دوري" من constant_master رقم 12
+            $periodicConstant = \App\Helpers\ConstantsHelper::findByCode(12, 'PERIODIC');
+            if ($periodicConstant && (int)$maintenanceRecord->maintenance_type_id === $periodicConstant->id) {
+                $maintenanceRecord->generator->update([
+                    'last_major_maintenance_date' => $maintenanceRecord->maintenance_date
+                ]);
+            }
         }
 
         $maintenanceRecord->load('generator.operator');

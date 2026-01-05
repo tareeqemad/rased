@@ -54,22 +54,38 @@ class RoleSeeder extends Seeder
         $permissions = Permission::all();
 
         foreach ($roles as $roleData) {
-            $role = Role::create($roleData);
+            $role = Role::updateOrCreate(
+                ['name' => $roleData['name']],
+                $roleData
+            );
 
-            // منح الصلاحيات حسب الدور
+            // منح الصلاحيات حسب الدور (إزالة الصلاحيات القديمة أولاً ثم إضافة الجديدة)
+            $role->permissions()->detach();
             if ($role->name === 'super_admin') {
                 // SuperAdmin لديه جميع الصلاحيات
                 $role->permissions()->attach($permissions->pluck('id'));
             } elseif ($role->name === 'admin') {
-                // Admin (سلطة الطاقة) - صلاحيات المراقبة والاستعلام فقط
+                // Admin (سلطة الطاقة) - صلاحيات كاملة ما عدا إعدادات الموقع
+                // يمكنه إنشاء وتحديث السجلات، لكن لا يمكنه إدارة المستخدمين/المشغلين/الصلاحيات
                 $role->permissions()->attach($permissions->whereIn('name', [
+                    // عرض
                     'operators.view',
                     'generators.view',
+                    'generation_units.view',
                     'operation_logs.view',
                     'fuel_efficiencies.view',
                     'maintenance_records.view',
                     'compliance_safeties.view',
-                    'electricity_tariff_prices.view', // الأدمن يمكنهم الاستعلام فقط
+                    'electricity_tariff_prices.view',
+                    // إنشاء وتحديث السجلات
+                    'operation_logs.create',
+                    'operation_logs.update',
+                    'maintenance_records.create',
+                    'maintenance_records.update',
+                    'compliance_safeties.create',
+                    'compliance_safeties.update',
+                    'fuel_efficiencies.create',
+                    'fuel_efficiencies.update',
                 ])->pluck('id'));
             } elseif ($role->name === 'company_owner') {
                 // CompanyOwner - صلاحيات كاملة على بياناته وموظفيه

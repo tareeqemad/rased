@@ -238,6 +238,7 @@ class OperatorController extends Controller
 
         $operator->load([
             'owner',
+            'generationUnits.statusDetail',
             'generationUnits.generators' => function ($q) {
                 $q->latest()->take(5);
             },

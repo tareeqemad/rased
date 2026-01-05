@@ -13,17 +13,32 @@ return new class extends Migration
     {
         Schema::create('fuel_tanks', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('generator_id')->constrained('generators')->cascadeOnDelete();
+            // generation_unit_id سيتم إضافته بعد إنشاء جدول generation_units
+            $table->string('tank_code')->nullable();
             $table->integer('capacity')->nullable(); // لتر
-            $table->string('location')->nullable(); // ارضي, علوي, تحت الارض
+            // موقع الخزان - تخزن ID من constant_details، ثابت Master رقم 21 (موقع الخزان)
+            $table->foreignId('location_id')->nullable()
+                ->constrained('constant_details')->nullOnDelete()
+                ->comment('ID من constant_details - ثابت Master رقم 21 (موقع الخزان)');
             $table->boolean('filtration_system_available')->default(false);
             $table->string('condition')->nullable();
-            $table->string('material')->nullable(); // حديد, بلاستيك, مقوى, فايبر
-            $table->string('usage')->nullable(); // مركزي / احتياطي
-            $table->string('measurement_method')->nullable(); // سيخ, مدرج, ساعه ميكانيكية, حساس الكتروني, خرطوم شفاف
+            // مادة التصنيع - تخزن ID من constant_details، ثابت Master رقم 10 (مادة التصنيع)
+            $table->foreignId('material_id')->nullable()
+                ->constrained('constant_details')->nullOnDelete()
+                ->comment('ID من constant_details - ثابت Master رقم 10 (مادة التصنيع)');
+            // الاستخدام - تخزن ID من constant_details، ثابت Master رقم 11 (الاستخدام)
+            $table->foreignId('usage_id')->nullable()
+                ->constrained('constant_details')->nullOnDelete()
+                ->comment('ID من constant_details - ثابت Master رقم 11 (الاستخدام)');
+            // طريقة القياس - تخزن ID من constant_details، ثابت Master رقم 19 (طريقة القياس)
+            $table->foreignId('measurement_method_id')->nullable()
+                ->constrained('constant_details')->nullOnDelete()
+                ->comment('ID من constant_details - ثابت Master رقم 19 (طريقة القياس)');
             $table->integer('order')->default(1); // ترتيب الخزان
             $table->timestamps();
             $table->softDeletes();
+            
+            $table->index('tank_code');
         });
     }
 

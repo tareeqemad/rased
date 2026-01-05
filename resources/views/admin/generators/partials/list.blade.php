@@ -1,7 +1,7 @@
 @if($generators->count() > 0)
     <div class="gen-list">
         @foreach($generators as $generator)
-            <div class="gen-row" data-generator-id="{{ $generator->id }}" data-status="{{ $generator->status }}">
+            <div class="gen-row" data-generator-id="{{ $generator->id }}" data-status="{{ $generator->status_id }}">
                 <div class="gen-row-main">
                     <div class="gen-row-content">
                         <div class="gen-row-header">
@@ -11,7 +11,7 @@
                                 <span class="badge bg-secondary ms-2">{{ $generator->generator_number }}</span>
                             </div>
                             <div class="gen-row-meta">
-                                @if($generator->status === 'active')
+                                @if($generator->statusDetail && $generator->statusDetail->code === 'ACTIVE')
                                     <span class="badge bg-success">فعال</span>
                                 @else
                                     <span class="badge bg-danger">غير فعال</span>

@@ -122,7 +122,6 @@ php artisan migrate
 php artisan db:seed --class=ConstantSeeder
 php artisan db:seed --class=RoleSeeder
 php artisan db:seed --class=PermissionSeeder
-php artisan db:seed --class=AddGeneratorConstantsSeeder
 
 # (اختياري) ملء بيانات تجريبية
 php artisan db:seed --class=OperatorsWithDataSeeder

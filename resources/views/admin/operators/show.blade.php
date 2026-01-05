@@ -389,10 +389,12 @@
                                                     <span class="badge bg-info">
                                                         {{ $unit->generators()->count() }} / {{ $unit->generators_count }} مولد
                                                     </span>
-                                                    @if($unit->status === 'active')
-                                                        <span class="badge bg-success">نشط</span>
+                                                    @if($unit->statusDetail)
+                                                        <span class="badge {{ $unit->statusDetail->code === 'ACTIVE' ? 'bg-success' : 'bg-secondary' }}">
+                                                            {{ $unit->statusDetail->label }}
+                                                        </span>
                                                     @else
-                                                        <span class="badge bg-secondary">غير نشط</span>
+                                                        <span class="badge bg-secondary">غير محدد</span>
                                                     @endif
                                                 </div>
                                             </div>

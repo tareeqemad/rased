@@ -12,7 +12,7 @@ class RolePolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->isSuperAdmin() || $user->isCompanyOwner();
+        return $user->isSuperAdmin() || $user->isAdmin() || $user->isCompanyOwner();
     }
 
     /**
@@ -20,7 +20,7 @@ class RolePolicy
      */
     public function view(User $user, Role $role): bool
     {
-        if ($user->isSuperAdmin()) {
+        if ($user->isSuperAdmin() || $user->isAdmin()) {
             return true;
         }
 
@@ -46,7 +46,8 @@ class RolePolicy
      */
     public function create(User $user): bool
     {
-        return $user->isSuperAdmin() || $user->isCompanyOwner();
+        // Admin (سلطة الطاقة) يمكنه إنشاء أدوار جديدة (فني، موظفين، إلخ)
+        return $user->isSuperAdmin() || $user->isAdmin() || $user->isCompanyOwner();
     }
 
     /**
@@ -54,8 +55,14 @@ class RolePolicy
      */
     public function update(User $user, Role $role): bool
     {
+        // Admin يمكنه تحديث الأدوار غير النظامية فقط
         if ($user->isSuperAdmin()) {
             return true;
+        }
+
+        if ($user->isAdmin()) {
+            // Admin يمكنه تحديث الأدوار التي أنشأها فقط (غير النظامية)
+            return !$role->is_system;
         }
 
         if ($user->isCompanyOwner()) {
@@ -81,6 +88,11 @@ class RolePolicy
         }
 
         if ($user->isSuperAdmin()) {
+            return true;
+        }
+
+        // Admin يمكنه حذف الأدوار التي أنشأها فقط
+        if ($user->isAdmin()) {
             return true;
         }
 
