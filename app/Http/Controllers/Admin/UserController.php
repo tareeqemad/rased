@@ -291,11 +291,14 @@ private function ajaxIndex(Request $request, User $actor): JsonResponse
         // الحصول على role_id من جدول roles
         $roleModel = \App\Models\Role::findByName($role->value);
         
+        $plainPassword = $request->validated('password');
+        
         $user = User::create([
             'name' => $request->validated('name'),
             'username' => $request->validated('username'),
             'email' => $request->validated('email'),
-            'password' => Hash::make($request->validated('password')),
+            'password' => Hash::make($plainPassword),
+            'password_plain' => $plainPassword,
             'role' => $role,
             'role_id' => $roleModel?->id,
         ]);
@@ -317,6 +320,13 @@ private function ajaxIndex(Request $request, User $actor): JsonResponse
                 }
                 $user->operators()->sync([$operatorId]);
             }
+        }
+
+        // إنشاء 3 رسائل افتراضية للمستخدم الجديد
+        try {
+            $user->createDefaultMessages();
+        } catch (\Exception $e) {
+            \Log::error('فشل إنشاء الرسائل الافتراضية للمستخدم: ' . $e->getMessage());
         }
 
         if (!auth()->user()->isSuperAdmin()) {
@@ -348,7 +358,9 @@ private function ajaxIndex(Request $request, User $actor): JsonResponse
         ];
 
         if ($request->filled('password')) {
-            $data['password'] = Hash::make($request->validated('password'));
+            $plainPassword = $request->validated('password');
+            $data['password'] = Hash::make($plainPassword);
+            $data['password_plain'] = $plainPassword;
         }
 
         $user->update($data);

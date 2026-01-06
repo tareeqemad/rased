@@ -6,12 +6,16 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Models\ConstantDetail;
+use App\Models\Operator;
+use App\Models\GenerationUnit;
 
 class FuelEfficiency extends Model
 {
     use SoftDeletes;
 
     protected $fillable = [
+        'operator_id',
+        'generation_unit_id',
         'generator_id',
         'consumption_date',
         'operating_hours',
@@ -35,6 +39,26 @@ class FuelEfficiency extends Model
             'energy_distribution_efficiency' => 'decimal:2',
             'total_operating_cost' => 'decimal:2',
         ];
+    }
+
+    public function operator(): BelongsTo
+    {
+        return $this->belongsTo(Operator::class);
+    }
+
+    public function generationUnit(): BelongsTo
+    {
+        return $this->belongsTo(GenerationUnit::class);
+    }
+
+    public function operator(): BelongsTo
+    {
+        return $this->belongsTo(Operator::class);
+    }
+
+    public function generationUnit(): BelongsTo
+    {
+        return $this->belongsTo(GenerationUnit::class);
     }
 
     public function generator(): BelongsTo

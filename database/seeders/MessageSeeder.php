@@ -199,6 +199,60 @@ class MessageSeeder extends Seeder
             ];
         }
 
+        // 7. إنشاء 3 رسائل افتراضية لكل مستخدم في النظام
+        $allUsers = User::where('id', '!=', $superAdmin->id)->get();
+        foreach ($allUsers as $user) {
+            // الحصول على المشغل المرتبط بالمستخدم (إن وجد)
+            $operator = null;
+            if ($user->isCompanyOwner()) {
+                $operator = $user->ownedOperators()->first();
+            } elseif ($user->isEmployee() || $user->isTechnician()) {
+                $operator = $user->operators()->first();
+            }
+
+            // رسالة ترحيبية
+            $messages[] = [
+                'sender_id' => $superAdmin->id,
+                'receiver_id' => $user->id,
+                'operator_id' => $operator?->id,
+                'subject' => 'مرحباً بك في منصة راصد',
+                'body' => "عزيزي/عزيزتي {$user->name}،\n\nنرحب بك في منصة راصد لإدارة وحدات التوليد. نتمنى أن تجد في النظام كل ما تحتاجه لإدارة عملك بكفاءة وفعالية.\n\nنتمنى لك تجربة ممتعة!",
+                'type' => 'admin_to_operator',
+                'is_read' => false,
+                'read_at' => null,
+                'created_at' => Carbon::now()->subDays(7),
+                'updated_at' => Carbon::now()->subDays(7),
+            ];
+
+            // رسالة دليل الاستخدام
+            $messages[] = [
+                'sender_id' => $superAdmin->id,
+                'receiver_id' => $user->id,
+                'operator_id' => $operator?->id,
+                'subject' => 'دليل الاستخدام السريع',
+                'body' => "عزيزي/عزيزتي {$user->name}،\n\nيمكنك من خلال النظام:\n- إدارة بيانات المولدات ووحدات التوليد\n- متابعة سجلات التشغيل والوقود\n- إدارة أعمال الصيانة\n- التواصل مع الفريق من خلال نظام الرسائل\n\nللمزيد من المعلومات، يرجى مراجعة الدليل الإرشادي.",
+                'type' => 'admin_to_operator',
+                'is_read' => false,
+                'read_at' => null,
+                'created_at' => Carbon::now()->subDays(6),
+                'updated_at' => Carbon::now()->subDays(6),
+            ];
+
+            // رسالة معلومات مهمة
+            $messages[] = [
+                'sender_id' => $superAdmin->id,
+                'receiver_id' => $user->id,
+                'operator_id' => $operator?->id,
+                'subject' => 'معلومات مهمة',
+                'body' => "عزيزي/عزيزتي {$user->name}،\n\nنود تذكيرك بأن:\n- يرجى إكمال بيانات المشغل في أقرب وقت ممكن\n- يمكنك التواصل معنا في أي وقت من خلال نظام الرسائل\n- ننصح بتغيير كلمة المرور بعد تسجيل الدخول لأول مرة\n\nنتمنى لك تجربة ناجحة!",
+                'type' => 'admin_to_operator',
+                'is_read' => false,
+                'read_at' => null,
+                'created_at' => Carbon::now()->subDays(5),
+                'updated_at' => Carbon::now()->subDays(5),
+            ];
+        }
+
         // إدراج الرسائل
         foreach ($messages as $message) {
             try {

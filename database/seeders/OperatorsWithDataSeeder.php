@@ -489,12 +489,14 @@ class OperatorsWithDataSeeder extends Seeder
             $governorateEnum = Governorate::fromValue($governorateData['value']);
 
             // إنشاء CompanyOwner
+            $ownerPassword = 'password';
             $owner = User::firstOrCreate(
                 ['email' => 'owner' . ($i + 1) . '@example.com'],
                 [
                     'name' => 'صاحب شركة ' . ($i + 1),
                     'username' => 'company_owner_' . ($i + 1),
-                    'password' => Hash::make('password'),
+                    'password' => Hash::make($ownerPassword),
+                    'password_plain' => $ownerPassword,
                     'role' => Role::CompanyOwner,
                     'status' => 'active',
                 ]
@@ -739,12 +741,14 @@ class OperatorsWithDataSeeder extends Seeder
 
             for ($k = 0; $k < 6; $k++) {
                 $userRoleData = $usersRoles[$k];
+                $employeePassword = 'password';
                 $employee = User::firstOrCreate(
                     ['email' => 'user' . ($i + 1) . '_' . ($k + 1) . '@example.com'],
                     [
                         'name' => $employeeNames[$k] . ' (' . $userRoleData['name'] . ')',
                         'username' => 'user_' . ($i + 1) . '_' . ($k + 1),
-                        'password' => Hash::make('password'),
+                        'password' => Hash::make($employeePassword),
+                        'password_plain' => $employeePassword,
                         'role' => $userRoleData['role'],
                         'role_id' => $userRoleData['roleModel']?->id,
                         'status' => 'active',

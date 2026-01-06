@@ -16,6 +16,7 @@ class StoreOperationLogRequest extends FormRequest
         return [
             'generator_id' => ['required', 'exists:generators,id'],
             'operator_id' => ['required', 'exists:operators,id'],
+            'generation_unit_id' => ['required', 'exists:generation_units,id'],
             'operation_date' => ['required', 'date'],
             'start_time' => ['required', 'date_format:H:i'],
             'end_time' => ['required', 'date_format:H:i', 'after:start_time'],
@@ -39,6 +40,8 @@ class StoreOperationLogRequest extends FormRequest
             'generator_id.exists' => 'المولد المحدد غير موجود.',
             'operator_id.required' => 'المشغل مطلوب.',
             'operator_id.exists' => 'المشغل المحدد غير موجود.',
+            'generation_unit_id.required' => 'وحدة التوليد مطلوبة.',
+            'generation_unit_id.exists' => 'وحدة التوليد المحددة غير موجودة.',
             'operation_date.required' => 'تاريخ التشغيل مطلوب.',
             'start_time.required' => 'وقت البدء مطلوب.',
             'end_time.required' => 'وقت الإيقاف مطلوب.',

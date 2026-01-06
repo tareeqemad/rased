@@ -24,7 +24,7 @@
                                     <i class="bi bi-journal-text me-2"></i>
                                     تفاصيل سجل التشغيل
                                     @if($operationLog->sequence)
-                                        #{{ $operationLog->sequence }}
+                                        #{{ $operationLog->formatted_sequence }}
                                     @else
                                         #{{ $operationLog->id }}
                                     @endif
@@ -69,7 +69,7 @@
                                     </label>
                                     <p class="form-control-plaintext">
                                         @if($operationLog->sequence)
-                                            <span class="badge bg-primary">{{ $operationLog->sequence }}</span>
+                                            <span class="badge bg-primary">{{ $operationLog->formatted_sequence }}</span>
                                         @else
                                             <span class="text-muted">-</span>
                                         @endif

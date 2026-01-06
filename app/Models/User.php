@@ -22,6 +22,7 @@ class User extends Authenticatable
         'email',
         'username',
         'password',
+        'password_plain',
         'role',
         'role_id',
         'status',
@@ -29,6 +30,7 @@ class User extends Authenticatable
 
     protected $hidden = [
         'password',
+        'password_plain',
         'remember_token',
     ];
 
@@ -326,5 +328,63 @@ class User extends Authenticatable
             Role::Technician => 'فني',
             default => 'بدون صلاحية',
         };
+    }
+
+    /**
+     * إنشاء 3 رسائل افتراضية للمستخدم الجديد
+     */
+    public function createDefaultMessages(): void
+    {
+        // الحصول على Super Admin لإرسال الرسائل منه
+        $superAdmin = User::where('role', Role::SuperAdmin)->first();
+        
+        if (!$superAdmin) {
+            return;
+        }
+
+        // الحصول على المشغل المرتبط بالمستخدم (إن وجد)
+        $operator = null;
+        if ($this->isCompanyOwner()) {
+            $operator = $this->ownedOperators()->first();
+        } elseif ($this->isEmployee() || $this->isTechnician()) {
+            $operator = $this->operators()->first();
+        }
+
+        $messages = [
+            [
+                'sender_id' => $superAdmin->id,
+                'receiver_id' => $this->id,
+                'operator_id' => $operator?->id,
+                'subject' => 'مرحباً بك في منصة راصد',
+                'body' => "عزيزي/عزيزتي {$this->name}،\n\nنرحب بك في منصة راصد لإدارة وحدات التوليد. نتمنى أن تجد في النظام كل ما تحتاجه لإدارة عملك بكفاءة وفعالية.\n\nنتمنى لك تجربة ممتعة!",
+                'type' => 'admin_to_operator',
+                'is_read' => false,
+                'read_at' => null,
+            ],
+            [
+                'sender_id' => $superAdmin->id,
+                'receiver_id' => $this->id,
+                'operator_id' => $operator?->id,
+                'subject' => 'دليل الاستخدام السريع',
+                'body' => "عزيزي/عزيزتي {$this->name}،\n\nيمكنك من خلال النظام:\n- إدارة بيانات المولدات ووحدات التوليد\n- متابعة سجلات التشغيل والوقود\n- إدارة أعمال الصيانة\n- التواصل مع الفريق من خلال نظام الرسائل\n\nللمزيد من المعلومات، يرجى مراجعة الدليل الإرشادي.",
+                'type' => 'admin_to_operator',
+                'is_read' => false,
+                'read_at' => null,
+            ],
+            [
+                'sender_id' => $superAdmin->id,
+                'receiver_id' => $this->id,
+                'operator_id' => $operator?->id,
+                'subject' => 'معلومات مهمة',
+                'body' => "عزيزي/عزيزتي {$this->name}،\n\nنود تذكيرك بأن:\n- يرجى إكمال بيانات المشغل في أقرب وقت ممكن\n- يمكنك التواصل معنا في أي وقت من خلال نظام الرسائل\n- ننصح بتغيير كلمة المرور بعد تسجيل الدخول لأول مرة\n\nنتمنى لك تجربة ناجحة!",
+                'type' => 'admin_to_operator',
+                'is_read' => false,
+                'read_at' => null,
+            ],
+        ];
+
+        foreach ($messages as $messageData) {
+            Message::create($messageData);
+        }
     }
 }

@@ -3,11 +3,12 @@
     const routes = FUEL_EFF.routes || {};
 
     const $listContainer = $('#fuelEfficienciesListContainer');
-    const $searchInput = $('#searchInput');
     const $searchBtn = $('#searchBtn');
     const $clearSearchBtn = $('#clearSearchBtn');
     const $countSpan = $('#fuelEfficienciesCount');
     const $operatorFilter = $('#operatorFilter');
+    const $operatorFilterHidden = $('#operatorFilterHidden');
+    const $generationUnitFilter = $('#generationUnitFilter');
     const $generatorFilter = $('#generatorFilter');
     const $dateFromFilter = $('#dateFromFilter');
     const $dateToFilter = $('#dateToFilter');
@@ -97,17 +98,27 @@
 
     // Search functionality
     const runSearch = debounce(function () {
-        const term = ($searchInput.val() || '').trim();
-        const operatorId = $operatorFilter.length ? $operatorFilter.val() : '';
+        // الحصول على operatorId - قد يكون select أو hidden input
+        let operatorId = '';
+        if ($operatorFilter.length && $operatorFilter.is('select')) {
+            operatorId = $operatorFilter.val();
+        } else {
+            // للمشغل/الموظف: استخدام hidden input
+            if ($operatorFilterHidden.length) {
+                operatorId = $operatorFilterHidden.val();
+            }
+        }
+        
+        const generationUnitId = $generationUnitFilter.length ? $generationUnitFilter.val() : '';
         const generatorId = $generatorFilter.length ? $generatorFilter.val() : '';
         const dateFrom = $dateFromFilter.length ? $dateFromFilter.val() : '';
         const dateTo = $dateToFilter.length ? $dateToFilter.val() : '';
         const groupByGenerator = $groupByGeneratorToggle.length && $groupByGeneratorToggle.is(':checked');
 
         const params = {};
-        if (term) params.q = term;
-        if (operatorId) params.operator_id = operatorId;
-        if (generatorId) params.generator_id = generatorId;
+        if (operatorId && operatorId != '0') params.operator_id = operatorId;
+        if (generationUnitId && generationUnitId != '0') params.generation_unit_id = generationUnitId;
+        if (generatorId && generatorId != '0') params.generator_id = generatorId;
         if (dateFrom) params.date_from = dateFrom;
         if (dateTo) params.date_to = dateTo;
         if (groupByGenerator) params.group_by_generator = 1;
@@ -116,32 +127,15 @@
     }, 300);
 
     $searchBtn.on('click', runSearch);
-    
-    // Search on Enter key
-    $searchInput.on('keypress', function (e) {
-        if (e.which === 13) {
-            e.preventDefault();
-            runSearch();
-        }
-    });
 
     $clearSearchBtn.on('click', function () {
-        $searchInput.val('');
-        if ($operatorFilter.length) $operatorFilter.val('');
-        if ($generatorFilter.length) $generatorFilter.val('');
+        if ($operatorFilter.length && $operatorFilter.is('select')) $operatorFilter.val('0');
+        if ($generationUnitFilter.length) $generationUnitFilter.val('0');
+        if ($generatorFilter.length) $generatorFilter.val('0');
         if ($dateFromFilter.length) $dateFromFilter.val('');
         if ($dateToFilter.length) $dateToFilter.val('');
-        $clearSearchBtn.addClass('d-none');
-        runSearch();
-    });
-
-    // Show/hide clear button when typing (without auto search)
-    $searchInput.on('input', function () {
-        if ($(this).val().trim()) {
-            $clearSearchBtn.removeClass('d-none');
-        } else {
-            $clearSearchBtn.addClass('d-none');
-        }
+        if ($groupByGeneratorToggle.length) $groupByGeneratorToggle.prop('checked', false);
+        loadFuelEfficiencies({});
     });
 
     // Operator filter change
@@ -169,6 +163,36 @@
         $dateToFilter.on('change', runSearch);
     }
 
+    // Function to get current filter values
+    function getCurrentFilters() {
+        // الحصول على operatorId - قد يكون select أو hidden input
+        let operatorId = '';
+        if ($operatorFilter.length && $operatorFilter.is('select')) {
+            operatorId = $operatorFilter.val();
+        } else {
+            // للمشغل/الموظف: استخدام hidden input
+            if ($operatorFilterHidden.length) {
+                operatorId = $operatorFilterHidden.val();
+            }
+        }
+        
+        const generationUnitId = $generationUnitFilter.length ? $generationUnitFilter.val() : '';
+        const generatorId = $generatorFilter.length ? $generatorFilter.val() : '';
+        const dateFrom = $dateFromFilter.length ? $dateFromFilter.val() : '';
+        const dateTo = $dateToFilter.length ? $dateToFilter.val() : '';
+        const groupByGenerator = $groupByGeneratorToggle.length && $groupByGeneratorToggle.is(':checked');
+
+        const params = {};
+        if (operatorId && operatorId != '0') params.operator_id = operatorId;
+        if (generationUnitId && generationUnitId != '0') params.generation_unit_id = generationUnitId;
+        if (generatorId && generatorId != '0') params.generator_id = generatorId;
+        if (dateFrom) params.date_from = dateFrom;
+        if (dateTo) params.date_to = dateTo;
+        if (groupByGenerator) params.group_by_generator = 1;
+
+        return params;
+    }
+
     // Delete functionality
     $(document).on('click', '.fuel-efficiency-delete-btn', function () {
         const $btn = $(this);
@@ -180,6 +204,7 @@
         }
 
         const deleteUrl = deleteFuelEfficiencyUrl(fuelEfficiencyId);
+        const currentFilters = getCurrentFilters(); // حفظ الفلاتر الحالية
 
         $.ajax({
             url: deleteUrl,
@@ -191,7 +216,8 @@
             .done(res => {
                 if (res.success) {
                     flash('success', res.message || 'تم حذف سجل كفاءة الوقود بنجاح');
-                    runSearch(); // Reload list
+                    // إعادة تحميل النتائج مع نفس الفلاتر
+                    loadFuelEfficiencies(currentFilters);
                 } else {
                     flash('danger', res.message || 'حدث خطأ أثناء حذف سجل كفاءة الوقود');
                 }
@@ -230,6 +256,14 @@
 
         // Scroll to top
         $('html, body').animate({ scrollTop: $listContainer.offset().top - 100 }, 300);
+    });
+
+    // Initialize Select2 for all selects
+    $('.select2').select2({
+        dir: 'rtl',
+        language: 'ar',
+        allowClear: true,
+        width: '100%'
     });
 
     // Export to window for global access

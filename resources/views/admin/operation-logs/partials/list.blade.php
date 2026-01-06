@@ -1,137 +1,143 @@
 @if($operationLogs->count() > 0)
-    <div class="log-list">
-        @foreach($operationLogs as $log)
-            <div class="log-row" data-operation-log-id="{{ $log->id }}">
-                <div class="log-row-main">
-                    <div class="log-row-content">
-                        <div class="log-row-header">
-                            <div class="log-row-title">
-                                <i class="bi bi-journal-text me-2 text-primary"></i>
-                                @if($log->sequence)
-                                    <span class="fw-bold">سجل تشغيل #{{ $log->sequence }}</span>
-                                    <span class="badge bg-primary ms-2" title="رقم التسلسل لهذا المولد">
-                                        <i class="bi bi-list-ol me-1"></i>
-                                        تسلسل {{ $log->sequence }}
-                                    </span>
-                                @else
-                                    <span class="fw-bold">سجل تشغيل #{{ $log->id }}</span>
-                                @endif
-                                @if($log->generator)
-                                    <span class="badge bg-secondary ms-2">{{ $log->generator->generator_number }}</span>
-                                @endif
-                            </div>
-                            <div class="log-row-meta">
-                                <span class="badge bg-info">{{ $log->operation_date->format('Y-m-d') }}</span>
-                            </div>
-                        </div>
-
-                        <div class="log-row-details">
-                            <div class="row g-2">
-                                @if($log->operator)
-                                    <div class="col-md-3 col-sm-6">
-                                        <div class="log-detail-item">
-                                            <i class="bi bi-building me-2 text-muted"></i>
-                                            <span class="text-muted">المشغل:</span>
-                                            <strong>{{ $log->operator->name }}</strong>
+    {{-- بطاقة معلومات المولد/وحدة التوليد --}}
+    @include('admin.operation-logs.partials.generator-info-card', ['operationLogs' => $operationLogs, 'totalStats' => $totalStats])
+    
+    {{-- جدول سجلات التشغيل --}}
+    <div class="card border mt-3">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="min-width: 120px;">رقم السجل</th>
+                            <th style="min-width: 100px;">المولد</th>
+                            <th style="min-width: 100px;">التاريخ</th>
+                            <th style="min-width: 120px;">الوقت</th>
+                            <th style="min-width: 100px;">المدة</th>
+                            <th style="min-width: 100px;">نسبة التحميل</th>
+                            <th style="min-width: 120px;">الوقود المستهلك</th>
+                            <th style="min-width: 120px;">الطاقة المنتجة</th>
+                            <th style="min-width: 100px;" class="text-center">الإجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($operationLogs as $log)
+                            <tr>
+                                <td>
+                                    @if($log->sequence)
+                                        <span class="fw-bold">#{{ $log->formatted_sequence }}</span>
+                                    @else
+                                        <span class="fw-bold">#{{ $log->id }}</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    @if($log->generator)
+                                        <span class="badge bg-secondary">{{ $log->generator->generator_number }}</span>
+                                        <div class="small text-muted">{{ $log->generator->name }}</div>
+                                    @else
+                                        <span class="text-muted">-</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    <span class="badge bg-info">{{ $log->operation_date->format('Y-m-d') }}</span>
+                                </td>
+                                <td>
+                                    @if($log->start_time && $log->end_time)
+                                        <div class="small">
+                                            <i class="bi bi-clock me-1"></i>
+                                            {{ date('H:i', strtotime($log->start_time)) }} - {{ date('H:i', strtotime($log->end_time)) }}
                                         </div>
-                                    </div>
-                                @endif
-                                
-                                @if($log->generator)
-                                    <div class="col-md-3 col-sm-6">
-                                        <div class="log-detail-item">
-                                            <i class="bi bi-lightning-charge me-2 text-muted"></i>
-                                            <span class="text-muted">المولد:</span>
-                                            <strong>{{ $log->generator->name }}</strong>
+                                    @else
+                                        <span class="text-muted">-</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    @if($log->start_time && $log->end_time)
+                                        @php
+                                            $startTime = \Carbon\Carbon::parse($log->operation_date->format('Y-m-d') . ' ' . $log->start_time->format('H:i:s'));
+                                            $endTime = \Carbon\Carbon::parse($log->operation_date->format('Y-m-d') . ' ' . $log->end_time->format('H:i:s'));
+                                            if ($endTime->lt($startTime)) {
+                                                $endTime->addDay();
+                                            }
+                                            $totalMinutes = $startTime->diffInMinutes($endTime);
+                                            $hours = floor($totalMinutes / 60);
+                                            $minutes = $totalMinutes % 60;
+                                        @endphp
+                                        <div class="small">
+                                            @if($hours > 0){{ $hours }}س @endif
+                                            @if($minutes > 0){{ $minutes }}د @endif
                                         </div>
-                                    </div>
-                                @endif
-
-                                @if($log->start_time && $log->end_time)
-                                    <div class="col-md-3 col-sm-6">
-                                        <div class="log-detail-item">
-                                            <i class="bi bi-clock me-2 text-muted"></i>
-                                            <span class="text-muted">الوقت:</span>
-                                            <strong>{{ date('H:i', strtotime($log->start_time)) }} - {{ date('H:i', strtotime($log->end_time)) }}</strong>
+                                    @else
+                                        <span class="text-muted">-</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    @if($log->load_percentage)
+                                        <span class="badge bg-{{ $log->load_percentage >= 80 ? 'success' : ($log->load_percentage >= 50 ? 'warning' : 'danger') }}">
+                                            {{ number_format($log->load_percentage, 2) }}%
+                                        </span>
+                                    @else
+                                        <span class="text-muted">-</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    @if($log->fuel_consumed)
+                                        <div class="small">
+                                            <i class="bi bi-fuel-pump me-1 text-success"></i>
+                                            {{ number_format($log->fuel_consumed, 2) }} لتر
                                         </div>
-                                    </div>
-                                @endif
-
-                                @if($log->load_percentage)
-                                    <div class="col-md-3 col-sm-6">
-                                        <div class="log-detail-item">
-                                            <i class="bi bi-speedometer2 me-2 text-muted"></i>
-                                            <span class="text-muted">نسبة التحميل:</span>
-                                            <strong>
-                                                <span class="badge bg-{{ $log->load_percentage >= 80 ? 'success' : ($log->load_percentage >= 50 ? 'warning' : 'danger') }}">
-                                                    {{ number_format($log->load_percentage, 2) }}%
-                                                </span>
-                                            </strong>
+                                    @else
+                                        <span class="text-muted">-</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    @if($log->energy_produced)
+                                        <div class="small">
+                                            <i class="bi bi-lightning me-1 text-warning"></i>
+                                            {{ number_format($log->energy_produced, 2) }} kWh
                                         </div>
+                                    @else
+                                        <span class="text-muted">-</span>
+                                    @endif
+                                </td>
+                                <td class="text-center">
+                                    <div class="btn-group" role="group">
+                                        @can('view', $log)
+                                            <a href="{{ route('admin.operation-logs.show', $log) }}" class="btn btn-xs btn-outline-info" title="عرض">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                        @endcan
+                                        @can('update', $log)
+                                            <a href="{{ route('admin.operation-logs.edit', $log) }}" class="btn btn-xs btn-outline-primary" title="تعديل">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                        @endcan
+                                        @can('delete', $log)
+                                            <button type="button" class="btn btn-xs btn-outline-danger log-delete-btn" 
+                                                    data-operation-log-id="{{ $log->id }}"
+                                                    data-operation-log-name="سجل #{{ $log->id }}"
+                                                    title="حذف">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        @endcan
                                     </div>
-                                @endif
-
-                                @if($log->fuel_consumed)
-                                    <div class="col-md-3 col-sm-6">
-                                        <div class="log-detail-item">
-                                            <i class="bi bi-fuel-pump me-2 text-muted"></i>
-                                            <span class="text-muted">الوقود المستهلك:</span>
-                                            <strong>{{ number_format($log->fuel_consumed, 2) }} لتر</strong>
-                                        </div>
-                                    </div>
-                                @endif
-
-                                @if($log->energy_produced)
-                                    <div class="col-md-3 col-sm-6">
-                                        <div class="log-detail-item">
-                                            <i class="bi bi-lightning me-2 text-muted"></i>
-                                            <span class="text-muted">الطاقة المنتجة:</span>
-                                            <strong>{{ number_format($log->energy_produced, 2) }} kWh</strong>
-                                        </div>
-                                    </div>
-                                @endif
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="log-row-actions">
-                        @can('view', $log)
-                            <a href="{{ route('admin.operation-logs.show', $log) }}" class="btn btn-xs btn-outline-info" title="عرض">
-                                <i class="bi bi-eye"></i>
-                            </a>
-                        @endcan
-                        @can('update', $log)
-                            <a href="{{ route('admin.operation-logs.edit', $log) }}" class="btn btn-xs btn-outline-primary" title="تعديل">
-                                <i class="bi bi-pencil"></i>
-                            </a>
-                        @endcan
-                        @can('delete', $log)
-                            <button type="button" class="btn btn-xs btn-outline-danger log-delete-btn" 
-                                    data-operation-log-id="{{ $log->id }}"
-                                    data-operation-log-name="سجل #{{ $log->id }}"
-                                    title="حذف">
-                                <i class="bi bi-trash"></i>
-                            </button>
-                        @endcan
-                    </div>
-                </div>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
             </div>
-        @endforeach
+        </div>
     </div>
 
     @if($operationLogs->hasPages())
-        <div class="log-pagination mt-4">
+        <div class="mt-4">
             {{ $operationLogs->links() }}
         </div>
     @endif
 @else
-    <div class="log-empty-state text-center py-5">
-        <i class="bi bi-inbox fs-1 text-muted d-block mb-3"></i>
-        <h5 class="text-muted">لا توجد سجلات تشغيل</h5>
-        <p class="text-muted">لم يتم العثور على سجلات تشغيل تطابق البحث</p>
+    <div class="text-center py-5">
+        <i class="bi bi-inbox fs-1 text-muted"></i>
+        <p class="text-muted mt-3">لا توجد نتائج للبحث</p>
     </div>
 @endif
-
-
-
-

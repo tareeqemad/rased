@@ -8,6 +8,7 @@ use App\Http\Requests\Admin\UpdateFuelEfficiencyRequest;
 use App\Models\FuelEfficiency;
 use App\Models\Generator;
 use App\Models\Notification;
+use App\Models\Operator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -43,14 +44,6 @@ class FuelEfficiencyController extends Controller
             });
         }
 
-        // Search
-        $q = trim((string) $request->input('q', ''));
-        if ($q !== '') {
-            $query->whereHas('generator', function ($gq) use ($q) {
-                $gq->where('name', 'like', "%{$q}%")
-                   ->orWhere('generator_number', 'like', "%{$q}%");
-            });
-        }
 
         if ($user->isSuperAdmin()) {
             $operatorId = (int) $request->input('operator_id', 0);
@@ -59,6 +52,14 @@ class FuelEfficiencyController extends Controller
                     $q->where('operator_id', $operatorId);
                 });
             }
+        }
+
+        // Filter by generation unit
+        $generationUnitId = (int) $request->input('generation_unit_id', 0);
+        if ($generationUnitId > 0) {
+            $query->whereHas('generator', function ($q) use ($generationUnitId) {
+                $q->where('generation_unit_id', $generationUnitId);
+            });
         }
 
         // Filter by generator
@@ -100,40 +101,70 @@ class FuelEfficiencyController extends Controller
 
         $operators = collect();
         $generators = collect();
+        $generationUnits = collect();
         
         if ($user->isSuperAdmin()) {
             $operators = \App\Models\Operator::select('id', 'name', 'unit_number')
                 ->orderBy('name')
                 ->get();
             
-            // Get generators based on selected operator or all
+            // Get generation units based on selected operator or all
             $selectedOperatorId = (int) $request->input('operator_id', 0);
             if ($selectedOperatorId > 0) {
-                $generators = Generator::where('operator_id', $selectedOperatorId)
-                    ->select('id', 'name', 'generator_number', 'operator_id')
-                    ->orderBy('generator_number')
+                $generationUnits = \App\Models\GenerationUnit::where('operator_id', $selectedOperatorId)
+                    ->select('id', 'name', 'unit_code', 'operator_id')
+                    ->orderBy('unit_code')
                     ->get();
+                
+                // Get generators based on selected generation unit or operator
+                $selectedGenerationUnitId = (int) $request->input('generation_unit_id', 0);
+                if ($selectedGenerationUnitId > 0) {
+                    $generators = Generator::where('generation_unit_id', $selectedGenerationUnitId)
+                        ->select('id', 'name', 'generator_number', 'operator_id', 'generation_unit_id')
+                        ->orderBy('generator_number')
+                        ->get();
+                } else {
+                    $generators = Generator::where('operator_id', $selectedOperatorId)
+                        ->select('id', 'name', 'generator_number', 'operator_id', 'generation_unit_id')
+                        ->orderBy('generator_number')
+                        ->get();
+                }
             } else {
-                $generators = Generator::select('id', 'name', 'generator_number', 'operator_id')
+                $generationUnits = \App\Models\GenerationUnit::select('id', 'name', 'unit_code', 'operator_id')
+                    ->orderBy('unit_code')
+                    ->get();
+                
+                $generators = Generator::select('id', 'name', 'generator_number', 'operator_id', 'generation_unit_id')
                     ->orderBy('generator_number')
                     ->get();
             }
         } elseif ($user->isCompanyOwner()) {
             $operator = $user->ownedOperators()->first();
             if ($operator) {
-                $generators = $operator->generators()->select('generators.id', 'generators.name', 'generators.generator_number', 'generators.operator_id')
+                $generationUnits = $operator->generationUnits()
+                    ->select('id', 'name', 'unit_code', 'operator_id')
+                    ->orderBy('unit_code')
+                    ->get();
+                
+                $generators = $operator->generators()->select('generators.id', 'generators.name', 'generators.generator_number', 'generators.operator_id', 'generators.generation_unit_id')
                     ->orderBy('generators.generator_number')
                     ->get();
             }
         } elseif ($user->isEmployee() || $user->isTechnician()) {
             $userOperators = $user->operators;
+            $generationUnits = \App\Models\GenerationUnit::whereHas('operator', function($q) use ($userOperators) {
+                $q->whereIn('operators.id', $userOperators->pluck('id'));
+            })->select('id', 'name', 'unit_code', 'operator_id')
+                ->orderBy('unit_code')
+                ->get();
+            
             $generators = Generator::whereIn('operator_id', $userOperators->pluck('id'))
-                ->select('id', 'name', 'generator_number', 'operator_id')
+                ->select('id', 'name', 'generator_number', 'operator_id', 'generation_unit_id')
                 ->orderBy('generator_number')
                 ->get();
         }
 
-        return view('admin.fuel-efficiencies.index', compact('fuelEfficiencies', 'operators', 'generators', 'groupedLogs'));
+        return view('admin.fuel-efficiencies.index', compact('fuelEfficiencies', 'operators', 'generators', 'generationUnits', 'groupedLogs'));
     }
 
     /**
@@ -144,27 +175,50 @@ class FuelEfficiencyController extends Controller
         $this->authorize('create', FuelEfficiency::class);
 
         $user = auth()->user();
+        $operators = collect();
         $generators = collect();
+        $generationUnits = collect();
 
         if ($user->isSuperAdmin()) {
-            $generators = Generator::all();
+            $operators = \App\Models\Operator::select('id', 'name', 'unit_number')
+                ->orderBy('name')
+                ->get();
         } elseif ($user->isCompanyOwner()) {
             $operator = $user->ownedOperators()->first();
             if ($operator) {
-                $generators = $operator->generators;
+                $operators = collect([$operator]);
+                $generationUnits = $operator->generationUnits()
+                    ->select('id', 'name', 'unit_code', 'operator_id')
+                    ->orderBy('unit_code')
+                    ->get();
+                
+                $generators = $operator->generators()
+                    ->select('generators.id', 'generators.name', 'generators.generator_number', 'generators.operator_id', 'generators.generation_unit_id')
+                    ->orderBy('generators.generator_number')
+                    ->get();
             }
-        } elseif ($user->isEmployee()) {
-            $operators = $user->operators;
-            $generators = Generator::whereIn('operator_id', $operators->pluck('id'))->get();
+        } elseif ($user->isEmployee() || $user->isTechnician()) {
+            $userOperators = $user->operators;
+            $operators = $userOperators;
+            $generationUnits = \App\Models\GenerationUnit::whereHas('operator', function($q) use ($userOperators) {
+                $q->whereIn('operators.id', $userOperators->pluck('id'));
+            })->select('id', 'name', 'unit_code', 'operator_id')
+                ->orderBy('unit_code')
+                ->get();
+            
+            $generators = Generator::whereIn('operator_id', $userOperators->pluck('id'))
+                ->select('id', 'name', 'generator_number', 'operator_id', 'generation_unit_id')
+                ->orderBy('generator_number')
+                ->get();
         }
-        
+
         // جلب الثوابت
         $constants = [
             'fuel_efficiency_comparison' => \App\Helpers\ConstantsHelper::get(17), // مقارنة كفاءة الوقود
             'energy_efficiency_comparison' => \App\Helpers\ConstantsHelper::get(18), // مقارنة كفاءة الطاقة
         ];
 
-        return view('admin.fuel-efficiencies.create', compact('generators', 'constants'));
+        return view('admin.fuel-efficiencies.create', compact('operators', 'generators', 'generationUnits', 'constants'));
     }
 
     /**
@@ -175,6 +229,19 @@ class FuelEfficiencyController extends Controller
         $this->authorize('create', FuelEfficiency::class);
 
         $data = $request->validated();
+        
+        // الحصول على operator_id و generation_unit_id من generator إذا لم يتم إرسالهما
+        if (!isset($data['operator_id']) || !isset($data['generation_unit_id'])) {
+            $generator = Generator::with('generationUnit')->find($data['generator_id']);
+            if ($generator) {
+                if (!isset($data['operator_id'])) {
+                    $data['operator_id'] = $generator->operator_id;
+                }
+                if (!isset($data['generation_unit_id'])) {
+                    $data['generation_unit_id'] = $generator->generation_unit_id;
+                }
+            }
+        }
         
         // Always calculate total operating cost from fuel consumed and price (ignore user input for security)
         if (isset($data['fuel_consumed']) && isset($data['fuel_price_per_liter']) 
@@ -318,5 +385,56 @@ class FuelEfficiencyController extends Controller
 
         return redirect()->route('admin.fuel-efficiencies.index')
             ->with('success', 'تم حذف سجل كفاءة الوقود بنجاح.');
+    }
+
+    /**
+     * Get generation units for a specific operator (AJAX).
+     */
+    public function getGenerationUnits(Request $request, Operator $operator): JsonResponse
+    {
+        $this->authorize('view', $operator);
+
+        $generationUnits = $operator->generationUnits()
+            ->select('id', 'name', 'unit_code', 'unit_number')
+            ->get()
+            ->map(function ($unit) {
+                return [
+                    'id' => $unit->id,
+                    'name' => $unit->name,
+                    'unit_code' => $unit->unit_code,
+                    'unit_number' => $unit->unit_number,
+                    'label' => "{$unit->name} ({$unit->unit_code})",
+                ];
+            });
+
+        return response()->json([
+            'success' => true,
+            'generation_units' => $generationUnits,
+        ]);
+    }
+
+    /**
+     * Get generators for a specific generation unit (AJAX).
+     */
+    public function getGenerators(Request $request, \App\Models\GenerationUnit $generationUnit): JsonResponse
+    {
+        $this->authorize('view', $generationUnit);
+
+        $generators = $generationUnit->generators()
+            ->select('id', 'name', 'generator_number', 'generation_unit_id')
+            ->get()
+            ->map(function ($generator) {
+                return [
+                    'id' => $generator->id,
+                    'name' => $generator->name,
+                    'generator_number' => $generator->generator_number,
+                    'label' => "{$generator->generator_number} - {$generator->name}",
+                ];
+            });
+
+        return response()->json([
+            'success' => true,
+            'generators' => $generators,
+        ]);
     }
 }

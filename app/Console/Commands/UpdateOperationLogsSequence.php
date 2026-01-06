@@ -28,29 +28,49 @@ class UpdateOperationLogsSequence extends Command
     {
         $this->info('بدء تحديث التسلسل لسجلات التشغيل...');
 
-        $generators = DB::table('generators')->pluck('id');
+        // الحصول على جميع المجموعات الفريدة (operator_id, generation_unit_id, generator_id)
+        $groups = DB::table('operation_logs')
+            ->join('generators', 'operation_logs.generator_id', '=', 'generators.id')
+            ->whereNull('operation_logs.deleted_at')
+            ->whereNotNull('generators.generation_unit_id')
+            ->select(
+                'operation_logs.operator_id',
+                'generators.generation_unit_id',
+                'operation_logs.generator_id'
+            )
+            ->distinct()
+            ->get();
         
         $totalUpdated = 0;
         
-        foreach ($generators as $generatorId) {
+        foreach ($groups as $group) {
             $logs = DB::table('operation_logs')
-                ->where('generator_id', $generatorId)
-                ->whereNull('deleted_at')
-                ->orderBy('operation_date')
-                ->orderBy('start_time')
-                ->orderBy('id')
-                ->get(['id']);
+                ->join('generators', 'operation_logs.generator_id', '=', 'generators.id')
+                ->where('operation_logs.operator_id', $group->operator_id)
+                ->where('operation_logs.generator_id', $group->generator_id)
+                ->where('generators.generation_unit_id', $group->generation_unit_id)
+                ->whereNull('operation_logs.deleted_at')
+                ->orderBy('operation_logs.operation_date')
+                ->orderBy('operation_logs.start_time')
+                ->orderBy('operation_logs.id')
+                ->pluck('operation_logs.id');
             
             $sequence = 1;
-            foreach ($logs as $log) {
+            foreach ($logs as $logId) {
                 DB::table('operation_logs')
-                    ->where('id', $log->id)
+                    ->where('id', $logId)
                     ->update(['sequence' => $sequence]);
                 $sequence++;
             }
             
             $totalUpdated += $logs->count();
-            $this->info("تم تحديث {$logs->count()} سجل للمولد ID: {$generatorId}");
+            
+            // الحصول على معلومات المجموعة للعرض
+            $operator = DB::table('operators')->where('id', $group->operator_id)->value('name');
+            $generationUnit = DB::table('generation_units')->where('id', $group->generation_unit_id)->value('unit_code');
+            $generator = DB::table('generators')->where('id', $group->generator_id)->value('generator_number');
+            
+            $this->info("تم تحديث {$logs->count()} سجل - المشغل: {$operator} | الوحدة: {$generationUnit} | المولد: {$generator}");
         }
 
         $this->info("تم تحديث {$totalUpdated} سجل بنجاح!");

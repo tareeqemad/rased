@@ -25,6 +25,45 @@ class OperationLogController extends Controller
         $this->authorize('viewAny', OperationLog::class);
 
         $user = auth()->user();
+        
+        // التحقق من وجود المشغل ووحدة التوليد على الأقل
+        $hasRequiredFilters = $request->filled('operator_id') && $request->filled('generation_unit_id');
+        
+        if (!$hasRequiredFilters && !$request->ajax() && !$request->wantsJson()) {
+            // إذا لم يكن هناك فلاتر وليس طلب AJAX، نرجع الصفحة بدون بيانات
+            $operators = collect();
+            $generators = collect();
+            $generationUnits = collect();
+            $operationLogs = null;
+            $groupedLogs = null;
+            
+            if ($user->isSuperAdmin()) {
+                $operators = \App\Models\Operator::orderBy('name')->get();
+                $generationUnits = \App\Models\GenerationUnit::orderBy('name')->get();
+                $generators = \App\Models\Generator::orderBy('name')->get();
+            } elseif ($user->isCompanyOwner()) {
+                $operator = $user->ownedOperators()->first();
+                if ($operator) {
+                    $generationUnits = $operator->generationUnits()->orderBy('name')->get();
+                    $generators = \App\Models\Generator::whereHas('generationUnit', function($q) use ($operator) {
+                        $q->where('operator_id', $operator->id);
+                    })->orderBy('name')->get();
+                }
+            } elseif ($user->isEmployee() || $user->isTechnician()) {
+                $operators = $user->operators;
+                $generationUnits = \App\Models\GenerationUnit::whereHas('operator', function($q) use ($operators) {
+                    $q->whereIn('operators.id', $operators->pluck('id'));
+                })->orderBy('name')->get();
+                $generators = \App\Models\Generator::whereHas('generationUnit', function($q) use ($operators) {
+                    $q->whereHas('operator', function($qq) use ($operators) {
+                        $qq->whereIn('operators.id', $operators->pluck('id'));
+                    });
+                })->orderBy('name')->get();
+            }
+            
+            return view('admin.operation-logs.index', compact('operators', 'generators', 'generationUnits', 'operationLogs', 'groupedLogs'));
+        }
+        
         $query = OperationLog::with(['generator', 'operator']);
 
         if ($user->isCompanyOwner()) {
@@ -37,20 +76,6 @@ class OperationLogController extends Controller
             $query->whereIn('operator_id', $operators->pluck('id'));
         }
 
-        // Search
-        $q = trim((string) $request->input('q', ''));
-        if ($q !== '') {
-            $query->where(function ($sub) use ($q) {
-                $sub->whereHas('generator', function ($gq) use ($q) {
-                    $gq->where('name', 'like', "%{$q}%")
-                       ->orWhere('generator_number', 'like', "%{$q}%");
-                })
-                ->orWhereHas('operator', function ($oq) use ($q) {
-                    $oq->where('name', 'like', "%{$q}%");
-                })
-                ->orWhere('operational_notes', 'like', "%{$q}%");
-            });
-        }
 
         if ($user->isSuperAdmin()) {
             $operatorId = (int) $request->input('operator_id', 0);
@@ -65,6 +90,87 @@ class OperationLogController extends Controller
             $query->where('generator_id', $generatorId);
         }
 
+        // Filter by generation unit
+        $generationUnitId = (int) $request->input('generation_unit_id', 0);
+        if ($generationUnitId > 0) {
+            $query->whereHas('generator', function($q) use ($generationUnitId) {
+                $q->where('generation_unit_id', $generationUnitId);
+            });
+        }
+
+
+        // Filter by load percentage with operators
+        if ($request->filled('load_percentage_value') && $request->filled('load_percentage_operator')) {
+            $loadValue = (float) $request->input('load_percentage_value');
+            $loadOperator = $request->input('load_percentage_operator');
+            
+            switch ($loadOperator) {
+                case 'equals':
+                    $query->where('load_percentage', $loadValue);
+                    break;
+                case 'greater_than':
+                    $query->where('load_percentage', '>', $loadValue);
+                    break;
+                case 'less_than':
+                    $query->where('load_percentage', '<', $loadValue);
+                    break;
+                case 'greater_equal':
+                    $query->where('load_percentage', '>=', $loadValue);
+                    break;
+                case 'less_equal':
+                    $query->where('load_percentage', '<=', $loadValue);
+                    break;
+            }
+        }
+
+        // Filter by fuel consumed with operators
+        if ($request->filled('fuel_consumed_value') && $request->filled('fuel_consumed_operator')) {
+            $fuelValue = (float) $request->input('fuel_consumed_value');
+            $fuelOperator = $request->input('fuel_consumed_operator');
+            
+            switch ($fuelOperator) {
+                case 'equals':
+                    $query->where('fuel_consumed', $fuelValue);
+                    break;
+                case 'greater_than':
+                    $query->where('fuel_consumed', '>', $fuelValue);
+                    break;
+                case 'less_than':
+                    $query->where('fuel_consumed', '<', $fuelValue);
+                    break;
+                case 'greater_equal':
+                    $query->where('fuel_consumed', '>=', $fuelValue);
+                    break;
+                case 'less_equal':
+                    $query->where('fuel_consumed', '<=', $fuelValue);
+                    break;
+            }
+        }
+
+        // Filter by energy produced with operators
+        if ($request->filled('energy_produced_value') && $request->filled('energy_produced_operator')) {
+            $energyValue = (float) $request->input('energy_produced_value');
+            $energyOperator = $request->input('energy_produced_operator');
+            
+            switch ($energyOperator) {
+                case 'equals':
+                    $query->where('energy_produced', $energyValue);
+                    break;
+                case 'greater_than':
+                    $query->where('energy_produced', '>', $energyValue);
+                    break;
+                case 'less_than':
+                    $query->where('energy_produced', '<', $energyValue);
+                    break;
+                case 'greater_equal':
+                    $query->where('energy_produced', '>=', $energyValue);
+                    break;
+                case 'less_equal':
+                    $query->where('energy_produced', '<=', $energyValue);
+                    break;
+            }
+        }
+
         if ($request->filled('date_from')) {
             $query->whereDate('operation_date', '>=', $request->input('date_from'));
         }
@@ -72,12 +178,41 @@ class OperationLogController extends Controller
             $query->whereDate('operation_date', '<=', $request->input('date_to'));
         }
 
+        // حساب الإحصائيات الإجمالية من جميع السجلات المطابقة (قبل pagination)
+        $totalStats = [
+            'total_count' => $query->count(),
+            'total_fuel' => $query->sum('fuel_consumed') ?? 0,
+            'total_energy' => $query->sum('energy_produced') ?? 0,
+            'total_duration' => 0, // سيتم حسابه لاحقاً
+        ];
+        
+        // حساب المدة الإجمالية
+        $allLogsForDuration = (clone $query)->select('operation_date', 'start_time', 'end_time')->get();
+        foreach ($allLogsForDuration as $log) {
+            if ($log->start_time && $log->end_time) {
+                $startTime = \Carbon\Carbon::parse($log->operation_date->format('Y-m-d') . ' ' . $log->start_time->format('H:i:s'));
+                $endTime = \Carbon\Carbon::parse($log->operation_date->format('Y-m-d') . ' ' . $log->end_time->format('H:i:s'));
+                if ($endTime->lt($startTime)) {
+                    $endTime->addDay();
+                }
+                $totalStats['total_duration'] += $startTime->diffInMinutes($endTime);
+            }
+        }
+        
         // Paginate - 100 items per page
         $operationLogs = $query->latest('operation_date')->latest('start_time')->paginate(100);
 
         if ($request->ajax() || $request->wantsJson()) {
-            // Return tbody rows only
-            $html = view('admin.operation-logs.partials.tbody-rows', compact('operationLogs'))->render();
+            // Check if grouping is requested - التجميع حسب المولد فقط
+            $groupByGenerator = $request->boolean('group_by_generator', false);
+            
+            if ($groupByGenerator) {
+                $groupedLogs = $operationLogs->groupBy('generator_id');
+                $html = view('admin.operation-logs.partials.grouped-list', compact('groupedLogs', 'operationLogs', 'totalStats'))->render();
+            } else {
+                $html = view('admin.operation-logs.partials.list', compact('operationLogs', 'totalStats'))->render();
+            }
+            
             $pagination = view('admin.operation-logs.partials.pagination', compact('operationLogs'))->render();
             
             return response()->json([
@@ -88,15 +223,17 @@ class OperationLogController extends Controller
             ]);
         }
 
-        // For normal page load, check if group_by_generator is requested
+        // For normal page load, check grouping options - التجميع حسب المولد فقط
         $groupByGenerator = $request->boolean('group_by_generator', false);
         $groupedLogs = null;
+        
         if ($groupByGenerator) {
             $groupedLogs = $operationLogs->groupBy('generator_id');
         }
 
         $operators = collect();
         $generators = collect();
+        $generationUnits = collect();
         
         if ($user->isSuperAdmin()) {
             $operators = Operator::select('id', 'name', 'unit_number')
@@ -107,30 +244,51 @@ class OperationLogController extends Controller
             $selectedOperatorId = (int) $request->input('operator_id', 0);
             if ($selectedOperatorId > 0) {
                 $generators = Generator::where('operator_id', $selectedOperatorId)
-                    ->select('id', 'name', 'generator_number', 'operator_id')
+                    ->select('id', 'name', 'generator_number', 'operator_id', 'generation_unit_id')
                     ->orderBy('generator_number')
                     ->get();
+                
+                $generationUnits = \App\Models\GenerationUnit::where('operator_id', $selectedOperatorId)
+                    ->select('id', 'name', 'unit_code', 'operator_id')
+                    ->orderBy('unit_code')
+                    ->get();
             } else {
-                $generators = Generator::select('id', 'name', 'generator_number', 'operator_id')
+                $generators = Generator::select('id', 'name', 'generator_number', 'operator_id', 'generation_unit_id')
                     ->orderBy('generator_number')
+                    ->get();
+                
+                $generationUnits = \App\Models\GenerationUnit::select('id', 'name', 'unit_code', 'operator_id')
+                    ->orderBy('unit_code')
                     ->get();
             }
         } elseif ($user->isCompanyOwner()) {
             $operator = $user->ownedOperators()->first();
             if ($operator) {
-                $generators = $operator->generators()->select('generators.id', 'generators.name', 'generators.generator_number', 'generators.operator_id')
+                $operators = collect([$operator]); // إضافة المشغل للعرض
+                $generators = $operator->generators()->select('generators.id', 'generators.name', 'generators.generator_number', 'generators.operator_id', 'generators.generation_unit_id')
                     ->orderBy('generators.generator_number')
+                    ->get();
+                
+                $generationUnits = $operator->generationUnits()
+                    ->select('id', 'name', 'unit_code', 'operator_id')
+                    ->orderBy('unit_code')
                     ->get();
             }
         } elseif ($user->isEmployee() || $user->isTechnician()) {
             $userOperators = $user->operators;
+            $operators = $userOperators; // إضافة المشغلين للعرض
             $generators = Generator::whereIn('operator_id', $userOperators->pluck('id'))
-                ->select('id', 'name', 'generator_number', 'operator_id')
+                ->select('id', 'name', 'generator_number', 'operator_id', 'generation_unit_id')
                 ->orderBy('generator_number')
+                ->get();
+            
+            $generationUnits = \App\Models\GenerationUnit::whereIn('operator_id', $userOperators->pluck('id'))
+                ->select('id', 'name', 'unit_code', 'operator_id')
+                ->orderBy('unit_code')
                 ->get();
         }
 
-        return view('admin.operation-logs.index', compact('operationLogs', 'operators', 'generators', 'groupedLogs'));
+        return view('admin.operation-logs.index', compact('operationLogs', 'operators', 'generators', 'generationUnits', 'groupedLogs', 'totalStats'));
     }
 
     /**
@@ -143,22 +301,31 @@ class OperationLogController extends Controller
         $user = auth()->user();
         $generators = collect();
         $operators = collect();
+        $generationUnits = collect();
 
         if ($user->isSuperAdmin()) {
-            $generators = Generator::all();
             $operators = Operator::all();
+            // لا نحمل وحدات التوليد والمولدات إلا بعد اختيار المشغل
         } elseif ($user->isCompanyOwner()) {
             $operator = $user->ownedOperators()->first();
             if ($operator) {
-                $generators = $operator->generators;
                 $operators = collect([$operator]);
+                // تحميل وحدات التوليد تلقائياً للمشغل
+                $generationUnits = $operator->generationUnits;
+                // تحميل المولدات تلقائياً
+                $generators = $operator->generators;
             }
-        } elseif ($user->isEmployee()) {
+        } elseif ($user->isEmployee() || $user->isTechnician()) {
             $operators = $user->operators;
-            $generators = Generator::whereIn('operator_id', $operators->pluck('id'))->get();
+            if ($operators->count() === 1) {
+                // إذا كان موظف تابع لمشغل واحد، نحمل وحدات التوليد والمولدات تلقائياً
+                $operator = $operators->first();
+                $generationUnits = $operator->generationUnits;
+                $generators = $operator->generators;
+            }
         }
 
-        return view('admin.operation-logs.create', compact('generators', 'operators'));
+        return view('admin.operation-logs.create', compact('generators', 'operators', 'generationUnits'));
     }
 
     /**
@@ -177,11 +344,25 @@ class OperationLogController extends Controller
             }
         }
 
-        $lastSequence = OperationLog::where('generator_id', $data['generator_id'])
-            ->max('sequence') ?? 0;
+        // حساب التسلسل بناءً على المشغل + وحدة التوليد + المولد
+        // الحصول على generation_unit_id من المولد
+        $generator = Generator::with('operator')->find($data['generator_id']);
+        $operator = Operator::find($data['operator_id']);
+        $generationUnitId = $generator ? $generator->generation_unit_id : null;
+        
+        // حساب آخر تسلسل للمجموعة (operator_id + generation_unit_id + generator_id)
+        $lastSequence = OperationLog::join('generators', 'operation_logs.generator_id', '=', 'generators.id')
+            ->where('operation_logs.operator_id', $data['operator_id'])
+            ->where('operation_logs.generator_id', $data['generator_id'])
+            ->when($generationUnitId, function($query) use ($generationUnitId) {
+                return $query->where('generators.generation_unit_id', $generationUnitId);
+            })
+            ->max('operation_logs.sequence') ?? 0;
         $data['sequence'] = $lastSequence + 1;
+        
 
         // Always calculate fuel consumed from start and end (ignore user input for security)
+        // المعادلة: كمية الوقود المستهلك (لتر) = قراءة عداد الوقود عند الانتهاء - قراءة عداد الوقود عند البدء
         if (isset($data['fuel_meter_start']) && isset($data['fuel_meter_end']) 
             && $data['fuel_meter_start'] > 0 && $data['fuel_meter_end'] > 0 
             && $data['fuel_meter_end'] >= $data['fuel_meter_start']) {
@@ -191,6 +372,7 @@ class OperationLogController extends Controller
         }
 
         // Always calculate energy produced from start and end (ignore user input for security)
+        // المعادلة: كمية الطاقة المنتجة (kWh) = قراءة عداد الطاقة عند الإيقاف - قراءة عداد الطاقة عند البدء
         if (isset($data['energy_meter_start']) && isset($data['energy_meter_end']) 
             && $data['energy_meter_start'] > 0 && $data['energy_meter_end'] > 0 
             && $data['energy_meter_end'] >= $data['energy_meter_start']) {
@@ -258,22 +440,31 @@ class OperationLogController extends Controller
         $user = auth()->user();
         $generators = collect();
         $operators = collect();
+        $generationUnits = collect();
 
         if ($user->isSuperAdmin()) {
-            $generators = Generator::all();
             $operators = Operator::all();
+            // لا نحمل وحدات التوليد والمولدات إلا بعد اختيار المشغل
         } elseif ($user->isCompanyOwner()) {
             $operator = $user->ownedOperators()->first();
             if ($operator) {
-                $generators = $operator->generators;
                 $operators = collect([$operator]);
+                // تحميل وحدات التوليد تلقائياً للمشغل
+                $generationUnits = $operator->generationUnits;
+                // تحميل المولدات تلقائياً
+                $generators = $operator->generators;
             }
-        } elseif ($user->isEmployee()) {
+        } elseif ($user->isEmployee() || $user->isTechnician()) {
             $operators = $user->operators;
-            $generators = Generator::whereIn('operator_id', $operators->pluck('id'))->get();
+            if ($operators->count() === 1) {
+                // إذا كان موظف تابع لمشغل واحد، نحمل وحدات التوليد والمولدات تلقائياً
+                $operator = $operators->first();
+                $generationUnits = $operator->generationUnits;
+                $generators = $operator->generators;
+            }
         }
 
-        return view('admin.operation-logs.edit', compact('operationLog', 'generators', 'operators'));
+        return view('admin.operation-logs.edit', compact('operationLog', 'generators', 'operators', 'generationUnits'));
     }
 
     /**
@@ -292,7 +483,32 @@ class OperationLogController extends Controller
             }
         }
 
+        // إعادة حساب التسلسل إذا تم تغيير المشغل أو المولد
+        $operatorChanged = isset($data['operator_id']) && $operationLog->operator_id != $data['operator_id'];
+        $generatorChanged = isset($data['generator_id']) && $operationLog->generator_id != $data['generator_id'];
+        
+        if ($operatorChanged || $generatorChanged) {
+            // الحصول على generation_unit_id من المولد الجديد
+            $newGeneratorId = $data['generator_id'] ?? $operationLog->generator_id;
+            $newOperatorId = $data['operator_id'] ?? $operationLog->operator_id;
+            
+            $generator = Generator::find($newGeneratorId);
+            $generationUnitId = $generator ? $generator->generation_unit_id : null;
+            
+            // حساب آخر تسلسل للمجموعة الجديدة
+            $lastSequence = OperationLog::join('generators', 'operation_logs.generator_id', '=', 'generators.id')
+                ->where('operation_logs.operator_id', $newOperatorId)
+                ->where('operation_logs.generator_id', $newGeneratorId)
+                ->where('operation_logs.id', '!=', $operationLog->id) // استثناء السجل الحالي
+                ->when($generationUnitId, function($query) use ($generationUnitId) {
+                    return $query->where('generators.generation_unit_id', $generationUnitId);
+                })
+                ->max('operation_logs.sequence') ?? 0;
+            $data['sequence'] = $lastSequence + 1;
+        }
+
         // Always calculate fuel consumed from start and end (ignore user input for security)
+        // المعادلة: كمية الوقود المستهلك (لتر) = قراءة عداد الوقود عند الانتهاء - قراءة عداد الوقود عند البدء
         if (isset($data['fuel_meter_start']) && isset($data['fuel_meter_end']) 
             && $data['fuel_meter_start'] > 0 && $data['fuel_meter_end'] > 0 
             && $data['fuel_meter_end'] >= $data['fuel_meter_start']) {
@@ -302,6 +518,7 @@ class OperationLogController extends Controller
         }
 
         // Always calculate energy produced from start and end (ignore user input for security)
+        // المعادلة: كمية الطاقة المنتجة (kWh) = قراءة عداد الطاقة عند الإيقاف - قراءة عداد الطاقة عند البدء
         if (isset($data['energy_meter_start']) && isset($data['energy_meter_end']) 
             && $data['energy_meter_start'] > 0 && $data['energy_meter_end'] > 0 
             && $data['energy_meter_end'] >= $data['energy_meter_start']) {
@@ -353,4 +570,56 @@ class OperationLogController extends Controller
 
         return redirect()->route('admin.operation-logs.index')->with('success', $msg);
     }
+
+    /**
+     * Get generation units for a specific operator (AJAX).
+     */
+    public function getGenerationUnits(Request $request, Operator $operator): JsonResponse
+    {
+        $this->authorize('view', $operator);
+
+        $generationUnits = $operator->generationUnits()
+            ->select('id', 'name', 'unit_code', 'unit_number')
+            ->get()
+            ->map(function ($unit) {
+                return [
+                    'id' => $unit->id,
+                    'name' => $unit->name,
+                    'unit_code' => $unit->unit_code,
+                    'unit_number' => $unit->unit_number,
+                    'label' => "{$unit->name} ({$unit->unit_code})",
+                ];
+            });
+
+        return response()->json([
+            'success' => true,
+            'generation_units' => $generationUnits,
+        ]);
+    }
+
+    /**
+     * Get generators for a specific generation unit (AJAX).
+     */
+    public function getGenerators(Request $request, \App\Models\GenerationUnit $generationUnit): JsonResponse
+    {
+        $this->authorize('view', $generationUnit);
+
+        $generators = $generationUnit->generators()
+            ->select('id', 'name', 'generator_number', 'generation_unit_id')
+            ->get()
+            ->map(function ($generator) {
+                return [
+                    'id' => $generator->id,
+                    'name' => $generator->name,
+                    'generator_number' => $generator->generator_number,
+                    'label' => "{$generator->generator_number} - {$generator->name}",
+                ];
+            });
+
+        return response()->json([
+            'success' => true,
+            'generators' => $generators,
+        ]);
+    }
+
 }

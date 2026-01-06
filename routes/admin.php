@@ -135,6 +135,12 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/operators/{operator}/generation-units', [GeneratorController::class, 'getGenerationUnits'])->name('operators.generation-units');
     Route::post('/generators/generate-number/{generationUnit}', [GeneratorController::class, 'generateGeneratorNumber'])->name('generators.generate-number');
     Route::resource('operation-logs', OperationLogController::class);
+    Route::get('/operators/{operator}/generation-units-for-logs', [OperationLogController::class, 'getGenerationUnits'])->name('operation-logs.generation-units');
+    Route::get('/generation-units/{generationUnit}/generators-for-logs', [OperationLogController::class, 'getGenerators'])->name('operation-logs.generators');
+    
+    // Fuel Efficiencies AJAX routes
+    Route::get('/operators/{operator}/generation-units-for-efficiencies', [FuelEfficiencyController::class, 'getGenerationUnits'])->name('fuel-efficiencies.generation-units');
+    Route::get('/generation-units/{generationUnit}/generators-for-efficiencies', [FuelEfficiencyController::class, 'getGenerators'])->name('fuel-efficiencies.generators');
     Route::resource('fuel-efficiencies', FuelEfficiencyController::class);
     Route::resource('maintenance-records', MaintenanceRecordController::class);
     Route::resource('compliance-safeties', ComplianceSafetyController::class);

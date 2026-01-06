@@ -23,12 +23,14 @@ class UserSeeder extends Seeder
         $employeeRole = RoleModel::where('name', 'employee')->first();
 
         // Super Admins - 5 super admins
+        $plainPassword = 'tareq123';
         User::firstOrCreate(
             ['email' => 'tareq@rased.ps'],
             [
                 'name' => 'طارق',
                 'username' => 'tareeqemad',
-                'password' => Hash::make('tareq123'),
+                'password' => Hash::make($plainPassword),
+                'password_plain' => $plainPassword,
                 'role' => Role::SuperAdmin,
                 'role_id' => $superAdminRole?->id,
                 'status' => 'active',
@@ -40,7 +42,8 @@ class UserSeeder extends Seeder
             [
                 'name' => 'فهيم',
                 'username' => 'faheem',
-                'password' => Hash::make('tareq123'),
+                'password' => Hash::make($plainPassword),
+                'password_plain' => $plainPassword,
                 'role' => Role::SuperAdmin,
                 'role_id' => $superAdminRole?->id,
                 'status' => 'active',
@@ -52,7 +55,8 @@ class UserSeeder extends Seeder
             [
                 'name' => 'أدهم',
                 'username' => 'adham',
-                'password' => Hash::make('tareq123'),
+                'password' => Hash::make($plainPassword),
+                'password_plain' => $plainPassword,
                 'role' => Role::SuperAdmin,
                 'role_id' => $superAdminRole?->id,
                 'status' => 'active',
@@ -64,7 +68,8 @@ class UserSeeder extends Seeder
             [
                 'name' => 'أدمن',
                 'username' => 'admin',
-                'password' => Hash::make('tareq123'),
+                'password' => Hash::make($plainPassword),
+                'password_plain' => $plainPassword,
                 'role' => Role::SuperAdmin,
                 'role_id' => $superAdminRole?->id,
                 'status' => 'active',
@@ -76,7 +81,8 @@ class UserSeeder extends Seeder
             [
                 'name' => 'خالد',
                 'username' => 'khalid',
-                'password' => Hash::make('tareq123'),
+                'password' => Hash::make($plainPassword),
+                'password_plain' => $plainPassword,
                 'role' => Role::SuperAdmin,
                 'role_id' => $superAdminRole?->id,
                 'status' => 'active',
@@ -84,12 +90,14 @@ class UserSeeder extends Seeder
         );
 
         // Admin (سلطة الطاقة)
+        $adminPassword = 'password';
         User::firstOrCreate(
             ['email' => 'admin@power.ps'],
             [
                 'name' => 'مدير سلطة الطاقة',
                 'username' => 'admin_power',
-                'password' => Hash::make('password'),
+                'password' => Hash::make($adminPassword),
+                'password_plain' => $adminPassword,
                 'role' => Role::Admin,
                 'role_id' => $adminRole?->id,
                 'status' => 'active',
@@ -102,7 +110,8 @@ class UserSeeder extends Seeder
             [
                 'name' => 'مشغل المملوك',
                 'username' => 'mmluk',
-                'password' => Hash::make('tareq123'),
+                'password' => Hash::make($plainPassword),
+                'password_plain' => $plainPassword,
                 'role' => Role::CompanyOwner,
                 'role_id' => $companyOwnerRole?->id,
                 'status' => 'active',
@@ -112,12 +121,14 @@ class UserSeeder extends Seeder
         // إنشاء أدوار خاصة لمشغل المملوك (سيتم إنشاؤها في OperatorsWithDataSeeder)
 
         // 5 Employees for mmluk with different permissions
+        $employeePassword = 'password';
         $employee1 = User::firstOrCreate(
             ['email' => 'emp1@mmluk.ps'],
             [
                 'name' => 'موظف 1 - عرض فقط',
                 'username' => 'emp1_mmluk',
-                'password' => Hash::make('password'),
+                'password' => Hash::make($employeePassword),
+                'password_plain' => $employeePassword,
                 'role' => Role::Employee,
                 'role_id' => $employeeRole?->id,
                 'status' => 'active',
@@ -129,7 +140,8 @@ class UserSeeder extends Seeder
             [
                 'name' => 'موظف 2 - عرض وتحديث',
                 'username' => 'emp2_mmluk',
-                'password' => Hash::make('password'),
+                'password' => Hash::make($employeePassword),
+                'password_plain' => $employeePassword,
                 'role' => Role::Employee,
                 'role_id' => $employeeRole?->id,
                 'status' => 'active',
@@ -141,7 +153,8 @@ class UserSeeder extends Seeder
             [
                 'name' => 'موظف 3 - كامل الصلاحيات',
                 'username' => 'emp3_mmluk',
-                'password' => Hash::make('password'),
+                'password' => Hash::make($employeePassword),
+                'password_plain' => $employeePassword,
                 'role' => Role::Employee,
                 'role_id' => $employeeRole?->id,
                 'status' => 'active',
@@ -153,7 +166,8 @@ class UserSeeder extends Seeder
             [
                 'name' => 'موظف 4 - سجلات فقط',
                 'username' => 'emp4_mmluk',
-                'password' => Hash::make('password'),
+                'password' => Hash::make($employeePassword),
+                'password_plain' => $employeePassword,
                 'role' => Role::Employee,
                 'role_id' => $employeeRole?->id,
                 'status' => 'active',
@@ -165,7 +179,8 @@ class UserSeeder extends Seeder
             [
                 'name' => 'موظف 5 - مولدات فقط',
                 'username' => 'emp5_mmluk',
-                'password' => Hash::make('password'),
+                'password' => Hash::make($employeePassword),
+                'password_plain' => $employeePassword,
                 'role' => Role::Employee,
                 'role_id' => $employeeRole?->id,
                 'status' => 'active',

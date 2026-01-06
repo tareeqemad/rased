@@ -3,15 +3,21 @@
     const routes = OPLOG.routes || {};
 
     const $listContainer = $('#operationLogsListContainer');
-    const $searchInput = $('#searchInput');
     const $searchBtn = $('#searchBtn');
     const $clearSearchBtn = $('#clearSearchBtn');
     const $countSpan = $('#operationLogsCount');
     const $operatorFilter = $('#operatorFilter');
     const $generatorFilter = $('#generatorFilter');
+    const $generationUnitFilter = $('#generationUnitFilter');
     const $dateFromFilter = $('#dateFromFilter');
     const $dateToFilter = $('#dateToFilter');
     const $groupByGeneratorToggle = $('#groupByGeneratorToggle');
+    
+    // Advanced filters - select مشترك للعمليات
+    const $commonOperator = $('#commonOperator');
+    const $loadPercentageValue = $('#loadPercentageValue');
+    const $fuelConsumedValue = $('#fuelConsumedValue');
+    const $energyProducedValue = $('#energyProducedValue');
     
     // Get the container with loading overlay (the card-body)
     const $loadingContainer = $listContainer.closest('.data-table-container');
@@ -95,80 +101,142 @@
             .always(() => setLoading(false));
     }
 
-    // Search functionality
-    const runSearch = debounce(function () {
-        const term = ($searchInput.val() || '').trim();
-        const operatorId = $operatorFilter.length ? $operatorFilter.val() : '';
+    // Search functionality - البحث فقط عند الضغط على زر البحث
+    function runSearch() {
+        // الحصول على operatorId - قد يكون select أو hidden input
+        let operatorId = '';
+        if ($operatorFilter.length && $operatorFilter.is('select')) {
+            operatorId = $operatorFilter.val();
+        } else {
+            // للمشغل/الموظف: استخدام hidden input
+            const $operatorFilterHidden = $('#operatorFilterHidden');
+            if ($operatorFilterHidden.length) {
+                operatorId = $operatorFilterHidden.val();
+            }
+        }
+        
         const generatorId = $generatorFilter.length ? $generatorFilter.val() : '';
+        const generationUnitId = $generationUnitFilter.length ? $generationUnitFilter.val() : '';
         const dateFrom = $dateFromFilter.length ? $dateFromFilter.val() : '';
         const dateTo = $dateToFilter.length ? $dateToFilter.val() : '';
         const groupByGenerator = $groupByGeneratorToggle.length && $groupByGeneratorToggle.is(':checked');
 
+        // Advanced filters - استخدام select مشترك للعمليات
+        const commonOperatorValue = $commonOperator.length ? $commonOperator.val() : '';
+        const loadPercentageValue = $loadPercentageValue.length ? $loadPercentageValue.val() : '';
+        const fuelConsumedValue = $fuelConsumedValue.length ? $fuelConsumedValue.val() : '';
+        const energyProducedValue = $energyProducedValue.length ? $energyProducedValue.val() : '';
+
+        // التحقق من وجود المشغل ووحدة التوليد على الأقل
+        if (!operatorId || operatorId == '0' || !generationUnitId || generationUnitId == '0') {
+            if (typeof window.showToast === 'function') {
+                window.showToast('يرجى اختيار المشغل ووحدة التوليد على الأقل', 'warning');
+            } else {
+                alert('يرجى اختيار المشغل ووحدة التوليد على الأقل');
+            }
+            return;
+        }
+
         const params = {};
-        if (term) params.q = term;
-        if (operatorId) params.operator_id = operatorId;
+        params.operator_id = operatorId;
+        params.generation_unit_id = generationUnitId;
         if (generatorId) params.generator_id = generatorId;
         if (dateFrom) params.date_from = dateFrom;
         if (dateTo) params.date_to = dateTo;
         if (groupByGenerator) params.group_by_generator = 1;
 
+        // Advanced filters
+        if (loadPercentageValue && commonOperatorValue) {
+            params.load_percentage_value = loadPercentageValue;
+            params.load_percentage_operator = commonOperatorValue;
+        }
+        
+        if (fuelConsumedValue && commonOperatorValue) {
+            params.fuel_consumed_value = fuelConsumedValue;
+            params.fuel_consumed_operator = commonOperatorValue;
+        }
+        
+        if (energyProducedValue && commonOperatorValue) {
+            params.energy_produced_value = energyProducedValue;
+            params.energy_produced_operator = commonOperatorValue;
+        }
+
         loadOperationLogs(params);
-    }, 300);
+    }
 
     $searchBtn.on('click', runSearch);
-    
-    // Search on Enter key
-    $searchInput.on('keypress', function (e) {
-        if (e.which === 13) {
-            e.preventDefault();
-            runSearch();
-        }
-    });
 
     $clearSearchBtn.on('click', function () {
-        $searchInput.val('');
         if ($operatorFilter.length) $operatorFilter.val('');
         if ($generatorFilter.length) $generatorFilter.val('');
+        if ($generationUnitFilter.length) $generationUnitFilter.val('');
         if ($dateFromFilter.length) $dateFromFilter.val('');
         if ($dateToFilter.length) $dateToFilter.val('');
+        
+        // Clear advanced filters
+        if ($loadPercentageValue.length) $loadPercentageValue.val('');
+        if ($fuelConsumedValue.length) $fuelConsumedValue.val('');
+        if ($energyProducedValue.length) $energyProducedValue.val('');
+        if ($commonOperator.length) $commonOperator.val('equals');
+        
+        if ($groupByGeneratorToggle.length) $groupByGeneratorToggle.prop('checked', false);
+        
         $clearSearchBtn.addClass('d-none');
-        runSearch();
+        // عند إلغاء الفلاتر، إعادة تحميل القائمة بدون فلاتر
+        loadOperationLogs({});
     });
 
-    // Show/hide clear button when typing (without auto search)
-    $searchInput.on('input', function () {
-        if ($(this).val().trim()) {
-            $clearSearchBtn.removeClass('d-none');
+    // لا يوجد بحث تلقائي - البحث فقط عند الضغط على زر البحث
+
+    // Function to get current filter values
+    function getCurrentFilters() {
+        // الحصول على operatorId - قد يكون select أو hidden input
+        let operatorId = '';
+        if ($operatorFilter.length && $operatorFilter.is('select')) {
+            operatorId = $operatorFilter.val();
         } else {
-            $clearSearchBtn.addClass('d-none');
+            // للمشغل/الموظف: استخدام hidden input
+            const $operatorFilterHidden = $('#operatorFilterHidden');
+            if ($operatorFilterHidden.length) {
+                operatorId = $operatorFilterHidden.val();
+            }
         }
-    });
+        
+        const generatorId = $generatorFilter.length ? $generatorFilter.val() : '';
+        const generationUnitId = $generationUnitFilter.length ? $generationUnitFilter.val() : '';
+        const dateFrom = $dateFromFilter.length ? $dateFromFilter.val() : '';
+        const dateTo = $dateToFilter.length ? $dateToFilter.val() : '';
+        const groupByGenerator = $groupByGeneratorToggle.length && $groupByGeneratorToggle.is(':checked');
 
-    // Operator filter change
-    if ($operatorFilter.length) {
-        $operatorFilter.on('change', function() {
-            // If operator changed, reload generators list
-            // For now, just run search
-            runSearch();
-        });
-    }
+        // Advanced filters - استخدام select مشترك للعمليات
+        const commonOperatorValue = $commonOperator.length ? $commonOperator.val() : '';
+        const loadPercentageValue = $loadPercentageValue.length ? $loadPercentageValue.val() : '';
+        const fuelConsumedValue = $fuelConsumedValue.length ? $fuelConsumedValue.val() : '';
+        const energyProducedValue = $energyProducedValue.length ? $energyProducedValue.val() : '';
 
-    // Generator filter change
-    if ($generatorFilter.length) {
-        $generatorFilter.on('change', runSearch);
-    }
+        const params = {};
+        if (operatorId && operatorId != '0') params.operator_id = operatorId;
+        if (generationUnitId && generationUnitId != '0') params.generation_unit_id = generationUnitId;
+        if (generatorId && generatorId != '0') params.generator_id = generatorId;
+        if (dateFrom) params.date_from = dateFrom;
+        if (dateTo) params.date_to = dateTo;
+        if (groupByGenerator) params.group_by_generator = 1;
 
-    // Group by generator toggle
-    if ($groupByGeneratorToggle.length) {
-        $groupByGeneratorToggle.on('change', runSearch);
-    }
+        // Advanced filters
+        if (loadPercentageValue && commonOperatorValue) {
+            params.load_percentage_value = loadPercentageValue;
+            params.load_percentage_operator = commonOperatorValue;
+        }
+        if (fuelConsumedValue && commonOperatorValue) {
+            params.fuel_consumed_value = fuelConsumedValue;
+            params.fuel_consumed_operator = commonOperatorValue;
+        }
+        if (energyProducedValue && commonOperatorValue) {
+            params.energy_produced_value = energyProducedValue;
+            params.energy_produced_operator = commonOperatorValue;
+        }
 
-    // Date filters change
-    if ($dateFromFilter.length) {
-        $dateFromFilter.on('change', runSearch);
-    }
-    if ($dateToFilter.length) {
-        $dateToFilter.on('change', runSearch);
+        return params;
     }
 
     // Delete functionality
@@ -182,6 +250,7 @@
         }
 
         const deleteUrl = deleteOperationLogUrl(operationLogId);
+        const currentFilters = getCurrentFilters(); // حفظ الفلاتر الحالية
 
         $.ajax({
             url: deleteUrl,
@@ -193,7 +262,8 @@
             .done(res => {
                 if (res.success) {
                     flash('success', res.message || 'تم حذف سجل التشغيل بنجاح');
-                    runSearch(); // Reload list
+                    // إعادة تحميل النتائج مع نفس الفلاتر
+                    loadOperationLogs(currentFilters);
                 } else {
                     flash('danger', res.message || 'حدث خطأ أثناء حذف سجل التشغيل');
                 }
@@ -223,7 +293,7 @@
             params[key] = value;
         });
 
-        // Preserve group_by_generator toggle state
+        // Preserve toggle states
         if ($groupByGeneratorToggle.length && $groupByGeneratorToggle.is(':checked')) {
             params.group_by_generator = 1;
         }

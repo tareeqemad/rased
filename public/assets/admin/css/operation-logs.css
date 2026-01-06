@@ -63,6 +63,28 @@
 
 .operation-logs-page .card-body {
     padding: 1.5rem;
+    padding-bottom: 2.5rem;
+}
+
+/* إضافة مسافة من الأسفل للنموذج لمنع تداخل الـ footer */
+.operation-logs-page .log-card form .card-body {
+    padding-bottom: 3rem;
+}
+
+/* إضافة مسافة في نهاية الصفحة لمنع تداخل الـ footer */
+.operation-logs-page {
+    padding-bottom: 2rem;
+    margin-bottom: 2rem;
+}
+
+/* تحسين مظهر Select2 عند وجود خطأ */
+.operation-logs-page .select2-container.is-invalid .select2-selection {
+    border-color: #dc3545 !important;
+}
+
+.operation-logs-page .select2-container.is-invalid .select2-selection:focus {
+    border-color: #dc3545 !important;
+    box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25) !important;
 }
 
 .operation-logs-page hr {
@@ -372,6 +394,97 @@
     margin-bottom: 0;
 }
 
+/* Generator Info Card */
+.operation-logs-page .generator-info-card {
+    margin-bottom: 1.5rem;
+}
+
+.operation-logs-page .generator-icon {
+    background: linear-gradient(135deg, var(--primary, #0056b3) 0%, #003d82 100%);
+    box-shadow: 0 4px 12px rgba(0, 86, 179, 0.25);
+}
+
+.operation-logs-page .stat-card {
+    transition: all 0.2s;
+}
+
+.operation-logs-page .stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.operation-logs-page .stat-icon {
+    opacity: 0.8;
+}
+
+.operation-logs-page .stat-value {
+    font-size: 1.25rem;
+    line-height: 1.2;
+}
+
+.operation-logs-page .stat-label {
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+}
+
+/* تحسين عرض تفاصيل السجل */
+.operation-logs-page .log-detail-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.5rem;
+    border-radius: 8px;
+    transition: all 0.2s;
+}
+
+.operation-logs-page .log-detail-item:hover {
+    background-color: #f8f9fa;
+}
+
+.operation-logs-page .log-detail-item i {
+    font-size: 1.25rem;
+    margin-top: 0.125rem;
+    flex-shrink: 0;
+}
+
+.operation-logs-page .log-detail-item > div {
+    flex: 1;
+}
+
+/* إخفاء placeholder في Select2 */
+.operation-logs-page .select2-container--default .select2-selection--single .select2-selection__placeholder {
+    display: none;
+}
+
+.operation-logs-page .select2-container--default .select2-selection--single .select2-selection__rendered {
+    color: #212529 !important;
+}
+
+/* تكبير الخط في الجدول */
+.operation-logs-page .table {
+    font-size: 1rem;
+}
+
+.operation-logs-page .table thead th {
+    font-size: 1rem;
+    font-weight: 600;
+    padding: 1rem 0.75rem;
+}
+
+.operation-logs-page .table tbody td {
+    font-size: 1rem;
+    padding: 0.875rem 0.75rem;
+}
+
+.operation-logs-page .table tbody td .small {
+    font-size: 0.95rem;
+}
+
+.operation-logs-page .table .badge {
+    font-size: 0.9rem;
+    padding: 0.4rem 0.6rem;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .operation-logs-page .log-searchbar{
@@ -398,11 +511,26 @@
     .operation-logs-page .log-row-actions{
         justify-content: flex-end;
     }
+    
+    .operation-logs-page .generator-info-card .stat-card {
+        margin-bottom: 0.5rem;
+    }
+    
+    .operation-logs-page .table {
+        font-size: 0.9rem;
+    }
+    
+    .operation-logs-page .table thead th {
+        font-size: 0.9rem;
+        padding: 0.75rem 0.5rem;
+    }
+    
+    .operation-logs-page .table tbody td {
+        font-size: 0.9rem;
+        padding: 0.75rem 0.5rem;
+    }
 }
 
-.operation-logs-page .card-body {
-    padding: 1.5rem;
-}
 
 
 

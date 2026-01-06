@@ -15,6 +15,8 @@ class StoreFuelEfficiencyRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'operator_id' => ['required', 'exists:operators,id'],
+            'generation_unit_id' => ['required', 'exists:generation_units,id'],
             'generator_id' => ['required', 'exists:generators,id'],
             'consumption_date' => ['required', 'date'],
             'operating_hours' => ['nullable', 'numeric', 'min:0'],
@@ -31,6 +33,10 @@ class StoreFuelEfficiencyRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'operator_id.required' => 'المشغل مطلوب.',
+            'operator_id.exists' => 'المشغل المحدد غير موجود.',
+            'generation_unit_id.required' => 'وحدة التوليد مطلوبة.',
+            'generation_unit_id.exists' => 'وحدة التوليد المحددة غير موجودة.',
             'generator_id.required' => 'المولد مطلوب.',
             'generator_id.exists' => 'المولد المحدد غير موجود.',
             'consumption_date.required' => 'تاريخ الاستهلاك مطلوب.',

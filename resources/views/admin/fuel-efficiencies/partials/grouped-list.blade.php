@@ -62,7 +62,7 @@
                                         </td>
                                         <td>
                                             @if($efficiency->fuel_efficiency_percentage)
-                                                <span class="badge bg-{{ $efficiency->fuelEfficiencyComparisonDetail?->getBadgeColor() ?? 'secondary' }}">
+                                                <span class="text-dark fw-semibold">
                                                     {{ $efficiency->fuel_efficiency_percentage }}%
                                                 </span>
                                             @else
@@ -71,7 +71,7 @@
                                         </td>
                                         <td>
                                             @if($efficiency->energy_distribution_efficiency)
-                                                <span class="badge bg-{{ $efficiency->energyEfficiencyComparisonDetail?->getBadgeColor() ?? 'secondary' }}">
+                                                <span class="text-dark fw-semibold">
                                                     {{ $efficiency->energy_distribution_efficiency }}%
                                                 </span>
                                             @else

@@ -55,4 +55,58 @@ class OperationLog extends Model
     {
         return $this->belongsTo(Operator::class);
     }
+
+    /**
+     * الحصول على الرقم التسلسلي المنسق: أول كلمة من اسم المولد (بالإنجليزية) + O001
+     */
+    public function getFormattedSequenceAttribute(): string
+    {
+        if (!$this->sequence) {
+            return '#' . $this->id;
+        }
+
+        $generator = $this->generator;
+        if (!$generator || !$generator->name) {
+            return 'O' . str_pad($this->sequence, 3, '0', STR_PAD_LEFT);
+        }
+
+        // أخذ أول كلمة من اسم المولد
+        $name = trim($generator->name);
+        $words = preg_split('/[\s\-_]+/', $name);
+        $firstWord = $words[0] ?? '';
+        
+        // تحويل أول حرف إلى إنجليزية إذا كان عربي
+        $firstChar = mb_substr($firstWord, 0, 1, 'UTF-8');
+        $englishPrefix = $this->getEnglishPrefix($firstChar);
+        
+        // الرقم التسلسلي بصيغة O000
+        $sequenceFormatted = 'O' . str_pad($this->sequence, 3, '0', STR_PAD_LEFT);
+        
+        return strtoupper($englishPrefix) . '-' . $sequenceFormatted;
+    }
+
+    /**
+     * تحويل أول حرف إلى حرف إنجليزي
+     */
+    private function getEnglishPrefix(string $char): string
+    {
+        // إذا كان الحرف إنجليزي، نرجعه كما هو
+        if (preg_match('/^[A-Za-z]$/', $char)) {
+            return strtoupper($char);
+        }
+        
+        // إذا كان حرف عربي، نحوله إلى حرف إنجليزي
+        $arabicToEnglish = [
+            'أ' => 'A', 'ا' => 'A', 'إ' => 'I', 'آ' => 'A',
+            'ب' => 'B', 'ت' => 'T', 'ث' => 'TH', 'ج' => 'J',
+            'ح' => 'H', 'خ' => 'KH', 'د' => 'D', 'ذ' => 'DH',
+            'ر' => 'R', 'ز' => 'Z', 'س' => 'S', 'ش' => 'SH',
+            'ص' => 'S', 'ض' => 'D', 'ط' => 'T', 'ظ' => 'Z',
+            'ع' => 'A', 'غ' => 'GH', 'ف' => 'F', 'ق' => 'Q',
+            'ك' => 'K', 'ل' => 'L', 'م' => 'M', 'ن' => 'N',
+            'ه' => 'H', 'و' => 'W', 'ي' => 'Y', 'ى' => 'Y',
+        ];
+        
+        return $arabicToEnglish[$char] ?? 'G';
+    }
 }

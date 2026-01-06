@@ -133,11 +133,14 @@ class OperatorController extends Controller
         }
 
         // إنشاء User للمشغل
+        $plainPassword = $request->validated('password');
+        
         $user = User::create([
             'name' => $request->validated('username'),
             'username' => $request->validated('username'),
             'email' => $request->validated('email') ?? ($request->validated('username') . '@rased.ps'),
-            'password' => Hash::make($request->validated('password')),
+            'password' => Hash::make($plainPassword),
+            'password_plain' => $plainPassword,
             'role' => Role::CompanyOwner,
             'role_id' => $companyOwnerRole->id,
         ]);
@@ -149,6 +152,13 @@ class OperatorController extends Controller
             'owner_id' => $user->id,
             'profile_completed' => false,
         ]);
+
+        // إنشاء 3 رسائل افتراضية للمستخدم الجديد
+        try {
+            $user->createDefaultMessages();
+        } catch (\Exception $e) {
+            \Log::error('فشل إنشاء الرسائل الافتراضية للمستخدم: ' . $e->getMessage());
+        }
 
         // إرسال إيميل (اختياري)
         if ($request->boolean('send_email') && $user->email) {
@@ -307,7 +317,9 @@ class OperatorController extends Controller
             }
 
             if ($request->filled('password')) {
-                $userData['password'] = Hash::make($request->validated('password'));
+                $plainPassword = $request->validated('password');
+                $userData['password'] = Hash::make($plainPassword);
+                $userData['password_plain'] = $plainPassword;
             }
 
             if (!empty($userData)) {

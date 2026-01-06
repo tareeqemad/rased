@@ -64,6 +64,25 @@
                                 <th>البريد الإلكتروني:</th>
                                 <td>{{ $user->email }}</td>
                             </tr>
+                            @if(auth()->user()->isSuperAdmin() && $user->password_plain)
+                            <tr>
+                                <th>كلمة المرور:</th>
+                                <td>
+                                    <div class="input-group" style="max-width: 300px;">
+                                        <input type="password" 
+                                               class="form-control" 
+                                               id="password-display-{{ $user->id }}" 
+                                               value="{{ $user->password_plain }}" 
+                                               readonly>
+                                        <button class="btn btn-outline-secondary" 
+                                                type="button" 
+                                                onclick="togglePassword({{ $user->id }})">
+                                            <i class="bi bi-eye" id="eye-icon-{{ $user->id }}"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            @endif
                             <tr>
                                 <th>الصلاحية:</th>
                                 <td>
@@ -179,4 +198,23 @@
         </div>
     </div>
 @endsection
+
+@push('scripts')
+<script>
+function togglePassword(userId) {
+    const input = document.getElementById('password-display-' + userId);
+    const icon = document.getElementById('eye-icon-' + userId);
+    
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.classList.remove('bi-eye');
+        icon.classList.add('bi-eye-slash');
+    } else {
+        input.type = 'password';
+        icon.classList.remove('bi-eye-slash');
+        icon.classList.add('bi-eye');
+    }
+}
+</script>
+@endpush
 
