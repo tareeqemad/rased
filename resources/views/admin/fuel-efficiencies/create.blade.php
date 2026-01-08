@@ -4,34 +4,37 @@
 
 @php
     $breadcrumbTitle = 'إضافة سجل كفاءة وقود';
+    $breadcrumbParent = 'سجلات كفاءة الوقود';
+    $breadcrumbParentUrl = route('admin.fuel-efficiencies.index');
 @endphp
 
 @push('styles')
     <link rel="stylesheet" href="{{ asset('assets/admin/css/fuel-efficiencies.css') }}">
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-    <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="{{ asset('assets/admin/libs/select2/select2.min.css') }}">
 @endpush
 
 @section('content')
-    <div class="fuel-efficiencies-page">
+    <div class="general-page">
         <div class="row g-3">
             <div class="col-12">
-                <div class="card log-card">
-                    <div class="log-card-header">
-                        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-0">
-                            <div>
-                                <div class="log-title">
-                                    <i class="bi bi-speedometer2 me-2"></i>
-                                    إضافة سجل كفاءة وقود جديد
-                                </div>
-                                <div class="log-subtitle">
-                                    قم بإدخال بيانات كفاءة الوقود بشكل كامل
-                                </div>
+                <div class="general-card">
+                    <div class="general-card-header">
+                        <div>
+                            <h5 class="general-title">
+                                <i class="bi bi-speedometer2 me-2"></i>
+                                إضافة سجل كفاءة وقود جديد
+                            </h5>
+                            <div class="general-subtitle">
+                                قم بإدخال بيانات كفاءة الوقود بشكل كامل
                             </div>
                         </div>
+                        <a href="{{ route('admin.fuel-efficiencies.index') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-right me-2"></i>
+                            العودة للقائمة
+                        </a>
                     </div>
 
-                    <div class="card-body p-4">
+                    <div class="card-body">
                         <form action="{{ route('admin.fuel-efficiencies.store') }}" method="POST" id="fuelEfficiencyForm">
                             @csrf
 
@@ -361,13 +364,12 @@
 
                             <hr class="my-4">
 
-                            <!-- Action Buttons -->
-                            <div class="d-flex justify-content-between align-items-center">
+                            <div class="d-flex justify-content-end align-items-center gap-2">
                                 <a href="{{ route('admin.fuel-efficiencies.index') }}" class="btn btn-outline-secondary">
                                     <i class="bi bi-arrow-right me-2"></i>
                                     إلغاء
                                 </a>
-                                <button type="submit" class="btn btn-primary px-4">
+                                <button type="submit" class="btn btn-primary">
                                     <i class="bi bi-check-lg me-2"></i>
                                     حفظ البيانات
                                 </button>
@@ -381,8 +383,8 @@
 @endsection
 
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/i18n/ar.js"></script>
+<script src="{{ asset('assets/admin/libs/select2/select2.min.js') }}"></script>
+<script src="{{ asset('assets/admin/libs/select2/i18n/ar.js') }}"></script>
 <script>
     (function($) {
         $(document).ready(function() {

@@ -4,6 +4,8 @@
 
 @php
     $breadcrumbTitle = 'إضافة سجل صيانة';
+    $breadcrumbParent = 'سجلات الصيانة';
+    $breadcrumbParentUrl = route('admin.maintenance-records.index');
 @endphp
 
 @push('styles')
@@ -11,25 +13,27 @@
 @endpush
 
 @section('content')
-    <div class="maintenance-records-page">
+    <div class="general-page">
         <div class="row g-3">
             <div class="col-12">
-                <div class="card log-card">
-                    <div class="log-card-header">
-                        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-0">
-                            <div>
-                                <div class="log-title">
-                                    <i class="bi bi-tools me-2"></i>
-                                    إضافة سجل صيانة جديد
-                                </div>
-                                <div class="log-subtitle">
-                                    قم بإدخال بيانات سجل الصيانة بشكل كامل
-                                </div>
+                <div class="general-card">
+                    <div class="general-card-header">
+                        <div>
+                            <h5 class="general-title">
+                                <i class="bi bi-tools me-2"></i>
+                                إضافة سجل صيانة جديد
+                            </h5>
+                            <div class="general-subtitle">
+                                قم بإدخال بيانات سجل الصيانة بشكل كامل
                             </div>
                         </div>
+                        <a href="{{ route('admin.maintenance-records.index') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-right me-2"></i>
+                            العودة للقائمة
+                        </a>
                     </div>
 
-                    <div class="card-body p-4">
+                    <div class="card-body">
                         <form action="{{ route('admin.maintenance-records.store') }}" method="POST" id="maintenanceRecordForm">
                             @csrf
 
@@ -267,13 +271,12 @@
 
                             <hr class="my-4">
 
-                            <!-- Action Buttons -->
-                            <div class="d-flex justify-content-between align-items-center">
+                            <div class="d-flex justify-content-end align-items-center gap-2">
                                 <a href="{{ route('admin.maintenance-records.index') }}" class="btn btn-outline-secondary">
                                     <i class="bi bi-arrow-right me-2"></i>
                                     إلغاء
                                 </a>
-                                <button type="submit" class="btn btn-primary px-4">
+                                <button type="submit" class="btn btn-primary">
                                     <i class="bi bi-check-lg me-2"></i>
                                     حفظ البيانات
                                 </button>

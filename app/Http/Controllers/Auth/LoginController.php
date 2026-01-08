@@ -45,6 +45,16 @@ class LoginController extends Controller
         ]);
     }
 
+    /**
+     * الحصول على CSRF token جديد (للتحديث التلقائي)
+     */
+    public function getCSRFToken(Request $request)
+    {
+        return response()->json([
+            'token' => csrf_token(),
+        ]);
+    }
+
     public function logout(Request $request)
     {
         Auth::logout();

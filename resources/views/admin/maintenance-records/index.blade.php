@@ -12,35 +12,37 @@
 @endpush
 
 @section('content')
-    <div class="maintenance-records-page">
+    <div class="general-page">
         <div class="row g-3">
             {{-- Main: قائمة سجلات الصيانة --}}
             <div class="col-12">
-                <div class="card log-card">
-                    <div class="log-card-header log-toolbar-header">
-                        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
-                            <div>
-                                <div class="log-title">
-                                    <i class="bi bi-tools me-2"></i>
-                                    سجلات الصيانة
-                                </div>
-                                <div class="log-subtitle">
-                                    إدارة سجلات الصيانة. العدد: <span id="maintenanceRecordsCount">{{ isset($groupedLogs) ? $groupedLogs->flatten()->count() : $maintenanceRecords->total() }}</span>
-                                </div>
+                <div class="general-card">
+                    <div class="general-card-header">
+                        <div>
+                            <h5 class="general-title">
+                                <i class="bi bi-tools me-2"></i>
+                                سجلات الصيانة
+                            </h5>
+                            <div class="general-subtitle">
+                                إدارة سجلات الصيانة. العدد: <span id="maintenanceRecordsCount">{{ isset($groupedLogs) ? $groupedLogs->flatten()->count() : $maintenanceRecords->total() }}</span>
                             </div>
+                        </div>
 
+                        <div class="d-flex gap-2">
                             @can('create', App\Models\MaintenanceRecord::class)
                                 <a href="{{ route('admin.maintenance-records.create') }}" class="btn btn-primary">
-                                    <i class="bi bi-plus-circle me-2"></i>
+                                    <i class="bi bi-plus-lg me-1"></i>
                                     إضافة سجل جديد
                                 </a>
                             @endcan
                         </div>
+                    </div>
 
+                    <div class="card-body">
                         {{-- كارد واحد للفلاتر --}}
-                        <div class="card border mb-3">
-                            <div class="card-header bg-light">
-                                <h6 class="card-title mb-0">
+                        <div class="filter-card">
+                            <div class="card-header">
+                                <h6 class="card-title">
                                     <i class="bi bi-funnel me-2"></i>
                                     فلاتر البحث
                                 </h6>
@@ -145,50 +147,47 @@
                                 </div>
                             </div>
                         </div>
-                    </div>
 
-                    {{-- Row 3: Card للجدول --}}
-                    <div class="card border mt-3">
-                        <div class="card-body">
-                            @if(request('group_by_generator') && isset($groupedLogs) && $groupedLogs->isNotEmpty())
-                                {{-- Grouped view (non-AJAX only) --}}
-                                @include('admin.maintenance-records.partials.grouped-list', ['groupedLogs' => $groupedLogs, 'maintenanceRecords' => $maintenanceRecords])
-                            @else
-                                {{-- Normal table view with AJAX --}}
-                                <div class="table-responsive">
-                                    <table class="table table-hover mb-0">
-                                        <thead class="table-light">
-                                            <tr>
-                                                <th>#</th>
-                                                <th>رقم المولد</th>
-                                                <th>نوع الصيانة</th>
-                                                <th>تاريخ الصيانة</th>
-                                                <th>اسم الفني</th>
-                                                <th>زمن التوقف</th>
-                                                <th>تكلفة الصيانة</th>
-                                                <th>الإجراءات</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="maintenanceRecordsTbody">
-                                            @include('admin.maintenance-records.partials.tbody-rows', ['maintenanceRecords' => $maintenanceRecords])
-                                        </tbody>
-                                    </table>
-                                </div>
+                        <hr class="my-3">
 
-                                @if(isset($maintenanceRecords) && $maintenanceRecords->hasPages())
-                                    <div class="d-flex justify-content-between align-items-center mt-3">
-                                        <div class="small text-muted">
-                                            عرض {{ $maintenanceRecords->firstItem() }} - {{ $maintenanceRecords->lastItem() }} من {{ $maintenanceRecords->total() }}
-                                        </div>
-                                        <nav>
-                                            <ul class="pagination mb-0" id="maintenanceRecordsPagination">
-                                                @include('admin.maintenance-records.partials.pagination', ['maintenanceRecords' => $maintenanceRecords])
-                                            </ul>
-                                        </nav>
+                        @if(request('group_by_generator') && isset($groupedLogs) && $groupedLogs->isNotEmpty())
+                            {{-- Grouped view (non-AJAX only) --}}
+                            @include('admin.maintenance-records.partials.grouped-list', ['groupedLogs' => $groupedLogs, 'maintenanceRecords' => $maintenanceRecords])
+                        @else
+                            {{-- Normal table view with AJAX --}}
+                            <div class="table-responsive">
+                                <table class="table general-table mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>رقم المولد</th>
+                                            <th>نوع الصيانة</th>
+                                            <th>تاريخ الصيانة</th>
+                                            <th>اسم الفني</th>
+                                            <th>زمن التوقف</th>
+                                            <th>تكلفة الصيانة</th>
+                                            <th>الإجراءات</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="maintenanceRecordsTbody">
+                                        @include('admin.maintenance-records.partials.tbody-rows', ['maintenanceRecords' => $maintenanceRecords])
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            @if(isset($maintenanceRecords) && $maintenanceRecords->hasPages())
+                                <div class="d-flex justify-content-between align-items-center mt-3">
+                                    <div class="small text-muted">
+                                        عرض {{ $maintenanceRecords->firstItem() }} - {{ $maintenanceRecords->lastItem() }} من {{ $maintenanceRecords->total() }}
                                     </div>
-                                @endif
+                                    <nav>
+                                        <ul class="pagination mb-0" id="maintenanceRecordsPagination">
+                                            @include('admin.maintenance-records.partials.pagination', ['maintenanceRecords' => $maintenanceRecords])
+                                        </ul>
+                                    </nav>
+                                </div>
                             @endif
-                        </div>
+                        @endif
                     </div>
                 </div>
             </div>

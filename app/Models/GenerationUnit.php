@@ -93,6 +93,14 @@ class GenerationUnit extends Model
     }
 
     /**
+     * علاقة مع ثابت المدينة (city_id) - اسم بديل للتوافق
+     */
+    public function cityDetail(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\ConstantDetail::class, 'city_id');
+    }
+
+    /**
      * علاقة مع ثابت حالة الوحدة (status_id)
      * يستخدم: ConstantsHelper::get(15) - ثابت Master رقم 15
      */
@@ -134,6 +142,14 @@ class GenerationUnit extends Model
     public function getOperatorNameAttribute(): ?string
     {
         return $this->operator?->name;
+    }
+
+    /**
+     * الحصول على اسم المدينة من الثوابت
+     */
+    public function getCityName(): ?string
+    {
+        return $this->city?->label;
     }
 
     /**

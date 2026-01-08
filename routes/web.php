@@ -8,11 +8,19 @@ Route::get('/', [\App\Http\Controllers\PublicHomeController::class, 'index'])->n
 Route::get('/map', [\App\Http\Controllers\PublicHomeController::class, 'map'])->name('front.map');
 Route::get('/stats', [\App\Http\Controllers\PublicHomeController::class, 'stats'])->name('front.stats');
 Route::get('/about', [\App\Http\Controllers\PublicHomeController::class, 'about'])->name('front.about');
+
+// Join routes - protected with guest middleware
+Route::middleware('guest')->group(function () {
+    Route::get('/join', [\App\Http\Controllers\PublicHomeController::class, 'join'])->name('front.join');
+    Route::post('/join', [\App\Http\Controllers\PublicHomeController::class, 'storeJoinRequest'])->name('front.join.store');
+});
+
 Route::get('/api/operators/map', [\App\Http\Controllers\PublicHomeController::class, 'getOperatorsForMap'])->name('front.operators.map');
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
     Route::post('/login', [LoginController::class, 'login'])->middleware('throttle:5,1');
+    Route::get('/login/csrf-token', [LoginController::class, 'getCSRFToken'])->name('login.csrf-token');
 });
 
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout')->middleware('auth');

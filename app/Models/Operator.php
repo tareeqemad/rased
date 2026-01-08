@@ -20,11 +20,15 @@ class Operator extends Model
 
     protected $fillable = [
         'name',
+        'name_en',
         'owner_id',
         'owner_name',
         'owner_id_number',
         'operator_id_number',
+        'phone',
+        'email',
         'status',
+        'is_approved',
         'profile_completed',
     ];
 
@@ -36,6 +40,7 @@ class Operator extends Model
             'total_capacity' => 'decimal:2',
             'max_synchronization_capacity' => 'decimal:2',
             'profile_completed' => 'boolean',
+            'is_approved' => 'boolean',
             'synchronization_available' => 'boolean',
             'governorate' => Governorate::class,
         ];
@@ -108,6 +113,14 @@ class Operator extends Model
     public function isProfileComplete(): bool
     {
         return $this->profile_completed && !empty($this->name);
+    }
+
+    /**
+     * التحقق من أن المشغل معتمد ومفعل
+     */
+    public function isApproved(): bool
+    {
+        return $this->status === 'active' && $this->is_approved === true;
     }
 
     public function getGovernorateDetails(): ?array

@@ -196,7 +196,7 @@
                     </div>
                     <ul class="list-unstyled mb-0">
                         <li>
-                            <a href="javascript:void(0);" class="dropdown-item">
+                            <a href="{{ route('admin.profile.show') }}" class="dropdown-item">
                                 <i class="bi bi-person me-2"></i>
                                 الملف الشخصي
                             </a>

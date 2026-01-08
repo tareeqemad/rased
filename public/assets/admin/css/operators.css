@@ -13,50 +13,7 @@
     padding-bottom: 1rem;
 }
 
-/* Card */
-.operators-page .op-card{
-    border: 1px solid var(--op-border);
-    border-radius: 14px;
-    background: var(--op-surface);
-    overflow: hidden;
-    box-shadow: 0 2px 10px rgba(15,23,42,.04);
-    position: relative;
-}
-.operators-page .op-card::before{
-    content:"";
-    position:absolute;
-    top:0; left:0; right:0;
-    height: 3px;
-    background: rgba(var(--primary-rgb), .85);
-}
-
-/* Kill theme-blue card-header inside this module */
-.operators-page .card-header{
-    background: var(--op-surface) !important;
-    color: var(--op-text) !important;
-    border-bottom: 1px solid var(--op-border-2) !important;
-}
-.operators-page .op-card-header{
-    background: var(--op-surface);
-    border-bottom: 1px solid var(--op-border-2);
-    padding: 1rem 1.25rem;
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 1rem;
-}
-
-.operators-page .op-title{
-    font-weight: 900;
-    font-size: 1.05rem;
-    margin: 0;
-    color: var(--op-text);
-}
-.operators-page .op-subtitle{
-    font-size: .85rem;
-    color: var(--op-muted);
-    margin-top: .25rem;
-}
+/* Card styles removed - using general-card from general-cards.css */
 
 .operators-page .op-toolbar{
     margin-top: .5rem;

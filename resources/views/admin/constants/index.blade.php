@@ -12,19 +12,19 @@
 @endpush
 
 @section('content')
-<div class="constants-page" id="constantsPage" data-index-url="{{ route('admin.constants.index') }}">
+<div class="general-page" id="constantsPage" data-index-url="{{ route('admin.constants.index') }}">
 
     <div class="row g-3">
         <div class="col-12">
-            <div class="constants-card">
+            <div class="general-card">
 
-                <div class="constants-card-header">
+                <div class="general-card-header">
                     <div>
-                        <h5 class="constants-title">
+                        <h5 class="general-title">
                         <i class="bi bi-database me-2"></i>
                         إدارة الثوابت
                     </h5>
-                        <div class="constants-subtitle">
+                        <div class="general-subtitle">
                             إدارة وتنظيم ثوابت النظام
                         </div>
                     </div>
@@ -39,15 +39,16 @@
                     </div>
                 </div>
 
-                {{-- كارد واحد للفلاتر --}}
-                <div class="card border mb-3">
-                    <div class="card-header bg-light">
-                        <h6 class="card-title mb-0">
-                            <i class="bi bi-funnel me-2"></i>
-                            فلاتر البحث
-                        </h6>
-                    </div>
-                    <div class="card-body">
+                <div class="card-body pb-4">
+                    {{-- كارد واحد للفلاتر --}}
+                    <div class="filter-card">
+                        <div class="card-header">
+                            <h6 class="card-title">
+                                <i class="bi bi-funnel me-2"></i>
+                                فلاتر البحث
+                            </h6>
+                        </div>
+                        <div class="card-body">
                             <div class="row g-3">
                                 <div class="col-md-5">
                                     <label class="form-label fw-semibold">
@@ -84,52 +85,51 @@
                         </div>
                     </div>
 
-                    {{-- كارد للجدول --}}
-                    <div class="card border mt-3">
-                        <div class="card-body">
-                            <div class="table-responsive">
-                                <table class="table table-hover align-middle mb-0 constants-table">
-                                    <thead>
-                                    <tr>
-                                        <th style="min-width:120px;">رقم الثابت</th>
-                                        <th>اسم الثابت</th>
-                                        <th class="d-none d-md-table-cell">الوصف</th>
-                                        <th class="text-center">التفاصيل</th>
-                                        <th class="text-center">الحالة</th>
-                                        <th class="text-center d-none d-lg-table-cell">الترتيب</th>
-                                        <th style="min-width:140px;">الإجراءات</th>
-                                    </tr>
-                                    </thead>
-                                    <tbody id="constantsTbody">
-                                        @include('admin.constants.partials.tbody-rows', ['constants' => $constants])
-                                    </tbody>
-                                </table>
-                            </div>
+                    <hr class="my-3">
 
-                            <div class="d-flex flex-wrap justify-content-between align-items-center mt-3 gap-2">
-                                <div class="small text-muted" id="constantsMeta">
-                                    @if($constants->total() > 0)
-                                        عرض {{ $constants->firstItem() }} - {{ $constants->lastItem() }} من {{ $constants->total() }}
-                                    @else
-                                        —
-                                    @endif
-                                </div>
-                                <nav>
-                                    <ul class="pagination mb-0" id="constantsPagination">
-                                        @include('admin.constants.partials.pagination', ['constants' => $constants])
-                                    </ul>
-                                </nav>
-                            </div>
-                        </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0 general-table">
+                            <thead>
+                                <tr>
+                                    <th style="min-width:120px;">رقم الثابت</th>
+                                    <th>اسم الثابت</th>
+                                    <th class="d-none d-md-table-cell">الوصف</th>
+                                    <th class="text-center">التفاصيل</th>
+                                    <th class="text-center">الحالة</th>
+                                    <th class="text-center d-none d-lg-table-cell">الترتيب</th>
+                                    <th style="min-width:140px;">الإجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody id="constantsTbody">
+                                @include('admin.constants.partials.tbody-rows', ['constants' => $constants])
+                            </tbody>
+                        </table>
                     </div>
+
+                    <div class="d-flex flex-wrap justify-content-between align-items-center mt-3 gap-2">
+                        <div class="small text-muted" id="constantsMeta">
+                            @if($constants->total() > 0)
+                                عرض {{ $constants->firstItem() }} - {{ $constants->lastItem() }} من {{ $constants->total() }}
+                            @else
+                                —
+                            @endif
+                        </div>
+                        <nav>
+                            <ul class="pagination mb-0" id="constantsPagination">
+                                @include('admin.constants.partials.pagination', ['constants' => $constants])
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
             </div>
         </div>
-
-        <!-- Modals Container -->
-        <div id="modalsContainer">
-            @include('admin.constants.partials.modals', ['constants' => $constants])
-        </div>
     </div>
+
+    <!-- Modals Container -->
+    <div id="modalsContainer">
+        @include('admin.constants.partials.modals', ['constants' => $constants])
+    </div>
+</div>
 @endsection
 
 @push('scripts')

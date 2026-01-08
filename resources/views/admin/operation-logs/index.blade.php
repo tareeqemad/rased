@@ -15,35 +15,36 @@
 @section('content')
     <input type="hidden" id="csrfToken" value="{{ csrf_token() }}">
 
-    <div class="operation-logs-page">
+    <div class="general-page" id="operationLogsPage">
         <div class="row g-3">
-            {{-- Main: قائمة سجلات التشغيل --}}
             <div class="col-12">
-                <div class="log-card">
-                    <div class="log-card-header log-toolbar-header">
-                        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
-                            <div>
-                                <div class="log-title">
-                                    <i class="bi bi-journal-text me-2"></i>
-                                    سجلات التشغيل
-                                </div>
-                                <div class="log-subtitle">
-                                    البحث والفلترة وإدارة سجلات التشغيل. العدد: <span id="operationLogsCount">{{ isset($operationLogs) ? $operationLogs->total() : 0 }}</span>
-                                </div>
+                <div class="general-card">
+                    <div class="general-card-header">
+                        <div>
+                            <h5 class="general-title">
+                                <i class="bi bi-journal-text me-2"></i>
+                                سجلات التشغيل
+                            </h5>
+                            <div class="general-subtitle">
+                                البحث والفلترة وإدارة سجلات التشغيل. العدد: <span id="operationLogsCount">{{ isset($operationLogs) ? $operationLogs->total() : 0 }}</span>
                             </div>
+                        </div>
 
+                        <div class="d-flex gap-2">
                             @can('create', App\Models\OperationLog::class)
                                 <a href="{{ route('admin.operation-logs.create') }}" class="btn btn-primary">
-                                    <i class="bi bi-plus-circle me-2"></i>
+                                    <i class="bi bi-plus-lg me-1"></i>
                                     إضافة سجل جديد
                                 </a>
                             @endcan
                         </div>
+                    </div>
 
+                    <div class="card-body pb-4">
                         {{-- كارد واحد للفلاتر --}}
-                        <div class="card border mb-3">
-                            <div class="card-header bg-light">
-                                <h6 class="card-title mb-0">
+                        <div class="filter-card">
+                            <div class="card-header">
+                                <h6 class="card-title">
                                     <i class="bi bi-funnel me-2"></i>
                                     فلاتر البحث
                                 </h6>
@@ -253,9 +254,10 @@
                                 </div>
                             </div>
                         </div>
-                    </div>
 
-                    <div class="card-body log-list-body data-table-container">
+                        <hr class="my-3">
+
+                        <div class="data-table-container">
                         <div id="operationLogsListContainer">
                             @if(request()->filled('operator_id') && request()->filled('generation_unit_id'))
                                 @if(isset($groupedLogs) && $groupedLogs->isNotEmpty())

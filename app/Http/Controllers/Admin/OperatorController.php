@@ -100,20 +100,12 @@ class OperatorController extends Controller
 
     /**
      * Show the form for creating a new resource.
+     * 
+     * @deprecated المشغلون الآن يقدمون طلبات انضمام من الموقع العام
      */
     public function create(Request $request): View
     {
-        $this->authorize('create', Operator::class);
-
-        // للـ AJAX مودال: رجع form partial فقط
-        if ($request->ajax()) {
-            return view('admin.operators.partials.form', [
-                'mode' => 'create',
-                'operator' => new Operator(),
-            ]);
-        }
-
-        return view('admin.operators.create');
+        abort(404, 'تم إلغاء هذه الصفحة. المشغلون يقدمون طلبات انضمام من الموقع العام.');
     }
 
     /**

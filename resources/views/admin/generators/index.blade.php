@@ -13,35 +13,36 @@
 @section('content')
     <input type="hidden" id="csrfToken" value="{{ csrf_token() }}">
 
-    <div class="generators-page">
+    <div class="general-page" id="generatorsPage">
         <div class="row g-3">
-            {{-- Main: قائمة المولدات --}}
             <div class="col-12">
-                <div class="card gen-card">
-                    <div class="gen-card-header gen-toolbar-header">
-                        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
-                            <div>
-                                <div class="gen-title">
-                                    <i class="bi bi-lightning-charge me-2"></i>
-                                    إدارة المولدات
-                                </div>
-                                <div class="gen-subtitle">
-                                    البحث والفلترة وإدارة المولدات. العدد: <span id="generatorsCount">{{ $generators->total() }}</span>
-                                </div>
+                <div class="general-card">
+                    <div class="general-card-header">
+                        <div>
+                            <h5 class="general-title">
+                                <i class="bi bi-lightning-charge me-2"></i>
+                                إدارة المولدات
+                            </h5>
+                            <div class="general-subtitle">
+                                البحث والفلترة وإدارة المولدات. العدد: <span id="generatorsCount">{{ $generators->total() }}</span>
                             </div>
+                        </div>
 
+                        <div class="d-flex gap-2">
                             @can('create', App\Models\Generator::class)
                                 <a href="{{ route('admin.generators.create') }}" class="btn btn-primary">
-                                    <i class="bi bi-plus-circle me-2"></i>
+                                    <i class="bi bi-plus-lg me-1"></i>
                                     إضافة مولد جديد
                                 </a>
                             @endcan
                         </div>
+                    </div>
 
+                    <div class="card-body pb-4">
                         {{-- كارد واحد للفلاتر --}}
-                        <div class="card border mt-3 mb-3">
-                            <div class="card-header bg-light">
-                                <h6 class="card-title mb-0">
+                        <div class="filter-card">
+                            <div class="card-header">
+                                <h6 class="card-title">
                                     <i class="bi bi-funnel me-2"></i>
                                     فلاتر البحث
                                 </h6>
@@ -117,18 +118,20 @@
                                 </div>
                             </div>
                         </div>
-                    </div>
 
-                    <div class="card-body position-relative gen-list-body">
-                        <div id="generatorsLoadingOverlay" class="gen-loading" style="display:none;">
-                            <div class="text-center">
-                                <div class="spinner-border" role="status"></div>
-                                <div class="mt-2 text-muted fw-semibold">جاري التحميل...</div>
+                        <hr class="my-3">
+
+                        <div class="position-relative" id="generatorsListContainer">
+                            <div id="generatorsLoadingOverlay" class="gen-loading" style="display:none;">
+                                <div class="text-center">
+                                    <div class="spinner-border" role="status"></div>
+                                    <div class="mt-2 text-muted fw-semibold">جاري التحميل...</div>
+                                </div>
                             </div>
-                        </div>
 
-                        <div id="generatorsListContainer">
-                            @include('admin.generators.partials.list', ['generators' => $generators])
+                            <div id="generatorsListContent">
+                                @include('admin.generators.partials.list', ['generators' => $generators])
+                            </div>
                         </div>
                     </div>
                 </div>

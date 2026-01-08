@@ -20,6 +20,7 @@ class DatabaseSeeder extends Seeder
             ConstantSeeder::class,
             SettingsSeeder::class,
             UserSeeder::class,
+            AuthorizedPhoneSeeder::class,
             OperatorsWithDataSeeder::class,
             ComplaintSuggestionSeeder::class,
             MessageSeeder::class,

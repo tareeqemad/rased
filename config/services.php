@@ -35,4 +35,10 @@ return [
         ],
     ],
 
+    'hotsms' => [
+        'username' => env('HOTSMS_USERNAME', 'E-SER-GEDCO'),
+        'password' => env('HOTSMS_PASSWORD', '6770585'),
+        'sender' => env('HOTSMS_SENDER', 'E-SER-GEDCO'),
+    ],
+
 ];

@@ -4,6 +4,8 @@
 
 @php
     $breadcrumbTitle = 'إضافة مولد جديد';
+    $breadcrumbParent = 'إدارة المولدات';
+    $breadcrumbParentUrl = route('admin.generators.index');
 @endphp
 
 @push('styles')
@@ -11,29 +13,27 @@
 @endpush
 
 @section('content')
-    <div class="generators-page">
+    <div class="general-page">
         <div class="row g-3">
             <div class="col-12">
-                <div class="card gen-card">
-                    <div class="gen-card-header gen-toolbar-header">
-                        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
-                            <div>
-                                <div class="gen-title">
-                                    <i class="bi bi-lightning-charge me-2"></i>
-                                    إضافة مولد جديد
-                                </div>
-                                <div class="gen-subtitle">
-                                    قم بإدخال جميع بيانات المولد الكهربائي
-                                </div>
+                <div class="general-card">
+                    <div class="general-card-header">
+                        <div>
+                            <h5 class="general-title">
+                                <i class="bi bi-lightning-charge me-2"></i>
+                                إضافة مولد جديد
+                            </h5>
+                            <div class="general-subtitle">
+                                قم بإدخال جميع بيانات المولد الكهربائي
                             </div>
-                            <a href="{{ route('admin.generators.index') }}" class="btn btn-outline-secondary">
-                                <i class="bi bi-arrow-right me-2"></i>
-                                العودة للقائمة
-                            </a>
                         </div>
+                        <a href="{{ route('admin.generators.index') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-right me-2"></i>
+                            العودة للقائمة
+                        </a>
                     </div>
 
-                    <div class="card-body p-4">
+                    <div class="card-body">
                         <form action="{{ route('admin.generators.store') }}" method="POST" enctype="multipart/form-data" id="generatorForm">
                             @csrf
 
@@ -376,10 +376,14 @@
                             </div>
                         </div>
                     </div>
+                        </div>
                     </div>
+                    </form>
+
+                    <hr class="my-4">
 
                     <!-- Navigation Buttons -->
-                    <div class="d-flex justify-content-between align-items-center mt-4 pt-4 border-top">
+                    <div class="d-flex justify-content-between align-items-center">
                         <button type="button" class="btn btn-outline-primary btn-lg px-4 rounded-pill shadow-sm" id="prevBtn" onclick="navigateTabs(-1)" style="display: none;">
                             <i class="bi bi-arrow-right me-2"></i>السابق
                         </button>
@@ -390,12 +394,11 @@
                             <button type="button" class="btn btn-primary btn-lg px-5 rounded-pill shadow" id="nextBtn" onclick="navigateTabs(1)">
                                 التالي<i class="bi bi-arrow-left ms-2"></i>
                             </button>
-                            <button type="submit" class="btn btn-success btn-lg px-5 rounded-pill shadow" id="submitBtn" style="display: none;">
+                            <button type="submit" form="generatorForm" class="btn btn-success btn-lg px-5 rounded-pill shadow" id="submitBtn" style="display: none;">
                                 <i class="bi bi-check-lg me-2"></i>حفظ البيانات
                             </button>
                         </div>
-                        </div>
-                    </form>
+                    </div>
                 </div>
             </div>
         </div>

@@ -60,6 +60,14 @@ class OperationLogPolicy
             return true;
         }
 
+        // التحقق من أن المشغل معتمد
+        if ($user->isCompanyOwner()) {
+            $operator = $user->ownedOperators()->first();
+            if ($operator && !$operator->isApproved()) {
+                return false;
+            }
+        }
+
         // التحقق من الصلاحية الديناميكية
         if ($user->hasPermission('operation_logs.create')) {
             return true;

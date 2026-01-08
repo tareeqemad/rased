@@ -16,6 +16,7 @@ use App\Http\Controllers\Admin\OperatorController;
 use App\Http\Controllers\Admin\OperatorProfileController;
 use App\Http\Controllers\Admin\OperatorUnitNumberController;
 use App\Http\Controllers\Admin\AuditLogController;
+use App\Http\Controllers\Admin\AuthorizedPhoneController;
 use App\Http\Controllers\Admin\PermissionAuditLogController;
 use App\Http\Controllers\Admin\PermissionsController;
 use App\Http\Controllers\Admin\RoleController;
@@ -26,6 +27,12 @@ use Illuminate\Support\Facades\Route;
 Route::middleware(['auth', 'admin'])->group(function () {
 
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+
+    /**
+     * User Profile (for all users)
+     */
+    Route::get('profile', [\App\Http\Controllers\Admin\ProfileController::class, 'show'])->name('profile.show');
+    Route::put('profile/change-password', [\App\Http\Controllers\Admin\ProfileController::class, 'changePassword'])->name('profile.change-password');
 
     /**
      * Permissions Tree
@@ -170,4 +177,9 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('messages/recent', [MessageController::class, 'getRecentMessages'])->name('messages.recent');
     Route::post('messages/{message}/mark-read', [MessageController::class, 'markAsRead'])->name('messages.mark-read');
     Route::resource('messages', MessageController::class);
+
+    /**
+     * Authorized Phones (Super Admin only)
+     */
+    Route::resource('authorized-phones', AuthorizedPhoneController::class);
 });

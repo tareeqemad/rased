@@ -39,9 +39,9 @@
                         </div>
 
                         {{-- كارد واحد للفلاتر --}}
-                        <div class="card border mt-3 mb-3">
-                            <div class="card-header bg-light">
-                                <h6 class="card-title mb-0">
+                        <div class="filter-card">
+                            <div class="card-header">
+                                <h6 class="card-title">
                                     <i class="bi bi-funnel me-2"></i>
                                     فلاتر البحث
                                 </h6>

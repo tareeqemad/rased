@@ -4,6 +4,8 @@
 
 @php
     $breadcrumbTitle = 'تعديل سجل تشغيل';
+    $breadcrumbParent = 'سجلات التشغيل';
+    $breadcrumbParentUrl = route('admin.operation-logs.index');
 @endphp
 
 @push('styles')
@@ -12,17 +14,17 @@
 @endpush
 
 @section('content')
-    <div class="operation-logs-page">
+    <div class="general-page">
         <div class="row g-3">
             <div class="col-12">
-                <div class="log-card">
-                    <div class="log-card-header">
+                <div class="general-card">
+                    <div class="general-card-header">
                         <div>
-                            <h5 class="log-title">
+                            <h5 class="general-title">
                                 <i class="bi bi-pencil-square me-2"></i>
                                 تعديل سجل التشغيل
                             </h5>
-                            <div class="log-subtitle">
+                            <div class="general-subtitle">
                                 المولد: {{ $operationLog->generator->name }} | 
                                 التاريخ: {{ $operationLog->operation_date->format('Y-m-d') }}
                             </div>
@@ -33,11 +35,10 @@
                         </a>
                     </div>
 
-                    <form action="{{ route('admin.operation-logs.update', $operationLog) }}" method="POST" id="operationLogForm">
-                        @csrf
-                        @method('PUT')
-
-                        <div class="card-body">
+                    <div class="card-body">
+                        <form action="{{ route('admin.operation-logs.update', $operationLog) }}" method="POST" id="operationLogForm">
+                            @csrf
+                            @method('PUT')
                             <div class="row g-3">
                                 <div class="col-12">
                                     <h6 class="fw-bold mb-3">
@@ -400,19 +401,21 @@
                                     @enderror
                                 </div>
                             </div>
+                        </form>
 
-                            <div class="d-flex justify-content-end align-items-center gap-2 mt-4 mb-3">
-                                <a href="{{ route('admin.operation-logs.index') }}" class="btn btn-outline-secondary">
-                                    <i class="bi bi-arrow-right me-2"></i>
-                                    إلغاء
-                                </a>
-                                <button type="submit" class="btn btn-primary" id="submitOperationLogBtn">
-                                    <i class="bi bi-check-lg me-2"></i>
-                                    حفظ التعديلات
-                                </button>
-                            </div>
+                        <hr class="my-4">
+
+                        <div class="d-flex justify-content-end align-items-center gap-2">
+                            <a href="{{ route('admin.operation-logs.index') }}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-right me-2"></i>
+                                إلغاء
+                            </a>
+                            <button type="submit" form="operationLogForm" class="btn btn-primary" id="submitOperationLogBtn">
+                                <i class="bi bi-check-lg me-2"></i>
+                                حفظ التعديلات
+                            </button>
                         </div>
-                    </form>
+                    </div>
                 </div>
             </div>
         </div>

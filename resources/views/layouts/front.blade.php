@@ -20,18 +20,76 @@
     <link rel="stylesheet" href="{{ asset('assets/front/css/main.css') }}">
     
     <style>
-        /* Navigation background without pattern image */
+        /* Navigation background - تصميم أبيض/فضي أنيق */
         .public-nav {
-            background: rgba(20, 26, 107, 0.95) !important;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.1) !important;
-            border-bottom: 2px solid rgba(255, 255, 255, 0.15) !important;
-            backdrop-filter: blur(10px) !important;
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 50%, #f1f5f9 100%) !important;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.05) !important;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
+            backdrop-filter: blur(12px) !important;
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            width: 100% !important;
+            z-index: 9999 !important;
+            padding: 0.85rem 0 !important;
         }
         
-        /* تحسين التباين في الصفحة الرئيسية */
-        body:has(.hero-section) .public-nav {
-            background: rgba(15, 20, 80, 0.98) !important;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.2) !important;
+        /* إضافة padding للـ body لتجنب تغطية المحتوى */
+        body {
+            padding-top: 70px !important;
+        }
+        
+        /* تطبيق الخط والأنماط */
+        .public-nav,
+        .public-nav * {
+            font-family: 'Tajawal', sans-serif !important;
+        }
+        
+        .brand-text {
+            font-weight: 700 !important;
+            font-size: 1.4rem !important;
+            letter-spacing: -0.3px !important;
+            color: #1e293b !important;
+        }
+        
+        .brand-link {
+            color: #1e293b !important;
+        }
+        
+        .nav-link {
+            font-weight: 600 !important;
+            font-size: 0.95rem !important;
+            padding: 0.5rem 1rem !important;
+            border-radius: 8px !important;
+            transition: all 0.2s ease !important;
+            color: #475569 !important;
+        }
+        
+        .nav-link:hover {
+            background: rgba(59, 130, 246, 0.1) !important;
+            color: #3b82f6 !important;
+            transform: translateY(-1px) !important;
+        }
+        
+        .nav-link.active {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+            color: white !important;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.25) !important;
+        }
+        
+        .brand-icon {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+            border-radius: 10px !important;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2) !important;
+        }
+        
+        .brand-icon svg {
+            color: white !important;
+        }
+        
+        .nav-toggle span {
+            background-color: #1e293b !important;
         }
     </style>
     
@@ -67,6 +125,7 @@
                 <li><a href="{{ route('front.map') }}" class="nav-link {{ request()->routeIs('front.map') ? 'active' : '' }}">الخريطة</a></li>
                 <li><a href="{{ route('front.stats') }}" class="nav-link {{ request()->routeIs('front.stats') ? 'active' : '' }}">الإحصائيات</a></li>
                 <li><a href="{{ route('front.about') }}" class="nav-link {{ request()->routeIs('front.about') ? 'active' : '' }}">من نحن</a></li>
+                <li><a href="{{ route('front.join') }}" class="nav-link {{ request()->routeIs('front.join') ? 'active' : '' }}">طلب الانضمام</a></li>
                 <li><a href="{{ route('complaints-suggestions.index') }}" class="nav-link {{ request()->routeIs('complaints-suggestions.*') ? 'active' : '' }}">الشكاوي والمقترحات</a></li>
             </ul>
         </div>
@@ -80,36 +139,7 @@
     <!-- Footer -->
     <footer class="public-footer">
         <div class="footer-container">
-            <div class="footer-grid">
-                <div class="footer-col">
-                    <h3 class="footer-title">عن {{ $siteName ?? 'راصد' }}</h3>
-                    <p class="footer-text">
-                        منصة رقمية متكاملة لتنظيم وإدارة سوق الطاقة في محافظات غزة. نسعى لتوفير خدمة أفضل للمواطنين والمشغلين.
-                    </p>
-                </div>
-                
-                <div class="footer-col">
-                    <h3 class="footer-title">روابط سريعة</h3>
-                    <ul class="footer-links">
-                        <li><a href="{{ route('front.home') }}">الرئيسية</a></li>
-                        <li><a href="{{ route('front.map') }}">خريطة المشغلين</a></li>
-                        <li><a href="{{ route('front.stats') }}">الإحصائيات</a></li>
-                        <li><a href="{{ route('complaints-suggestions.index') }}">الشكاوي والمقترحات</a></li>
-                    </ul>
-                </div>
-                
-                <div class="footer-col">
-                    <h3 class="footer-title">تواصل معنا</h3>
-                    <ul class="footer-links">
-                        <li><a href="{{ route('complaints-suggestions.create') }}">إرسال شكوى</a></li>
-                        <li><a href="{{ route('complaints-suggestions.create') }}">إرسال اقتراح</a></li>
-                    </ul>
-                </div>
-            </div>
-            
-            <div class="footer-bottom">
-                <p>&copy; {{ date('Y') }} {{ $siteName ?? 'راصد' }}. جميع الحقوق محفوظة.</p>
-            </div>
+            <p class="footer-copyright">جميع الحقوق محفوظة © 2026 {{ $siteName ?? 'راصد' }}.</p>
         </div>
     </footer>
 
@@ -121,4 +151,3 @@
     @stack('scripts')
 </body>
 </html>
-

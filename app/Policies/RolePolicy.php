@@ -46,8 +46,20 @@ class RolePolicy
      */
     public function create(User $user): bool
     {
-        // Admin (سلطة الطاقة) يمكنه إنشاء أدوار جديدة (فني، موظفين، إلخ)
-        return $user->isSuperAdmin() || $user->isAdmin() || $user->isCompanyOwner();
+        if ($user->isSuperAdmin() || $user->isAdmin()) {
+            return true;
+        }
+
+        // CompanyOwner يحتاج مشغل معتمد
+        if ($user->isCompanyOwner()) {
+            $operator = $user->ownedOperators()->first();
+            if ($operator && !$operator->isApproved()) {
+                return false;
+            }
+            return true;
+        }
+
+        return false;
     }
 
     /**

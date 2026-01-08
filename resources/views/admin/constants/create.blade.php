@@ -35,18 +35,23 @@
 @endpush
 
 @section('content')
-<div class="constants-page">
+<div class="general-page">
     <div class="row g-3">
         <div class="col-12">
             <!-- Card إضافة الثابت الرئيسي -->
-            <div class="card mb-4">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0 fw-bold">
-                        <i class="bi bi-plus-circle me-2"></i>
-                        إضافة ثابت جديد
-                    </h5>
-                    <a href="{{ route('admin.constants.index') }}" class="btn btn-sm">
-                        <i class="bi bi-arrow-right me-1"></i>
+            <div class="general-card mb-4">
+                <div class="general-card-header">
+                    <div>
+                        <h5 class="general-title">
+                            <i class="bi bi-plus-circle me-2"></i>
+                            إضافة ثابت جديد
+                        </h5>
+                        <div class="general-subtitle">
+                            قم بإدخال بيانات الثابت الرئيسي
+                        </div>
+                    </div>
+                    <a href="{{ route('admin.constants.index') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-right me-2"></i>
                         رجوع
                     </a>
                 </div>
@@ -138,13 +143,18 @@
             </div>
             
             <!-- Card تفاصيل الثابت -->
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0 fw-bold">
-                        <i class="bi bi-list-ul me-2"></i>
-                        تفاصيل الثابت
-                    </h5>
-                    <button type="button" class="btn btn-sm btn-primary" id="addNewRowBtn">
+            <div class="general-card">
+                <div class="general-card-header">
+                    <div>
+                        <h5 class="general-title">
+                            <i class="bi bi-list-ul me-2"></i>
+                            تفاصيل الثابت
+                        </h5>
+                        <div class="general-subtitle">
+                            إضافة وإدارة تفاصيل الثابت
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-primary" id="addNewRowBtn">
                         <i class="bi bi-plus-circle me-1"></i>
                         إضافة تفصيل
                     </button>

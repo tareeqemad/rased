@@ -304,6 +304,7 @@ private function ajaxIndex(Request $request, User $actor): JsonResponse
         ]);
 
         // ربط الموظف/الفني بمشغل واحد فقط
+        $operator = null;
         if ($user->isEmployee() || $user->isTechnician()) {
             if ($authUser->isCompanyOwner()) {
                 $operator = $authUser->ownedOperators()->first();
@@ -318,11 +319,27 @@ private function ajaxIndex(Request $request, User $actor): JsonResponse
                     $user->delete();
                     return $this->jsonOrRedirect($request, false, 'اختر المشغل لربط الموظف/الفني.');
                 }
+                $operator = Operator::find($operatorId);
                 $user->operators()->sync([$operatorId]);
+            }
+            
+            // إذا كان Admin/Super Admin يضيف user للمشغل، تفعيل المشغل
+            if (($authUser->isSuperAdmin() || $authUser->isAdmin()) && $operator && !$operator->is_approved) {
+                $operator->update(['is_approved' => true]);
+            }
+        } elseif ($user->isCompanyOwner() && ($authUser->isSuperAdmin() || $authUser->isAdmin())) {
+            // إذا كان Admin/Super Admin يضيف CompanyOwner، ربطه بالمشغل وتفعيل المشغل
+            $operatorId = (int)$request->input('operator_id');
+            if ($operatorId) {
+                $operator = Operator::find($operatorId);
+                if ($operator && !$operator->is_approved) {
+                    // تفعيل المشغل عند إضافة user له
+                    $operator->update(['is_approved' => true]);
+                }
             }
         }
 
-        // إنشاء 3 رسائل افتراضية للمستخدم الجديد
+        // إنشاء 3 رسائل ترحيبية للمستخدم الجديد
         try {
             $user->createDefaultMessages();
         } catch (\Exception $e) {

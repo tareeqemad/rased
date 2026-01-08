@@ -17,17 +17,17 @@
 @endpush
 
 @section('content')
-    <div class="users-page">
+    <div class="general-page">
         <div class="row g-3">
             <div class="col-12">
-                <div class="users-card">
-                    <div class="users-card-header">
+                <div class="general-card">
+                    <div class="general-card-header">
                         <div>
-                            <h5 class="users-title">
+                            <h5 class="general-title">
                                 <i class="bi bi-person-plus me-2"></i>
                                 {{ $breadcrumbTitle }}
                             </h5>
-                            <div class="users-subtitle">
+                            <div class="general-subtitle">
                                 @if($authUser->isCompanyOwner())
                                     سيتم ربط المستخدم تلقائيًا بالمشغل الخاص بك.
                                 @else

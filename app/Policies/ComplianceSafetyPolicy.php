@@ -40,6 +40,19 @@ class ComplianceSafetyPolicy
             return true;
         }
 
+        // التحقق من أن المشغل معتمد
+        if ($user->isCompanyOwner()) {
+            $operator = $user->ownedOperators()->first();
+            if ($operator && !$operator->isApproved()) {
+                return false;
+            }
+        } elseif ($user->isEmployee() || $user->isTechnician()) {
+            $operator = $user->operators()->first();
+            if ($operator && !$operator->isApproved()) {
+                return false;
+            }
+        }
+
         if ($user->hasPermission('compliance_safeties.create')) {
             return true;
         }

@@ -32,7 +32,7 @@
 @endpush
 
 @section('content')
-<div class="users-page"
+<div class="general-page"
      id="usersPage"
      data-index-url="{{ route('admin.users.index') }}"
      data-users-base-url="{{ route('admin.users.index') }}"
@@ -42,15 +42,15 @@
 
     <div class="row g-3">
         <div class="col-12">
-            <div class="users-card">
+            <div class="general-card">
 
-                <div class="users-card-header">
+                <div class="general-card-header">
                     <div>
-                        <h5 class="users-title">
+                        <h5 class="general-title">
                             <i class="bi bi-people me-2"></i>
                             إدارة المستخدمين
                         </h5>
-                        <div class="users-subtitle">
+                        <div class="general-subtitle">
                             إدارة الحسابات حسب الصلاحيات والارتباط بالمشغل.
                         </div>
                     </div>
@@ -75,9 +75,9 @@
 
 
                     {{-- كارد واحد للفلاتر --}}
-                    <div class="card border mb-3">
-                        <div class="card-header bg-light">
-                            <h6 class="card-title mb-0">
+                    <div class="filter-card">
+                        <div class="card-header">
+                            <h6 class="card-title">
                                 <i class="bi bi-funnel me-2"></i>
                                 فلاتر البحث
                             </h6>
@@ -150,18 +150,19 @@
                         </div>
                     </div>
 
+                    <hr class="my-3">
 
                     <div class="table-responsive" id="usersTableContainer">
-                        <table class="table table-hover align-middle mb-0 users-table">
+                        <table class="table table-hover align-middle mb-0 general-table">
                             <thead>
                             <tr>
                                 <th style="min-width:220px;">الاسم</th>
                                 <th>اسم المستخدم</th>
                                 <th>البريد الإلكتروني</th>
-                                <th>الدور</th>
-                                <th>المشغل</th>
-                                <th>عدد الموظفين</th>
-                                <th style="min-width:140px;">الإجراءات</th>
+                                <th class="text-center">الدور</th>
+                                <th class="text-center">المشغل</th>
+                                <th class="text-center">عدد الموظفين</th>
+                                <th style="min-width:140px;" class="text-center">الإجراءات</th>
                             </tr>
                             </thead>
                             <tbody id="usersTbody">
@@ -472,8 +473,8 @@
                         <tr>
                             <td>
                                 <div class="d-flex align-items-center gap-2">
-                                    <div class="avatar-pill">${escapeHtml(initials)}</div>
-                                    <div>
+                                    <div class="avatar-pill flex-shrink-0">${escapeHtml(initials)}</div>
+                                    <div class="flex-grow-1">
                                         <div class="fw-bold">${escapeHtml(name)}</div>
                                         <div class="small text-muted">#${escapeHtml(u.id)}</div>
                                     </div>

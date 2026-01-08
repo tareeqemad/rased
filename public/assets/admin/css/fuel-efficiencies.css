@@ -11,55 +11,7 @@
     --log-muted: #6b7280;
 }
 
-/* Card base */
-.fuel-efficiencies-page .log-card{
-    border: 1px solid var(--log-border);
-    border-radius: 14px;
-    background: var(--log-surface);
-    overflow: hidden;
-    box-shadow: 0 2px 10px rgba(15,23,42,.04);
-    position: relative;
-}
-
-/* خط Accent رفيع */
-.fuel-efficiencies-page .log-card::before{
-    content:"";
-    position:absolute;
-    top:0; left:0; right:0;
-    height: 3px;
-    background: rgba(var(--primary-rgb), .85);
-}
-
-.fuel-efficiencies-page .card-header{
-    background: var(--log-surface) !important;
-    color: var(--log-text) !important;
-    border-bottom: 1px solid var(--log-border-2) !important;
-}
-.fuel-efficiencies-page .card-header *{
-    color: var(--log-text) !important;
-}
-
-/* Header */
-.fuel-efficiencies-page .log-card-header{
-    background: var(--log-surface) !important;
-    color: var(--log-text) !important;
-    border-bottom: 1px solid var(--log-border-2);
-    padding: 1rem 1.25rem;
-}
-.fuel-efficiencies-page .log-card-header *{
-    color: inherit;
-}
-
-.fuel-efficiencies-page .log-title{
-    font-weight: 800;
-    font-size: 1rem;
-    color: var(--log-text);
-}
-.fuel-efficiencies-page .log-subtitle{
-    font-size: .85rem;
-    color: var(--log-muted);
-    margin-top: .25rem;
-}
+/* Card styles removed - using general-card from general-cards.css */
 
 /* List Body */
 .fuel-efficiencies-page .log-list-body{

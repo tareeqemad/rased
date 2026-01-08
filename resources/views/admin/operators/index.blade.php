@@ -13,36 +13,30 @@
 <div class="operators-page">
 
     @if(auth()->user()->isSuperAdmin())
-        <div class="row g-3">
-            <div class="col-12">
-                <div class="op-card">
-                    <div class="op-card-header">
-                        <div>
-                            <h5 class="op-title">
-                                <i class="bi bi-buildings me-2"></i>
-                                إدارة المشغلين
-                            </h5>
-                            <div class="op-subtitle">
-                                إدارة المشغلين والموظفين التابعين لهم.
+        <div class="general-page" id="operatorsPage">
+            <div class="row g-3">
+                <div class="col-12">
+                    <div class="general-card">
+                        <div class="general-card-header">
+                            <div>
+                                <h5 class="general-title">
+                                    <i class="bi bi-buildings me-2"></i>
+                                    إدارة المشغلين
+                                </h5>
+                                <div class="general-subtitle">
+                                    إدارة المشغلين والموظفين التابعين لهم.
+                                </div>
+                            </div>
+
+                            <div class="d-flex gap-2">
                             </div>
                         </div>
 
-                        <div class="d-flex gap-2">
-                            @can('create', App\Models\Operator::class)
-                                <button class="btn btn-primary" id="openCreateOperator"
-                                        data-url="{{ route('admin.operators.create') }}">
-                                    <i class="bi bi-plus-lg me-1"></i>
-                                    إضافة مشغل
-                                </button>
-                            @endcan
-                        </div>
-                    </div>
-
-                    <div class="card-body pb-4">
+                        <div class="card-body pb-4">
                         {{-- كارد واحد للفلاتر --}}
-                        <div class="card border mb-3">
-                            <div class="card-header bg-light">
-                                <h6 class="card-title mb-0">
+                        <div class="filter-card">
+                            <div class="card-header">
+                                <h6 class="card-title">
                                     <i class="bi bi-funnel me-2"></i>
                                     فلاتر البحث
                                 </h6>
@@ -89,6 +83,8 @@
                             </div>
                         </div>
 
+                        <hr class="my-3">
+
                         {{-- list (body + footer pagination) --}}
                         <div class="position-relative" id="operatorsListWrap">
                             {{-- Loading overlay --}}
@@ -104,6 +100,7 @@
                 </div>
             </div>
         </div>
+    </div>
 
         {{-- Modal: Create/Edit --}}
         <div class="modal fade" id="operatorModal" tabindex="-1" aria-hidden="true">
@@ -516,11 +513,6 @@
         // edit modal
         $wrap.find('[data-action="edit-operator"]').off('click').on('click', function (e) {
             e.preventDefault();
-            openOperatorModal($(this).data('url'));
-        });
-
-        // create modal
-        $('#openCreateOperator').off('click').on('click', function () {
             openOperatorModal($(this).data('url'));
         });
 

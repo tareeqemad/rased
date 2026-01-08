@@ -11,81 +11,6 @@
 @push('styles')
     <link rel="stylesheet" href="{{ asset('assets/admin/css/data-table-loading.css') }}">
     <style>
-        .perm-audit-page {
-            --r-border: #e5e7eb;
-            --r-border2: #eef2f7;
-            --r-surface: #ffffff;
-            --r-subtle: #f8fafc;
-            --r-text: #0f172a;
-            --r-muted: #64748b;
-            margin-bottom: 2rem;
-        }
-
-        .perm-audit-page .perm-audit-card {
-            position: relative;
-            border: 1px solid var(--r-border);
-            border-radius: 14px;
-            background: var(--r-surface);
-            overflow: hidden;
-            box-shadow: 0 2px 10px rgba(15, 23, 42, .04);
-        }
-
-        .perm-audit-page .perm-audit-card::before {
-            content: "";
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 3px;
-            background: rgba(var(--primary-rgb), .85);
-        }
-
-        .perm-audit-page .perm-audit-card-header {
-            padding: 1rem 1.25rem;
-            border-bottom: 1px solid var(--r-border2);
-            background: var(--r-surface);
-            display: flex;
-            align-items: flex-start;
-            justify-content: space-between;
-            gap: 1rem;
-        }
-
-        .perm-audit-page .perm-audit-title {
-            font-weight: 900;
-            font-size: 1.05rem;
-            margin: 0;
-            color: var(--r-text);
-        }
-
-        .perm-audit-page .perm-audit-subtitle {
-            margin-top: .25rem;
-            color: var(--r-muted);
-            font-size: .85rem;
-        }
-
-        .perm-audit-page .perm-audit-table {
-            margin-bottom: 0;
-        }
-
-        .perm-audit-page .perm-audit-table thead th {
-            background: var(--r-subtle);
-            border-bottom: 2px solid var(--r-border);
-            font-weight: 700;
-            font-size: .85rem;
-            color: var(--r-text);
-            padding: .75rem 1rem;
-        }
-
-        .perm-audit-page .perm-audit-table tbody td {
-            padding: 1rem;
-            vertical-align: middle;
-            border-bottom: 1px solid var(--r-border2);
-        }
-
-        .perm-audit-page .perm-audit-table tbody tr:hover {
-            background: var(--r-subtle);
-        }
-
         .perm-audit-badge {
             font-weight: 600;
             font-size: .75rem;
@@ -110,44 +35,33 @@
         }
 
         .perm-audit-user-avatar {
-            width: 36px;
-            height: 36px;
+            width: 40px;
+            height: 40px;
             border-radius: 50%;
-            background: rgba(var(--primary-rgb), .1);
+            background: rgba(var(--primary-rgb), .12);
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: 700;
-            color: rgba(var(--primary-rgb), 1);
-            font-size: .85rem;
-        }
-
-        .perm-audit-empty {
-            text-align: center;
-            padding: 3rem 1rem;
-            color: var(--r-muted);
-        }
-
-        .perm-audit-empty i {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-            opacity: .5;
+            color: rgba(var(--primary-rgb), .95);
+            font-size: 0.875rem;
+            flex-shrink: 0;
         }
     </style>
 @endpush
 
 @section('content')
-<div class="perm-audit-page">
+<div class="general-page">
     <div class="row g-3">
         <div class="col-12">
-            <div class="perm-audit-card">
-                <div class="perm-audit-card-header">
+            <div class="general-card">
+                <div class="general-card-header">
                     <div>
-                        <h5 class="perm-audit-title">
+                        <h5 class="general-title">
                             <i class="bi bi-shield-check me-2"></i>
                             سجل تغييرات الصلاحيات
                         </h5>
-                        <div class="perm-audit-subtitle">
+                        <div class="general-subtitle">
                             {{ $isSuperAdmin ? 'متابعة جميع التغييرات على الصلاحيات في النظام' : 'متابعة تغييرات الصلاحيات للموظفين والفنيين التابعين لمشغلك' }}
                         </div>
                     </div>
@@ -156,7 +70,7 @@
                 <div class="card-body pb-4">
                     <div class="table-responsive data-table-container" id="auditLogsTableContainer">
                         @if($auditLogs->count() > 0)
-                            <table class="table table-hover align-middle mb-0 perm-audit-table">
+                            <table class="table table-hover align-middle mb-0 general-table">
                                 <thead>
                                     <tr>
                                         <th style="min-width: 200px;">المستخدم</th>

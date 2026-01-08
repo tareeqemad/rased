@@ -4,6 +4,8 @@
 
 @php
     $breadcrumbTitle = 'تعديل سجل امتثال وسلامة';
+    $breadcrumbParent = 'سجلات الامتثال والسلامة';
+    $breadcrumbParentUrl = route('admin.compliance-safeties.index');
 @endphp
 
 @push('styles')

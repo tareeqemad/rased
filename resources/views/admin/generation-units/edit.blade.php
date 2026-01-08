@@ -4,6 +4,8 @@
 
 @php
     $breadcrumbTitle = 'تعديل وحدة التوليد';
+    $breadcrumbParent = 'وحدات التوليد';
+    $breadcrumbParentUrl = route('admin.generation-units.index');
 @endphp
 
 @push('styles')

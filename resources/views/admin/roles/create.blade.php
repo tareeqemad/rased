@@ -10,7 +10,7 @@
 
 @push('styles')
 <link rel="stylesheet" href="{{ asset('assets/admin/css/custom.css') }}">
-    <link rel="stylesheet" href="{{ asset('assets/admin/css/roles-forms.css') }}">
+<link rel="stylesheet" href="{{ asset('assets/admin/css/roles-forms.css') }}">
 @endpush
 
 @php
@@ -18,17 +18,17 @@
 @endphp
 
 @section('content')
-<div class="roles-page">
+<div class="general-page">
     <div class="row g-3">
         <div class="col-12">
-            <div class="roles-card">
-                <div class="roles-card-header">
+            <div class="general-card">
+                <div class="general-card-header">
                     <div>
-                        <h5 class="roles-title">
+                        <h5 class="general-title">
                             <i class="bi bi-shield-plus me-2"></i>
                             إضافة دور جديد
                         </h5>
-                        <div class="roles-subtitle">
+                        <div class="general-subtitle">
                             @if($isCompanyOwner)
                                 قم بإنشاء دور مخصص لمستخدمي مشغلك وحدد الصلاحيات المناسبة
                             @else

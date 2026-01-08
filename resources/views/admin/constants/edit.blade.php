@@ -35,18 +35,18 @@
 @endpush
 
 @section('content')
-<div class="constants-page">
+<div class="general-page">
     <div class="row g-3">
         <div class="col-12">
             <!-- Card تعديل الثابت الرئيسي -->
-            <div class="constants-card mb-4">
-                <div class="constants-card-header">
+            <div class="general-card mb-4">
+                <div class="general-card-header">
                     <div>
-                        <h5 class="constants-title">
+                        <h5 class="general-title">
                             <i class="bi bi-pencil me-2"></i>
                             تعديل الثابت الرئيسي
                         </h5>
-                        <div class="constants-subtitle">
+                        <div class="general-subtitle">
                             تعديل بيانات الثابت رقم {{ $constant->constant_number }}
                         </div>
                     </div>
@@ -98,14 +98,14 @@
             </div>
             
             <!-- Card تفاصيل الثابت -->
-            <div class="constants-card">
-                <div class="constants-card-header">
+            <div class="general-card">
+                <div class="general-card-header">
                     <div>
-                        <h5 class="constants-title">
+                        <h5 class="general-title">
                             <i class="bi bi-list-ul me-2"></i>
                             تفاصيل الثابت
                         </h5>
-                        <div class="constants-subtitle">
+                        <div class="general-subtitle">
                             إدارة تفاصيل الثابت (يمكن التعديل مباشرة في الجدول)
                         </div>
                     </div>

@@ -51,16 +51,6 @@ class FuelEfficiency extends Model
         return $this->belongsTo(GenerationUnit::class);
     }
 
-    public function operator(): BelongsTo
-    {
-        return $this->belongsTo(Operator::class);
-    }
-
-    public function generationUnit(): BelongsTo
-    {
-        return $this->belongsTo(GenerationUnit::class);
-    }
-
     public function generator(): BelongsTo
     {
         return $this->belongsTo(Generator::class);

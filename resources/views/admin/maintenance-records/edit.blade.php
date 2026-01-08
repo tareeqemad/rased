@@ -4,6 +4,8 @@
 
 @php
     $breadcrumbTitle = 'تعديل سجل صيانة';
+    $breadcrumbParent = 'سجلات الصيانة';
+    $breadcrumbParentUrl = route('admin.maintenance-records.index');
 @endphp
 
 @push('styles')
@@ -11,28 +13,30 @@
 @endpush
 
 @section('content')
-    <div class="maintenance-records-page">
+    <div class="general-page">
         <div class="row g-3">
             <div class="col-12">
-                <div class="card log-card">
-                    <div class="log-card-header">
-                        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-0">
-                            <div>
-                                <div class="log-title">
-                                    <i class="bi bi-pencil-square me-2"></i>
-                                    تعديل سجل الصيانة
-                                </div>
-                                <div class="log-subtitle">
-                                    @if($maintenanceRecord->generator)
-                                        المولد: {{ $maintenanceRecord->generator->name }} | 
-                                    @endif
-                                    التاريخ: {{ $maintenanceRecord->maintenance_date->format('Y-m-d') }}
-                                </div>
+                <div class="general-card">
+                    <div class="general-card-header">
+                        <div>
+                            <h5 class="general-title">
+                                <i class="bi bi-pencil-square me-2"></i>
+                                تعديل سجل الصيانة
+                            </h5>
+                            <div class="general-subtitle">
+                                @if($maintenanceRecord->generator)
+                                    المولد: {{ $maintenanceRecord->generator->name }} | 
+                                @endif
+                                التاريخ: {{ $maintenanceRecord->maintenance_date->format('Y-m-d') }}
                             </div>
                         </div>
+                        <a href="{{ route('admin.maintenance-records.index') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-right me-2"></i>
+                            العودة للقائمة
+                        </a>
                     </div>
 
-                    <div class="card-body p-4">
+                    <div class="card-body">
                         <form action="{{ route('admin.maintenance-records.update', $maintenanceRecord) }}" method="POST" id="maintenanceRecordForm">
                             @csrf
                             @method('PUT')
@@ -271,13 +275,12 @@
 
                             <hr class="my-4">
 
-                            <!-- Action Buttons -->
-                            <div class="d-flex justify-content-between align-items-center">
+                            <div class="d-flex justify-content-end align-items-center gap-2">
                                 <a href="{{ route('admin.maintenance-records.index') }}" class="btn btn-outline-secondary">
                                     <i class="bi bi-arrow-right me-2"></i>
                                     إلغاء
                                 </a>
-                                <button type="submit" class="btn btn-primary px-4">
+                                <button type="submit" class="btn btn-primary">
                                     <i class="bi bi-check-lg me-2"></i>
                                     حفظ التعديلات
                                 </button>

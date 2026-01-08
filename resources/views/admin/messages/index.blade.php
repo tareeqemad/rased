@@ -11,149 +11,116 @@
 @endphp
 
 @push('styles')
-    <link rel="stylesheet" href="{{ asset('assets/admin/css/data-table-loading.css') }}">
-    <link rel="stylesheet" href="{{ asset('assets/admin/css/permissions.css') }}">
-    <link rel="stylesheet" href="{{ asset('assets/admin/css/generators.css') }}">
-    <style>
-        .messages-page {
-            --perm-primary: #667eea;
-            --perm-secondary: #764ba2;
-        }
-        .messages-page .perm-card {
-            border: 1px solid #e5e7eb;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-        }
-        .messages-page .perm-card-header {
-            background: linear-gradient(135deg, var(--perm-primary) 0%, var(--perm-secondary) 100%);
-            color: white;
-            padding: 1.25rem 1.5rem;
-            border-bottom: none;
-        }
-        .messages-page .perm-title {
-            font-size: 1.35rem;
-            font-weight: 700;
-            margin-bottom: 0.25rem;
-            color: white;
-        }
-        .messages-page .perm-subtitle {
-            font-size: 0.9rem;
-            opacity: 0.95;
-            color: white;
-        }
-
-        /* Message Cards Styles (similar to generators) */
-        .messages-page .msg-list {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-        }
-        .messages-page .msg-row {
-            background: white;
-            border: 1px solid #e5e7eb;
-            border-radius: 12px;
-            padding: 1.25rem;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        }
-        .messages-page .msg-row:hover {
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            transform: translateY(-2px);
-        }
-        .messages-page .msg-row.msg-unread {
-            background: linear-gradient(135deg, #e7f3ff 0%, #d0e7ff 100%);
-            border-left: 4px solid #3b82f6;
-        }
-        .messages-page .msg-row-main {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 1rem;
-        }
-        .messages-page .msg-row-content {
-            flex: 1;
-        }
-        .messages-page .msg-row-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1rem;
-        }
-        .messages-page .msg-row-title {
-            display: flex;
-            align-items: center;
-            font-size: 1.1rem;
-            font-weight: 600;
-        }
-        .messages-page .msg-row-meta {
-            display: flex;
-            gap: 0.5rem;
-        }
-        .messages-page .msg-row-details {
-            margin-top: 0.75rem;
-        }
-        .messages-page .msg-detail-item {
-            display: flex;
-            align-items: center;
-            font-size: 0.9rem;
-            margin-bottom: 0.5rem;
-        }
-        .messages-page .msg-detail-item i {
-            width: 20px;
-        }
-        .messages-page .msg-preview {
-            padding-top: 0.5rem;
-            border-top: 1px solid #e9ecef;
-            margin-top: 0.5rem;
-        }
-        .messages-page .msg-row-actions {
-            display: flex;
-            gap: 0.5rem;
-            flex-shrink: 0;
-        }
-        .messages-page .msg-empty-state {
-            padding: 3rem 1rem;
-        }
-        .messages-page .msg-pagination {
-            display: flex;
-            justify-content: center;
-            margin-top: 2rem;
-        }
-    </style>
+<link rel="stylesheet" href="{{ asset('assets/admin/css/data-table-loading.css') }}">
+<style>
+    /* Message Cards Styles */
+    .messages-page .msg-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+    .messages-page .msg-row {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 1.25rem;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .messages-page .msg-row:hover {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        transform: translateY(-2px);
+    }
+    .messages-page .msg-row.msg-unread {
+        background: linear-gradient(135deg, #e7f3ff 0%, #d0e7ff 100%);
+        border-left: 4px solid #3b82f6;
+    }
+    .messages-page .msg-row-main {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    .messages-page .msg-row-content {
+        flex: 1;
+    }
+    .messages-page .msg-row-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+    .messages-page .msg-row-title {
+        display: flex;
+        align-items: center;
+        font-size: 1.1rem;
+        font-weight: 600;
+    }
+    .messages-page .msg-row-meta {
+        display: flex;
+        gap: 0.5rem;
+    }
+    .messages-page .msg-row-details {
+        margin-top: 0.75rem;
+    }
+    .messages-page .msg-detail-item {
+        display: flex;
+        align-items: center;
+        font-size: 0.9rem;
+        margin-bottom: 0.5rem;
+    }
+    .messages-page .msg-detail-item i {
+        width: 20px;
+    }
+    .messages-page .msg-preview {
+        padding-top: 0.5rem;
+        border-top: 1px solid #e9ecef;
+        margin-top: 0.5rem;
+    }
+    .messages-page .msg-row-actions {
+        display: flex;
+        gap: 0.5rem;
+        flex-shrink: 0;
+    }
+    .messages-page .msg-empty-state {
+        padding: 3rem 1rem;
+    }
+    .messages-page .msg-pagination {
+        display: flex;
+        justify-content: center;
+        margin-top: 2rem;
+    }
+</style>
 @endpush
 
 @section('content')
-<div class="messages-page" id="messagesPage" data-index-url="{{ route('admin.messages.index') }}">
+<div class="general-page messages-page" id="messagesPage" data-index-url="{{ route('admin.messages.index') }}">
     <div class="row g-3">
         <div class="col-12">
-            <div class="card perm-card">
-                <div class="perm-card-header">
-                    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
-                        <div>
-                            <div class="perm-title">
-                                <i class="bi bi-envelope me-2"></i>
-                                الرسائل
-                            </div>
-                            <div class="perm-subtitle">
-                                إدارة الرسائل الداخلية. العدد: <span id="messagesCount">{{ $messages->total() }}</span>
-                            </div>
+            <div class="general-card">
+                <div class="general-card-header">
+                    <div>
+                        <h5 class="general-title">
+                            <i class="bi bi-envelope me-2"></i>
+                            الرسائل
+                        </h5>
+                        <div class="general-subtitle">
+                            إدارة الرسائل الداخلية. العدد: <span id="messagesCount">{{ $messages->total() }}</span>
                         </div>
-
-                        @can('create', App\Models\Message::class)
-                            <a href="{{ route('admin.messages.create') }}" class="btn btn-light">
-                                <i class="bi bi-plus-circle me-2"></i>
-                                رسالة جديدة
-                            </a>
-                        @endcan
                     </div>
+                    @can('create', App\Models\Message::class)
+                        <a href="{{ route('admin.messages.create') }}" class="btn btn-primary">
+                            <i class="bi bi-plus-lg me-1"></i>
+                            رسالة جديدة
+                        </a>
+                    @endcan
                 </div>
 
                 <div class="card-body">
-                    {{-- كارد واحد للفلاتر --}}
-                    <div class="card border mb-3">
-                        <div class="card-header bg-light">
-                            <h6 class="card-title mb-0">
+                    {{-- فلاتر البحث --}}
+                    <div class="filter-card">
+                        <div class="card-header">
+                            <h6 class="card-title">
                                 <i class="bi bi-funnel me-2"></i>
                                 فلاتر البحث
                             </h6>
@@ -166,13 +133,21 @@
                                         <i class="bi bi-search me-1"></i>
                                         البحث
                                     </label>
-                                    <input
-                                        type="text"
-                                        id="searchInput"
-                                        class="form-control"
-                                        placeholder="ابحث في الموضوع أو المحتوى..."
-                                        value="{{ request('search', '') }}"
-                                    >
+                                    <div class="general-search">
+                                        <i class="bi bi-search"></i>
+                                        <input
+                                            type="text"
+                                            id="searchInput"
+                                            class="form-control"
+                                            placeholder="ابحث في الموضوع أو المحتوى..."
+                                            value="{{ request('search', '') }}"
+                                        >
+                                        @if(request('search'))
+                                            <button type="button" class="general-clear" id="btnClearSearch" title="إلغاء البحث">
+                                                <i class="bi bi-x-circle"></i>
+                                            </button>
+                                        @endif
+                                    </div>
                                 </div>
 
                                 {{-- نوع الرسالة --}}
@@ -221,23 +196,18 @@
                         </div>
                     </div>
 
-                    {{-- كارد للجدول --}}
-                    <div class="card border">
-                        <div class="card-body">
-                            <div id="messagesLoadingOverlay" class="gen-loading" style="display:none;">
-                                <div class="text-center">
-                                    <div class="spinner-border" role="status"></div>
-                                    <div class="mt-2 text-muted fw-semibold">جاري التحميل...</div>
-                                </div>
-                            </div>
+                    <hr class="my-3">
 
-                            <div id="messagesListContainer">
-                                @include('admin.messages.partials.tbody-rows', ['messages' => $messages])
-                            </div>
-                        </div>
+                    {{-- قائمة الرسائل --}}
+                    <div id="messagesLoadingOverlay" class="data-table-loading" style="display:none;">
+                        <div class="spinner-border text-primary" role="status"></div>
+                        <p class="mt-2 text-muted">جاري التحميل...</p>
+                    </div>
+
+                    <div id="messagesListContainer">
+                        @include('admin.messages.partials.tbody-rows', ['messages' => $messages])
                     </div>
                 </div>
-
             </div>
         </div>
     </div>
@@ -317,6 +287,14 @@
         state.search = '';
         state.type = '';
         state.is_read = '';
+        state.page = 1;
+        loadMessages();
+    });
+
+    // Clear search button
+    $('#btnClearSearch').on('click', function() {
+        $('#searchInput').val('');
+        state.search = '';
         state.page = 1;
         loadMessages();
     });

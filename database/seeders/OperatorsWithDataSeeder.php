@@ -1008,6 +1008,8 @@ class OperatorsWithDataSeeder extends Seeder
             $energyEfficiencyComparisonId = $getRandomConstantId($energyEfficiencyComparisonConstants);
             
             FuelEfficiency::create([
+                'operator_id' => $generator->operator_id,
+                'generation_unit_id' => $generator->generation_unit_id,
                 'generator_id' => $generator->id,
                 'consumption_date' => $consumptionDate,
                 'operating_hours' => $operatingHours,

@@ -24,6 +24,11 @@ class MessagePolicy
      */
     public function view(User $user, Message $message): bool
     {
+        // SuperAdmin و Admin يمكنهما رؤية جميع الرسائل
+        if ($user->isSuperAdmin() || $user->isAdmin()) {
+            return true;
+        }
+
         return $message->canBeViewedBy($user);
     }
 

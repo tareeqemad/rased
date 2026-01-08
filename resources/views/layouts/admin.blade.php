@@ -210,6 +210,9 @@
     <!-- Custom Css -->
     <link rel="stylesheet" href="{{ asset('assets/admin/css/custom.css') }}">
 
+    <!-- General Cards Css -->
+    <link rel="stylesheet" href="{{ asset('assets/admin/css/general-cards.css') }}">
+
     @stack('styles')
 </head>
 <body>
@@ -257,11 +260,7 @@
             <!-- container -->
             <div class="main-container container-fluid">
                 <!-- breadcrumb -->
-                @include('admin.partials.breadcrumb', [
-                    'title' => $breadcrumbTitle ?? '',
-                    'parent' => $breadcrumbParent ?? null,
-                    'parent_url' => $breadcrumbParentUrl ?? null
-                ])
+                @include('admin.partials.breadcrumb')
                 <!-- /breadcrumb -->
 
                 <!-- Flash Messages -->

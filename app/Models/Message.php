@@ -67,6 +67,11 @@ class Message extends Model
      */
     public function canBeViewedBy(User $user): bool
     {
+        // SuperAdmin و Admin يمكنهما رؤية جميع الرسائل
+        if ($user->isSuperAdmin() || $user->isAdmin()) {
+            return true;
+        }
+
         // المرسل يمكنه رؤية رسالته
         if ($this->sender_id === $user->id) {
             return true;

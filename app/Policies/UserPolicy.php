@@ -58,7 +58,16 @@ class UserPolicy
         }
 
         // CompanyOwner ينشئ موظف/فني فقط (التحقق النهائي بالداتا بالـ Controller/Request)
-        return $user->isCompanyOwner();
+        if ($user->isCompanyOwner()) {
+            // التحقق من أن المشغل معتمد
+            $operator = $user->ownedOperators()->first();
+            if ($operator && !$operator->isApproved()) {
+                return false;
+            }
+            return true;
+        }
+
+        return false;
     }
 
     public function update(User $user, User $model): bool

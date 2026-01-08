@@ -12,35 +12,37 @@
 @endpush
 
 @section('content')
-    <div class="compliance-safeties-page">
+    <div class="general-page">
         <div class="row g-3">
             {{-- Main: قائمة الامتثال والسلامة --}}
             <div class="col-12">
-                <div class="card log-card">
-                    <div class="log-card-header log-toolbar-header">
-                        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
-                            <div>
-                                <div class="log-title">
-                                    <i class="bi bi-shield-check me-2"></i>
-                                    الامتثال والسلامة
-                                </div>
-                                <div class="log-subtitle">
-                                    إدارة سجلات الامتثال والسلامة. العدد: <span id="complianceSafetiesCount">{{ isset($groupedLogs) ? $groupedLogs->flatten()->count() : $complianceSafeties->total() }}</span>
-                                </div>
+                <div class="general-card">
+                    <div class="general-card-header">
+                        <div>
+                            <h5 class="general-title">
+                                <i class="bi bi-shield-check me-2"></i>
+                                الامتثال والسلامة
+                            </h5>
+                            <div class="general-subtitle">
+                                إدارة سجلات الامتثال والسلامة. العدد: <span id="complianceSafetiesCount">{{ isset($groupedLogs) ? $groupedLogs->flatten()->count() : $complianceSafeties->total() }}</span>
                             </div>
+                        </div>
 
+                        <div class="d-flex gap-2">
                             @can('create', App\Models\ComplianceSafety::class)
                                 <a href="{{ route('admin.compliance-safeties.create') }}" class="btn btn-primary">
-                                    <i class="bi bi-plus-circle me-2"></i>
+                                    <i class="bi bi-plus-lg me-1"></i>
                                     إضافة سجل جديد
                                 </a>
                             @endcan
                         </div>
+                    </div>
 
+                    <div class="card-body">
                         {{-- كارد واحد للفلاتر --}}
-                        <div class="card border mb-3">
-                            <div class="card-header bg-light">
-                                <h6 class="card-title mb-0">
+                        <div class="filter-card">
+                            <div class="card-header">
+                                <h6 class="card-title">
                                     <i class="bi bi-funnel me-2"></i>
                                     فلاتر البحث
                                 </h6>
@@ -127,48 +129,45 @@
                                 </div>
                             </div>
                         </div>
-                    </div>
 
-                    {{-- Row 3: Card للجدول --}}
-                    <div class="card border mt-3">
-                        <div class="card-body">
-                            @if(request('group_by_operator') && isset($groupedLogs) && $groupedLogs->isNotEmpty())
-                                {{-- Grouped view (non-AJAX only) --}}
-                                @include('admin.compliance-safeties.partials.grouped-list', ['groupedLogs' => $groupedLogs, 'complianceSafeties' => $complianceSafeties])
-                            @else
-                                {{-- Normal table view with AJAX --}}
-                                <div class="table-responsive">
-                                    <table class="table table-hover mb-0">
-                                        <thead class="table-light">
-                                            <tr>
-                                                <th>#</th>
-                                                <th>اسم المشغل</th>
-                                                <th>حالة شهادة السلامة</th>
-                                                <th>تاريخ آخر زيارة</th>
-                                                <th>الجهة المنفذة</th>
-                                                <th>الإجراءات</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="complianceSafetiesTbody">
-                                            @include('admin.compliance-safeties.partials.tbody-rows', ['complianceSafeties' => $complianceSafeties])
-                                        </tbody>
-                                    </table>
-                                </div>
+                        <hr class="my-3">
 
-                                @if(!request('group_by_operator') && isset($complianceSafeties) && $complianceSafeties->hasPages())
-                                    <div class="d-flex justify-content-between align-items-center mt-3">
-                                        <div class="small text-muted">
-                                            عرض {{ $complianceSafeties->firstItem() }} - {{ $complianceSafeties->lastItem() }} من {{ $complianceSafeties->total() }}
-                                        </div>
-                                        <nav>
-                                            <ul class="pagination mb-0" id="complianceSafetiesPagination">
-                                                @include('admin.compliance-safeties.partials.pagination', ['complianceSafeties' => $complianceSafeties])
-                                            </ul>
-                                        </nav>
+                        @if(request('group_by_operator') && isset($groupedLogs) && $groupedLogs->isNotEmpty())
+                            {{-- Grouped view (non-AJAX only) --}}
+                            @include('admin.compliance-safeties.partials.grouped-list', ['groupedLogs' => $groupedLogs, 'complianceSafeties' => $complianceSafeties])
+                        @else
+                            {{-- Normal table view with AJAX --}}
+                            <div class="table-responsive">
+                                <table class="table general-table mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>اسم المشغل</th>
+                                            <th>حالة شهادة السلامة</th>
+                                            <th>تاريخ آخر زيارة</th>
+                                            <th>الجهة المنفذة</th>
+                                            <th>الإجراءات</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="complianceSafetiesTbody">
+                                        @include('admin.compliance-safeties.partials.tbody-rows', ['complianceSafeties' => $complianceSafeties])
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            @if(!request('group_by_operator') && isset($complianceSafeties) && $complianceSafeties->hasPages())
+                                <div class="d-flex justify-content-between align-items-center mt-3">
+                                    <div class="small text-muted">
+                                        عرض {{ $complianceSafeties->firstItem() }} - {{ $complianceSafeties->lastItem() }} من {{ $complianceSafeties->total() }}
                                     </div>
-                                @endif
+                                    <nav>
+                                        <ul class="pagination mb-0" id="complianceSafetiesPagination">
+                                            @include('admin.compliance-safeties.partials.pagination', ['complianceSafeties' => $complianceSafeties])
+                                        </ul>
+                                    </nav>
+                                </div>
                             @endif
-                        </div>
+                        @endif
                     </div>
                 </div>
             </div>

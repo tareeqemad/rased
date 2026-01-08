@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     @php
         $siteName = \App\Models\Setting::get('site_name', 'راصد');
     @endphp
@@ -30,6 +31,13 @@
             overflow: hidden;
         }
 
+        @media (max-width: 1024px) {
+            body {
+                overflow: auto;
+                align-items: flex-start;
+            }
+        }
+
         @keyframes gradientShift {
             0% { background-position: 0% 50%; }
             50% { background-position: 100% 50%; }
@@ -51,6 +59,13 @@
             position: relative;
         }
 
+        @media (max-width: 1024px) {
+            .login-container {
+                overflow: visible;
+                height: auto;
+            }
+        }
+
         .login-form-section {
             padding: 40px 40px;
             display: flex;
@@ -59,6 +74,13 @@
             background: linear-gradient(180deg, #ffffff 0%, #f8f9ff 100%);
             position: relative;
             overflow: hidden;
+        }
+
+        @media (max-width: 1024px) {
+            .login-form-section {
+                overflow: visible;
+                justify-content: flex-start;
+            }
         }
 
         .login-form-section::before {
@@ -579,15 +601,88 @@
             }
 
             .login-form-section {
-                padding: 60px 40px;
+                padding: 40px 30px;
                 min-height: 100vh;
-                overflow-y: auto;
+                overflow: visible;
+            }
+
+            .form-content {
+                padding-bottom: 40px;
             }
         }
 
         @media (max-width: 768px) {
             .login-form-section {
-                padding: 40px 30px;
+                padding: 30px 20px;
+            }
+
+            .form-content {
+                max-width: 100%;
+            }
+
+            .logo-mini {
+                margin-bottom: 24px;
+            }
+
+            .logo-mini img {
+                max-height: 180px;
+            }
+
+            .welcome-text {
+                font-size: 26px;
+                margin-bottom: 8px;
+            }
+
+            .welcome-subtitle {
+                font-size: 13px;
+                margin-bottom: 24px;
+            }
+
+            .form-group {
+                margin-bottom: 18px;
+            }
+
+            .form-label {
+                font-size: 12px;
+                margin-bottom: 6px;
+            }
+
+            .form-input {
+                padding: 11px 14px;
+                font-size: 14px;
+            }
+
+            .form-input.password-input {
+                padding-left: 45px;
+            }
+
+            .password-toggle {
+                left: 14px;
+                padding: 6px;
+            }
+
+            .password-toggle svg {
+                width: 18px;
+                height: 18px;
+            }
+
+            .remember-forgot {
+                margin-bottom: 20px;
+            }
+
+            .remember-me label {
+                font-size: 11px;
+            }
+
+            .login-button {
+                padding: 11px;
+                font-size: 13px;
+            }
+
+            .error-message {
+                padding: 10px 14px;
+                font-size: 11px;
+                margin-bottom: 18px;
             }
 
             .products-grid {
@@ -599,23 +694,202 @@
             .product-item {
                 padding: 20px 15px;
             }
+
+            .product-icon {
+                width: 60px;
+                height: 60px;
+                font-size: 30px;
+            }
+
+            .product-icon svg {
+                width: 32px;
+                height: 32px;
+            }
+
+            .product-name {
+                font-size: 11px;
+            }
+
+            .brand-logo {
+                font-size: 64px;
+            }
+
+            .brand-subtitle {
+                font-size: 16px;
+                margin-bottom: 30px;
+            }
+
+            .brand-description {
+                font-size: 12px;
+                max-width: 100%;
+                padding: 0 20px;
+            }
         }
-        @media (max-width: 1024px) {
-            .login-form-section::-webkit-scrollbar {
-                width: 8px;
+
+        @media (max-width: 480px) {
+            body {
+                padding: 0;
             }
 
-            .login-form-section::-webkit-scrollbar-track {
-                background: #f1f5f9;
+            .login-container {
+                border-radius: 0;
             }
 
-            .login-form-section::-webkit-scrollbar-thumb {
-                background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
-                border-radius: 4px;
+            .login-form-section {
+                padding: 24px 16px;
             }
 
-            .login-form-section::-webkit-scrollbar-thumb:hover {
-                background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+            .logo-mini {
+                margin-bottom: 20px;
+            }
+
+            .logo-mini img {
+                max-height: 150px;
+            }
+
+            .logo-mini-icon {
+                width: 60px;
+                height: 60px;
+                font-size: 32px;
+            }
+
+            .logo-mini-icon svg {
+                width: 40px;
+                height: 40px;
+            }
+
+            .welcome-text {
+                font-size: 22px;
+                margin-bottom: 6px;
+            }
+
+            .welcome-subtitle {
+                font-size: 12px;
+                margin-bottom: 20px;
+            }
+
+            .form-group {
+                margin-bottom: 16px;
+            }
+
+            .form-label {
+                font-size: 11px;
+                margin-bottom: 5px;
+            }
+
+            .form-input {
+                padding: 10px 12px;
+                font-size: 13px;
+                border-radius: 8px;
+            }
+
+            .form-input.password-input {
+                padding-left: 40px;
+            }
+
+            .password-toggle {
+                left: 12px;
+                padding: 5px;
+            }
+
+            .password-toggle svg {
+                width: 16px;
+                height: 16px;
+            }
+
+            .remember-forgot {
+                margin-bottom: 18px;
+            }
+
+            .remember-me input[type="checkbox"] {
+                width: 18px;
+                height: 18px;
+            }
+
+            .remember-me label {
+                font-size: 10px;
+            }
+
+            .login-button {
+                padding: 10px;
+                font-size: 12px;
+                border-radius: 8px;
+            }
+
+            .error-message {
+                padding: 9px 12px;
+                font-size: 10px;
+                margin-bottom: 16px;
+                border-radius: 8px;
+            }
+
+            .products-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 12px;
+                padding: 0 8px;
+            }
+
+            .product-item {
+                padding: 16px 12px;
+                border-radius: 12px;
+            }
+
+            .product-icon {
+                width: 50px;
+                height: 50px;
+                font-size: 26px;
+            }
+
+            .product-icon svg {
+                width: 28px;
+                height: 28px;
+            }
+
+            .product-name {
+                font-size: 10px;
+            }
+
+            .brand-logo {
+                font-size: 48px;
+                margin-bottom: 12px;
+            }
+
+            .brand-subtitle {
+                font-size: 14px;
+                margin-bottom: 24px;
+            }
+
+            .brand-description {
+                font-size: 11px;
+                line-height: 1.6;
+                padding: 0 16px;
+            }
+        }
+
+        @media (max-width: 360px) {
+            .login-form-section {
+                padding: 20px 12px;
+            }
+
+            .logo-mini img {
+                max-height: 120px;
+            }
+
+            .welcome-text {
+                font-size: 20px;
+            }
+
+            .welcome-subtitle {
+                font-size: 11px;
+            }
+
+            .products-grid {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+
+            .product-item {
+                padding: 14px 10px;
             }
         }
     </style>
@@ -827,6 +1101,36 @@
         const loginButtonSpinner = document.getElementById('loginButtonSpinner');
 
         if (loginForm && loginButton) {
+            // تحديث CSRF token من API قبل إرسال النموذج
+            function refreshCSRFToken() {
+                return fetch('{{ route("login.csrf-token") }}', {
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    const tokenInput = loginForm.querySelector('input[name="_token"]');
+                    const metaToken = document.querySelector('meta[name="csrf-token"]');
+                    
+                    if (tokenInput && data.token) {
+                        tokenInput.value = data.token;
+                    }
+                    
+                    if (metaToken && data.token) {
+                        metaToken.setAttribute('content', data.token);
+                    }
+                    
+                    return true;
+                })
+                .catch(error => {
+                    console.error('خطأ في تحديث CSRF token:', error);
+                    return false;
+                });
+            }
+
             loginForm.addEventListener('submit', function(e) {
                 // Check honeypot field (if filled, it's a bot)
                 const honeypot = loginForm.querySelector('input[name="website"]');
@@ -835,13 +1139,32 @@
                     return false;
                 }
 
-                // Disable button and show spinner
-                loginButton.disabled = true;
-                loginButtonText.style.display = 'none';
-                loginButtonSpinner.style.display = 'inline-block';
+                // منع الإرسال المباشر
+                e.preventDefault();
                 
-                // Prevent double submission
-                loginForm.submitDisabled = true;
+                // تحديث CSRF token قبل الإرسال
+                refreshCSRFToken().then((success) => {
+                    // Disable button and show spinner
+                    loginButton.disabled = true;
+                    loginButtonText.style.display = 'none';
+                    loginButtonSpinner.style.display = 'inline-block';
+                    
+                    // Prevent double submission
+                    if (loginForm.submitDisabled) {
+                        return false;
+                    }
+                    loginForm.submitDisabled = true;
+                    
+                    // إرسال النموذج بعد تحديث الـ token
+                    loginForm.submit();
+                }).catch(() => {
+                    // إذا فشل التحديث، أرسل النموذج كما هو
+                    loginButton.disabled = true;
+                    loginButtonText.style.display = 'none';
+                    loginButtonSpinner.style.display = 'inline-block';
+                    loginForm.submitDisabled = true;
+                    loginForm.submit();
+                });
             });
 
             // Re-enable button if form validation fails (after page reload with errors)

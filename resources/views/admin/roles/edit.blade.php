@@ -9,31 +9,38 @@
 @endphp
 
 @section('content')
-    <div class="row">
+<div class="general-page">
+    <div class="row g-3">
         <div class="col-12">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0 fw-bold">
-                        <i class="bi bi-shield-check me-2"></i>
-                        تعديل الدور
-                    </h5>
-                    <a href="{{ route('admin.roles.index') }}" class="btn btn-sm">
-                        <i class="bi bi-arrow-right me-1"></i>
+            <div class="general-card">
+                <div class="general-card-header">
+                    <div>
+                        <h5 class="general-title">
+                            <i class="bi bi-pencil-square me-2"></i>
+                            تعديل الدور
+                        </h5>
+                        <div class="general-subtitle">
+                            تعديل بيانات الدور والصلاحيات
+                        </div>
+                    </div>
+                    <a href="{{ route('admin.roles.index') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-right me-2"></i>
                         رجوع
                     </a>
                 </div>
+
                 <div class="card-body">
                     <form action="{{ route('admin.roles.update', $role) }}" method="POST" id="roleForm">
                         @csrf
                         @method('PUT')
 
-                        <div class="row g-3">
-                            <div class="col-12">
-                                <h6 class="fw-bold text-primary mb-3">
-                                    <i class="bi bi-info-circle me-2"></i>
-                                    بيانات الدور الأساسية
-                                </h6>
-                            </div>
+                        <div class="mb-4">
+                            <h6 class="fw-bold mb-3">
+                                <i class="bi bi-info-circle text-primary me-2"></i>
+                                بيانات الدور الأساسية
+                            </h6>
+
+                            <div class="row g-3">
 
                             <div class="col-md-6">
                                 <label class="form-label">اسم الدور (مفتاح) <span class="text-danger">*</span></label>
@@ -92,42 +99,48 @@
                                 </div>
                             @endif
 
-                            <div class="col-12 mt-4">
-                                <hr>
-                                <h6 class="fw-bold text-primary mb-3">
-                                    <i class="bi bi-shield-check me-2"></i>
-                                    الصلاحيات
-                                </h6>
-                                <div class="alert alert-info">
-                                    <i class="bi bi-info-circle me-2"></i>
-                                    <div>
-                                        <strong>اختيار الصلاحيات:</strong>
-                                        <ul class="mb-0 mt-2">
-                                            <li>يمكنك اختيار مجموعة كاملة من الصلاحيات أو اختيار صلاحيات محددة</li>
-                                            <li>الصلاحيات المحددة هي التي سيحصل عليها المستخدمون المرتبطون بهذا الدور</li>
-                                            @if(auth()->user()->isCompanyOwner())
-                                                <li class="text-warning"><strong>ملاحظة:</strong> الصلاحيات النظامية (إدارة المستخدمين والمشغلين) غير متاحة للمشغلين</li>
-                                            @endif
-                                        </ul>
-                                    </div>
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <div class="mb-4">
+                            <h6 class="fw-bold mb-3">
+                                <i class="bi bi-shield-check text-primary me-2"></i>
+                                الصلاحيات
+                            </h6>
+
+                            <div class="alert alert-info mb-4">
+                                <i class="bi bi-info-circle me-2"></i>
+                                <div>
+                                    <strong>اختيار الصلاحيات:</strong>
+                                    <ul class="mb-0 mt-2">
+                                        <li>يمكنك اختيار مجموعة كاملة من الصلاحيات أو اختيار صلاحيات محددة</li>
+                                        <li>الصلاحيات المحددة هي التي سيحصل عليها المستخدمون المرتبطون بهذا الدور</li>
+                                        @if(auth()->user()->isCompanyOwner())
+                                            <li class="text-warning"><strong>ملاحظة:</strong> الصلاحيات النظامية (إدارة المستخدمين والمشغلين) غير متاحة للمشغلين</li>
+                                        @endif
+                                    </ul>
                                 </div>
                             </div>
 
-                            <div class="col-12">
-                                <div class="permissions-container" style="max-height: 500px; overflow-y: auto; border: 1px solid #e9ecef; border-radius: 0.5rem; padding: 1rem;">
-                                    @foreach($permissions as $group => $groupPermissions)
-                                        <div class="permission-group mb-4">
-                                            <div class="d-flex align-items-center mb-3 p-2 bg-light rounded">
-                                                <input type="checkbox" class="form-check-input me-2 group-checkbox" 
-                                                       data-group="{{ $group }}" id="group_{{ $group }}">
-                                                <label class="form-check-label fw-bold mb-0" for="group_{{ $group }}">
-                                                    {{ $groupPermissions->first()->group_label }}
-                                                    <span class="badge bg-primary ms-2">{{ $groupPermissions->count() }}</span>
-                                                </label>
-                                            </div>
-                                            <div class="ms-4">
-                                                @foreach($groupPermissions as $permission)
-                                                    <div class="form-check mb-2">
+                            <div class="permissions-container">
+                                @foreach($permissions as $group => $groupPermissions)
+                                    <div class="permission-group">
+                                        <div class="permission-group-header">
+                                            <input type="checkbox" 
+                                                   class="form-check-input group-checkbox" 
+                                                   data-group="{{ $group }}" 
+                                                   id="group_{{ $group }}">
+                                            <label class="form-check-label fw-bold" for="group_{{ $group }}">
+                                                {{ $groupPermissions->first()->group_label }}
+                                                <span class="badge bg-primary ms-2">{{ $groupPermissions->count() }}</span>
+                                            </label>
+                                        </div>
+                                        <div class="permission-items">
+                                            @foreach($groupPermissions as $permission)
+                                                <div class="permission-item">
+                                                    <div class="form-check">
                                                         <input class="form-check-input permission-checkbox" 
                                                                type="checkbox" 
                                                                name="permissions[]" 
@@ -136,25 +149,29 @@
                                                                data-group="{{ $group }}"
                                                                {{ in_array($permission->id, $rolePermissions) ? 'checked' : '' }}>
                                                         <label class="form-check-label" for="permission_{{ $permission->id }}">
-                                                            {{ $permission->label }}
-                                                            <small class="text-muted d-block">{{ $permission->description }}</small>
-                                                            <code class="text-muted" style="font-size: 0.7rem;">{{ $permission->name }}</code>
+                                                            <span class="permission-name">{{ $permission->label }}</span>
+                                                            @if($permission->description)
+                                                                <span class="permission-description">{{ $permission->description }}</span>
+                                                            @endif
+                                                            <span class="permission-key">{{ $permission->name }}</span>
                                                         </label>
                                                     </div>
-                                                @endforeach
-                                            </div>
+                                                </div>
+                                            @endforeach
                                         </div>
-                                    @endforeach
-                                </div>
+                                    </div>
+                                @endforeach
                             </div>
                         </div>
 
-                        <div class="mt-4 pt-3 border-top d-flex justify-content-between align-items-center">
+                        <hr class="my-4">
+
+                        <div class="d-flex justify-content-end align-items-center gap-2">
                             <a href="{{ route('admin.roles.index') }}" class="btn btn-outline-secondary">
                                 <i class="bi bi-x-circle me-2"></i>
                                 إلغاء
                             </a>
-                            <button type="submit" class="btn btn-primary">
+                            <button type="submit" class="btn btn-primary" id="submitBtn">
                                 <i class="bi bi-check-lg me-2"></i>
                                 حفظ التغييرات
                             </button>
@@ -164,12 +181,12 @@
             </div>
         </div>
     </div>
+</div>
 @endsection
 
 @push('styles')
-    <link rel="stylesheet" href="{{ asset('assets/admin/css/roles-forms.css') }}">
-<link rel="stylesheet" href="{{ asset('assets/admin/css/custom.css') }}">
 <link rel="stylesheet" href="{{ asset('assets/admin/css/roles-forms.css') }}">
+<link rel="stylesheet" href="{{ asset('assets/admin/css/custom.css') }}">
 @endpush
 
 @push('scripts')

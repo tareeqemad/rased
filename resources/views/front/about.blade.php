@@ -14,32 +14,125 @@
 
     .about-header {
         text-align: center;
-        margin-bottom: 4rem;
-        padding: 3rem 0;
-        background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%);
-        color: white;
-        border-radius: 20px;
+        margin-bottom: 5rem;
+        padding: 0;
+        background: transparent;
+        border: none;
+        box-shadow: none;
+        font-family: 'Tajawal', sans-serif;
+        position: relative;
     }
 
     .about-header h1 {
-        font-size: 3rem;
+        font-size: 3.5rem;
         font-weight: 900;
-        margin-bottom: 1rem;
+        margin-bottom: 1.5rem;
+        color: #1e293b;
+        position: relative;
+        display: inline-block;
+    }
+    
+    .about-header h1::after {
+        content: '';
+        position: absolute;
+        bottom: -15px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 120px;
+        height: 4px;
+        background: linear-gradient(90deg, transparent 0%, #3b82f6 20%, #10b981 50%, #3b82f6 80%, transparent 100%);
+        border-radius: 2px;
     }
 
     .about-header p {
         font-size: 1.5rem;
-        opacity: 0.95;
+        color: #64748b;
         max-width: 800px;
-        margin: 0 auto;
+        margin: 2.5rem auto 0;
+        font-weight: 500;
+        line-height: 1.8;
+        position: relative;
+        padding-bottom: 2rem;
+    }
+    
+    .about-header p::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 80%;
+        max-width: 600px;
+        height: 1px;
+        background: linear-gradient(90deg, transparent 0%, rgba(59, 130, 246, 0.2) 20%, rgba(16, 185, 129, 0.3) 50%, rgba(59, 130, 246, 0.2) 80%, transparent 100%);
     }
 
     .about-section {
-        background: white;
-        border-radius: 20px;
-        padding: 3rem;
-        margin-bottom: 2rem;
-        box-shadow: var(--shadow-md);
+        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+        border-radius: 24px;
+        padding: 3.5rem;
+        margin-bottom: 2.5rem;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+        border: 1px solid rgba(59, 130, 246, 0.1);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .about-section::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        transform: scaleX(0);
+        transition: transform 0.4s ease;
+    }
+    
+    .about-section:nth-of-type(1)::before {
+        background: linear-gradient(90deg, #3b82f6 0%, #2563eb 50%, #1d4ed8 100%);
+    }
+    
+    .about-section:nth-of-type(2)::before {
+        background: linear-gradient(90deg, #10b981 0%, #059669 50%, #047857 100%);
+    }
+    
+    .about-section:nth-of-type(3)::before {
+        background: linear-gradient(90deg, #f59e0b 0%, #d97706 50%, #b45309 100%);
+    }
+    
+    .about-section:nth-of-type(4)::before {
+        background: linear-gradient(90deg, #8b5cf6 0%, #7c3aed 50%, #6d28d9 100%);
+    }
+    
+    .about-section:hover {
+        box-shadow: 0 15px 40px rgba(59, 130, 246, 0.15);
+        transform: translateY(-3px);
+    }
+    
+    .about-section:nth-of-type(1):hover {
+        box-shadow: 0 15px 40px rgba(59, 130, 246, 0.15);
+        border-color: rgba(59, 130, 246, 0.3);
+    }
+    
+    .about-section:nth-of-type(2):hover {
+        box-shadow: 0 15px 40px rgba(16, 185, 129, 0.15);
+        border-color: rgba(16, 185, 129, 0.3);
+    }
+    
+    .about-section:nth-of-type(3):hover {
+        box-shadow: 0 15px 40px rgba(245, 158, 11, 0.15);
+        border-color: rgba(245, 158, 11, 0.3);
+    }
+    
+    .about-section:nth-of-type(4):hover {
+        box-shadow: 0 15px 40px rgba(139, 92, 246, 0.15);
+        border-color: rgba(139, 92, 246, 0.3);
+    }
+    
+    .about-section:hover::before {
+        transform: scaleX(1);
     }
 
     .about-section h2 {
@@ -53,16 +146,56 @@
     }
 
     .about-section-icon {
-        width: 50px;
-        height: 50px;
-        background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%);
-        border-radius: 12px;
+        width: 60px;
+        height: 60px;
+        border-radius: 16px;
         display: flex;
         align-items: center;
         justify-content: center;
         flex-shrink: 0;
+        transition: all 0.3s ease;
     }
-
+    
+    .about-section:nth-of-type(1) .about-section-icon {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        box-shadow: 0 8px 20px rgba(59, 130, 246, 0.25);
+    }
+    
+    .about-section:nth-of-type(1):hover .about-section-icon {
+        transform: rotate(5deg) scale(1.1);
+        box-shadow: 0 12px 30px rgba(59, 130, 246, 0.35);
+    }
+    
+    .about-section:nth-of-type(2) .about-section-icon {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        box-shadow: 0 8px 20px rgba(16, 185, 129, 0.25);
+    }
+    
+    .about-section:nth-of-type(2):hover .about-section-icon {
+        transform: rotate(-5deg) scale(1.1);
+        box-shadow: 0 12px 30px rgba(16, 185, 129, 0.35);
+    }
+    
+    .about-section:nth-of-type(3) .about-section-icon {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        box-shadow: 0 8px 20px rgba(245, 158, 11, 0.25);
+    }
+    
+    .about-section:nth-of-type(3):hover .about-section-icon {
+        transform: rotate(5deg) scale(1.1);
+        box-shadow: 0 12px 30px rgba(245, 158, 11, 0.35);
+    }
+    
+    .about-section:nth-of-type(4) .about-section-icon {
+        background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+        box-shadow: 0 8px 20px rgba(139, 92, 246, 0.3);
+    }
+    
+    .about-section:nth-of-type(4):hover .about-section-icon {
+        transform: rotate(-5deg) scale(1.1);
+        box-shadow: 0 12px 30px rgba(139, 92, 246, 0.4);
+    }
+    
     .about-section-icon svg {
         width: 28px;
         height: 28px;
@@ -95,17 +228,41 @@
     }
 
     .feature-icon {
-        width: 24px;
-        height: 24px;
-        background: var(--primary-color);
+        width: 28px;
+        height: 28px;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
         flex-shrink: 0;
         margin-top: 3px;
+        transition: all 0.3s ease;
     }
-
+    
+    .features-list li:nth-child(1) .feature-icon {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+    
+    .features-list li:nth-child(2) .feature-icon {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    }
+    
+    .features-list li:nth-child(3) .feature-icon {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+    }
+    
+    .features-list li:nth-child(4) .feature-icon {
+        background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+        box-shadow: 0 4px 12px rgba(6, 182, 212, 0.3);
+    }
+    
+    .features-list li:hover .feature-icon {
+        transform: scale(1.15);
+    }
+    
     .feature-icon svg {
         width: 14px;
         height: 14px;
@@ -127,31 +284,123 @@
     }
 
     .goal-card {
-        background: var(--bg-light);
-        border-radius: 16px;
-        padding: 2rem;
+        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+        border-radius: 20px;
+        padding: 2.5rem 2rem;
         text-align: center;
-        border: 2px solid var(--border-color);
-        transition: all 0.3s;
+        border: 1px solid rgba(59, 130, 246, 0.1);
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .goal-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        transform: scaleX(0);
+        transition: transform 0.4s ease;
+    }
+    
+    .goal-card:nth-child(1)::before {
+        background: linear-gradient(90deg, #3b82f6 0%, #2563eb 50%, #1d4ed8 100%);
+    }
+    
+    .goal-card:nth-child(2)::before {
+        background: linear-gradient(90deg, #10b981 0%, #059669 50%, #047857 100%);
+    }
+    
+    .goal-card:nth-child(3)::before {
+        background: linear-gradient(90deg, #f59e0b 0%, #d97706 50%, #b45309 100%);
+    }
+    
+    .goal-card:nth-child(4)::before {
+        background: linear-gradient(90deg, #8b5cf6 0%, #7c3aed 50%, #6d28d9 100%);
     }
 
     .goal-card:hover {
-        border-color: var(--primary-color);
-        transform: translateY(-5px);
-        box-shadow: var(--shadow-md);
+        transform: translateY(-10px) scale(1.02);
+    }
+    
+    .goal-card:nth-child(1):hover {
+        box-shadow: 0 20px 40px rgba(59, 130, 246, 0.15);
+        border-color: rgba(59, 130, 246, 0.3);
+    }
+    
+    .goal-card:nth-child(2):hover {
+        box-shadow: 0 20px 40px rgba(16, 185, 129, 0.15);
+        border-color: rgba(16, 185, 129, 0.3);
+    }
+    
+    .goal-card:nth-child(3):hover {
+        box-shadow: 0 20px 40px rgba(245, 158, 11, 0.15);
+        border-color: rgba(245, 158, 11, 0.3);
+    }
+    
+    .goal-card:nth-child(4):hover {
+        box-shadow: 0 20px 40px rgba(139, 92, 246, 0.15);
+        border-color: rgba(139, 92, 246, 0.3);
+    }
+    
+    .goal-card:hover::before {
+        transform: scaleX(1);
     }
 
     .goal-icon {
-        width: 70px;
-        height: 70px;
+        width: 80px;
+        height: 80px;
         margin: 0 auto 1.5rem;
-        background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%);
-        border-radius: 16px;
+        border-radius: 20px;
         display: flex;
         align-items: center;
         justify-content: center;
+        transition: all 0.4s ease;
     }
-
+    
+    .goal-card:nth-child(1) .goal-icon {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        box-shadow: 0 8px 20px rgba(59, 130, 246, 0.25);
+    }
+    
+    .goal-card:nth-child(1):hover .goal-icon {
+        transform: rotate(5deg) scale(1.15);
+        box-shadow: 0 12px 30px rgba(59, 130, 246, 0.35);
+    }
+    
+    .goal-card:nth-child(2) .goal-icon {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        box-shadow: 0 8px 20px rgba(16, 185, 129, 0.25);
+    }
+    
+    .goal-card:nth-child(2):hover .goal-icon {
+        transform: rotate(-5deg) scale(1.15);
+        box-shadow: 0 12px 30px rgba(16, 185, 129, 0.35);
+    }
+    
+    .goal-card:nth-child(3) .goal-icon {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        box-shadow: 0 8px 20px rgba(245, 158, 11, 0.25);
+    }
+    
+    .goal-card:nth-child(3):hover .goal-icon {
+        transform: rotate(5deg) scale(1.15);
+        box-shadow: 0 12px 30px rgba(245, 158, 11, 0.35);
+    }
+    
+    .goal-card:nth-child(4) .goal-icon {
+        background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+        box-shadow: 0 8px 20px rgba(139, 92, 246, 0.25);
+    }
+    
+    .goal-card:nth-child(4):hover .goal-icon {
+        transform: rotate(-5deg) scale(1.15);
+        box-shadow: 0 12px 30px rgba(139, 92, 246, 0.35);
+    }
+    
     .goal-icon svg {
         width: 36px;
         height: 36px;
@@ -384,4 +633,3 @@
     </div>
 </div>
 @endsection
-

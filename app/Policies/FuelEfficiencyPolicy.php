@@ -45,6 +45,19 @@ class FuelEfficiencyPolicy
             return true;
         }
 
+        // التحقق من أن المشغل معتمد
+        if ($user->isCompanyOwner()) {
+            $operator = $user->ownedOperators()->first();
+            if ($operator && !$operator->isApproved()) {
+                return false;
+            }
+        } elseif ($user->isEmployee() || $user->isTechnician()) {
+            $operator = $user->operators()->first();
+            if ($operator && !$operator->isApproved()) {
+                return false;
+            }
+        }
+
         if ($user->hasPermission('fuel_efficiencies.create')) {
             return true;
         }

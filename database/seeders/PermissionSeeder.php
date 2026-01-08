@@ -69,6 +69,12 @@ class PermissionSeeder extends Seeder
             ['name' => 'generation_units.create', 'label' => 'إنشاء وحدة توليد', 'group' => 'generation_units', 'group_label' => 'وحدات التوليد', 'description' => 'القدرة على إنشاء وحدة توليد جديدة', 'order' => 35],
             ['name' => 'generation_units.update', 'label' => 'تحديث وحدة توليد', 'group' => 'generation_units', 'group_label' => 'وحدات التوليد', 'description' => 'القدرة على تحديث بيانات وحدة التوليد', 'order' => 36],
             ['name' => 'generation_units.delete', 'label' => 'حذف وحدة توليد', 'group' => 'generation_units', 'group_label' => 'وحدات التوليد', 'description' => 'القدرة على حذف وحدة التوليد', 'order' => 37],
+
+            // الأرقام المصرح بها
+            ['name' => 'authorized_phones.view', 'label' => 'عرض الأرقام المصرح بها', 'group' => 'authorized_phones', 'group_label' => 'الأرقام المصرح بها', 'description' => 'القدرة على عرض قائمة الأرقام المصرح بها', 'order' => 38],
+            ['name' => 'authorized_phones.create', 'label' => 'إنشاء رقم مصرح به', 'group' => 'authorized_phones', 'group_label' => 'الأرقام المصرح بها', 'description' => 'القدرة على إضافة رقم جديد للقائمة المصرح بها', 'order' => 39],
+            ['name' => 'authorized_phones.update', 'label' => 'تحديث رقم مصرح به', 'group' => 'authorized_phones', 'group_label' => 'الأرقام المصرح بها', 'description' => 'القدرة على تحديث بيانات الرقم المصرح به', 'order' => 40],
+            ['name' => 'authorized_phones.delete', 'label' => 'حذف رقم مصرح به', 'group' => 'authorized_phones', 'group_label' => 'الأرقام المصرح بها', 'description' => 'القدرة على حذف رقم من القائمة المصرح بها', 'order' => 41],
         ];
 
         foreach ($permissions as $permission) {

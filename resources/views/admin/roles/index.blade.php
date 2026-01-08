@@ -15,17 +15,17 @@
 @endpush
 
 @section('content')
-<div class="roles-page" id="rolesPage" data-index-url="{{ route('admin.roles.index') }}">
+<div class="general-page" id="rolesPage" data-index-url="{{ route('admin.roles.index') }}">
     <div class="row g-3">
         <div class="col-12">
-            <div class="roles-card">
-                <div class="roles-card-header">
+            <div class="general-card">
+                <div class="general-card-header">
                     <div>
-                        <h5 class="roles-title">
+                        <h5 class="general-title">
                             <i class="bi bi-shield-check me-2"></i>
                             {{ $isCompanyOwner ? 'أدوار المستخدمين' : 'إدارة الأدوار' }}
                         </h5>
-                        <div class="roles-subtitle">
+                        <div class="general-subtitle">
                             @if($isCompanyOwner)
                                 إدارة الأدوار والصلاحيات لمستخدمي مشغلك
                             @else
@@ -63,9 +63,9 @@
 
 
                     {{-- كارد واحد للفلاتر --}}
-                    <div class="card border mb-3">
-                        <div class="card-header bg-light">
-                            <h6 class="card-title mb-0">
+                    <div class="filter-card">
+                        <div class="card-header">
+                            <h6 class="card-title">
                                 <i class="bi bi-funnel me-2"></i>
                                 فلاتر البحث
                             </h6>
@@ -78,13 +78,13 @@
                                             <i class="bi bi-search me-1"></i>
                                             بحث
                                         </label>
-                                        <div class="roles-search">
+                                        <div class="general-search">
                                             <i class="bi bi-search"></i>
                                             <input type="text" name="search" id="rolesSearch" class="form-control" 
                                                    placeholder="اسم الدور / التسمية / الوصف..." 
                                                    value="{{ request('search') }}" autocomplete="off">
                                             @if(request('search'))
-                                                <button type="button" class="roles-clear" id="btnClearSearch" title="إلغاء البحث">
+                                                <button type="button" class="general-clear" id="btnClearSearch" title="إلغاء البحث">
                                                     <i class="bi bi-x-circle"></i>
                                                 </button>
                                             @endif
@@ -112,7 +112,7 @@
                     <hr class="my-3">
 
                     <div class="table-responsive" id="rolesTableContainer">
-                        <table class="table table-hover align-middle mb-0 roles-table">
+                        <table class="table table-hover align-middle mb-0 general-table">
                             <thead>
                                 <tr>
                                     <th style="min-width:150px;">اسم الدور</th>

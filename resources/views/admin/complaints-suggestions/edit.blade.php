@@ -5,6 +5,8 @@
 
 @php
     $breadcrumbTitle = 'تعديل الطلب';
+    $breadcrumbParent = 'الشكاوى والمقترحات';
+    $breadcrumbParentUrl = route('admin.complaints-suggestions.index');
 @endphp
 
 @push('styles')

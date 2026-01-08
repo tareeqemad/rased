@@ -17,17 +17,19 @@
             غير مصرح لك بالوصول إلى هذه الصفحة
         </div>
     @else
-    <div class="settings-page">
+    <div class="general-page">
         <div class="row g-3">
             <div class="col-12">
-                <div class="settings-card">
-                    <div class="settings-card-header">
-                        <h5 class="settings-card-title">
-                            <i class="bi bi-gear me-2"></i>
-                            إعدادات الموقع
-                        </h5>
-                        <div class="text-muted" style="margin-top: 0.25rem; font-size: 0.85rem;">
-                            قم بتعديل إعدادات الموقع واللوجو والبيانات الأساسية
+                <div class="general-card">
+                    <div class="general-card-header">
+                        <div>
+                            <h5 class="general-title">
+                                <i class="bi bi-gear me-2"></i>
+                                إعدادات الموقع
+                            </h5>
+                            <div class="general-subtitle">
+                                قم بتعديل إعدادات الموقع واللوجو والبيانات الأساسية
+                            </div>
                         </div>
                     </div>
 
@@ -35,7 +37,7 @@
                         @csrf
                         @method('PUT')
 
-                        <div class="card-body px-4 py-4">
+                        <div class="card-body">
                             <div class="mb-4 px-3">
                                 <h6 class="fw-bold mb-3">
                                     <i class="bi bi-image text-primary me-2"></i>
@@ -230,7 +232,6 @@
                                         </small>
                                     </div>
                                 </div>
-                                </div>
                             </div>
 
                             <hr class="my-4">
@@ -379,10 +380,10 @@
                                 </div>
                             </div>
                             @endif
-                        </div>
 
-                        <div class="card-footer border-top bg-light px-4 py-3">
-                            <div class="d-flex justify-content-between align-items-center gap-2">
+                            <hr class="my-4">
+
+                            <div class="d-flex justify-content-end align-items-center gap-2">
                                 <a href="{{ route('admin.dashboard') }}" class="btn btn-outline-secondary">
                                     <i class="bi bi-x-circle me-2"></i>
                                     إلغاء

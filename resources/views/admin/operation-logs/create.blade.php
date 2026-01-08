@@ -4,6 +4,8 @@
 
 @php
     $breadcrumbTitle = 'إضافة سجل تشغيل';
+    $breadcrumbParent = 'سجلات التشغيل';
+    $breadcrumbParentUrl = route('admin.operation-logs.index');
 @endphp
 
 @push('styles')
@@ -12,17 +14,17 @@
 @endpush
 
 @section('content')
-    <div class="operation-logs-page">
+    <div class="general-page">
         <div class="row g-3">
             <div class="col-12">
-                <div class="log-card">
-                    <div class="log-card-header">
+                <div class="general-card">
+                    <div class="general-card-header">
                         <div>
-                            <h5 class="log-title">
+                            <h5 class="general-title">
                                 <i class="bi bi-journal-plus me-2"></i>
                                 إضافة سجل تشغيل جديد
                             </h5>
-                            <div class="log-subtitle">
+                            <div class="general-subtitle">
                                 قم بإدخال بيانات سجل التشغيل بشكل كامل
                             </div>
                         </div>
@@ -32,10 +34,9 @@
                         </a>
                     </div>
 
-                    <form action="{{ route('admin.operation-logs.store') }}" method="POST" id="operationLogForm">
-                        @csrf
-
-                        <div class="card-body">
+                    <div class="card-body">
+                        <form action="{{ route('admin.operation-logs.store') }}" method="POST" id="operationLogForm">
+                            @csrf
                             <div class="row g-3">
                                 <div class="col-12">
                                     <h6 class="fw-bold mb-3">
@@ -399,7 +400,9 @@
                                 </div>
                             </div>
 
-                            <div class="d-flex justify-content-end align-items-center gap-2 mt-4 mb-3">
+                            <hr class="my-4">
+
+                            <div class="d-flex justify-content-end align-items-center gap-2">
                                 <a href="{{ route('admin.operation-logs.index') }}" class="btn btn-outline-secondary">
                                     <i class="bi bi-arrow-right me-2"></i>
                                     إلغاء
@@ -409,8 +412,8 @@
                                     حفظ البيانات
                                 </button>
                             </div>
-                        </div>
-                    </form>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>

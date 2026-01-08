@@ -75,6 +75,7 @@
                         <button type="submit" class="d-none" id="hiddenSubmitBtn"></button>
                     </form>
                 </div>
+            </div>
 
                 <div class="op-loading d-none" id="profileLoading">
                     <div class="text-center">
@@ -82,7 +83,6 @@
                         <div class="mt-2 text-muted fw-semibold">جاري الحفظ...</div>
                     </div>
                 </div>
-
             </div>
         </div>
 

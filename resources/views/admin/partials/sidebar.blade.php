@@ -143,6 +143,13 @@
                             </li>
                         </ul>
                     </li>
+
+                    <li class="slide {{ $isActive('admin.authorized-phones.*') }}">
+                        <a href="{{ route('admin.authorized-phones.index') }}" class="side-menu__item">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" width="24" height="24" viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
+                            <span class="side-menu__label">الأرقام المصرح بها</span>
+                        </a>
+                    </li>
                 @endif
 
                 {{-- إدارة العمليات --}}
@@ -152,17 +159,15 @@
 
                 {{-- المشغلون --}}
                 @can('viewAny', App\Models\Operator::class)
-                    <li class="slide has-sub {{ $isOpen('admin.operators.*') || $isOpen('admin.users.*') || $isOpen('admin.operators.tariff-prices.*') ? 'open' : '' }}">
-                        <a href="javascript:void(0);" class="side-menu__item {{ $isActive('admin.operators.*') || $isActive('admin.users.*') || $isActive('admin.operators.tariff-prices.*') ? 'active' : '' }}">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="side-menu__angle" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-                            <svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" width="24" height="24" viewBox="0 0 24 24"><path d="M4 21h16v-2H4v2zm0-4h16v-2H4v2zm0-4h16v-2H4v2zm0-4h7V5H4v4zm9 0h7V5h-7v4z"/></svg>
-                            <span class="side-menu__label">
-                                {{ $u->isCompanyOwner() ? 'المشغل' : 'المشغلون' }}
-                            </span>
-                        </a>
+                    @if($u->isCompanyOwner())
+                        <li class="slide has-sub {{ $isOpen('admin.operators.*') || $isOpen('admin.users.*') || $isOpen('admin.operators.tariff-prices.*') ? 'open' : '' }}">
+                            <a href="javascript:void(0);" class="side-menu__item {{ $isActive('admin.operators.*') || $isActive('admin.users.*') || $isActive('admin.operators.tariff-prices.*') ? 'active' : '' }}">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="side-menu__angle" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                                <svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" width="24" height="24" viewBox="0 0 24 24"><path d="M4 21h16v-2H4v2zm0-4h16v-2H4v2zm0-4h16v-2H4v2zm0-4h7V5H4v4zm9 0h7V5h-7v4z"/></svg>
+                                <span class="side-menu__label">المشغل</span>
+                            </a>
 
-                        <ul class="slide-menu child1" style="{{ ($show('admin.operators.*') || $show('admin.users.*') || $show('admin.operators.tariff-prices.*') || $show('admin.generation-units.*')) ? 'display:block' : '' }}">
-                            @if($u->isCompanyOwner())
+                            <ul class="slide-menu child1" style="{{ ($show('admin.operators.*') || $show('admin.users.*') || $show('admin.operators.tariff-prices.*') || $show('admin.generation-units.*')) ? 'display:block' : '' }}">
                                 <li class="slide">
                                     <a href="{{ route('admin.operators.profile') }}" class="side-menu__item {{ $isActive('admin.operators.profile') }}">
                                         ملف المشغل
@@ -194,22 +199,9 @@
                                         </a>
                                     </li>
                                 @endcan
-                            @else
-                                <li class="slide">
-                                    <a href="{{ route('admin.operators.index') }}" class="side-menu__item {{ $isActive('admin.operators.index') }}">
-                                        قائمة المشغلين
-                                    </a>
-                                </li>
-                                @can('create', App\Models\Operator::class)
-                                    <li class="slide">
-                                        <a href="{{ route('admin.operators.create') }}" class="side-menu__item {{ $isActive('admin.operators.create') }}">
-                                            إضافة مشغل جديد
-                                        </a>
-                                    </li>
-                                @endcan
-                            @endif
-                        </ul>
-                    </li>
+                            </ul>
+                        </li>
+                    @endif
                 @endcan
 
                 {{-- المولدات + كل ما يتبعها --}}

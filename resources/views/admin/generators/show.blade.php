@@ -12,13 +12,15 @@
 @push('styles')
     <link rel="stylesheet" href="{{ asset('assets/admin/css/generators.css') }}">
     <style>
-        .generators-page .info-section {
+        .generators-page .info-section,
+        .general-page .info-section {
             background: #f8f9fa;
             border-radius: 8px;
             padding: 1.5rem;
             margin-bottom: 1.5rem;
         }
-        .generators-page .info-label {
+        .generators-page .info-label,
+        .general-page .info-label {
             font-weight: 600;
             color: #495057;
             margin-bottom: 0.5rem;
@@ -26,11 +28,13 @@
             align-items: center;
             gap: 0.5rem;
         }
-        .generators-page .info-value {
+        .generators-page .info-value,
+        .general-page .info-value {
             color: #212529;
             font-size: 1rem;
         }
-        .generators-page .image-preview {
+        .generators-page .image-preview,
+        .general-page .image-preview {
             max-width: 300px;
             border-radius: 8px;
             border: 1px solid #dee2e6;
@@ -41,37 +45,35 @@
 @endpush
 
 @section('content')
-<div class="generators-page">
+<div class="general-page">
     <div class="row g-3">
         <div class="col-12">
-            <div class="card gen-card">
-                <div class="gen-card-header gen-toolbar-header">
-                    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
-                        <div>
-                            <div class="gen-title">
-                                <i class="bi bi-lightning-charge me-2"></i>
-                                عرض المولد: {{ $generator->name }}
-                            </div>
-                            <div class="gen-subtitle">
-                                تفاصيل المولد الكهربائي
-                            </div>
+            <div class="general-card">
+                <div class="general-card-header">
+                    <div>
+                        <h5 class="general-title">
+                            <i class="bi bi-lightning-charge me-2"></i>
+                            عرض المولد: {{ $generator->name }}
+                        </h5>
+                        <div class="general-subtitle">
+                            تفاصيل المولد الكهربائي
                         </div>
-                        <div class="d-flex gap-2">
-                            @can('update', $generator)
-                                <a href="{{ route('admin.generators.edit', $generator) }}" class="btn btn-primary">
-                                    <i class="bi bi-pencil me-1"></i>
-                                    تعديل
-                                </a>
-                            @endcan
-                            <a href="{{ route('admin.generators.index') }}" class="btn btn-outline-secondary">
-                                <i class="bi bi-arrow-right me-2"></i>
-                                العودة
+                    </div>
+                    <div class="d-flex gap-2">
+                        @can('update', $generator)
+                            <a href="{{ route('admin.generators.edit', $generator) }}" class="btn btn-primary">
+                                <i class="bi bi-pencil me-1"></i>
+                                تعديل
                             </a>
-                        </div>
+                        @endcan
+                        <a href="{{ route('admin.generators.index') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-right me-2"></i>
+                            العودة
+                        </a>
                     </div>
                 </div>
 
-                <div class="card-body p-4">
+                <div class="card-body">
                     <!-- المعلومات الأساسية -->
                     <div class="info-section">
                         <h5 class="mb-4 fw-bold">

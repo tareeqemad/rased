@@ -2,9 +2,9 @@
 /* Tajawal font is loaded from admin panel */
 
 :root {
-    --primary-color: #19228f;
-    --primary-dark: #141a6b;
-    --primary-light: #2d3ba8;
+    --primary-color: #3b82f6;
+    --primary-dark: #2563eb;
+    --primary-light: #60a5fa;
     --secondary-color: #198754;
     --text-dark: #1e293b;
     --text-gray: #64748b;
@@ -20,6 +20,8 @@
     --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
     --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.15);
 }
+
+/* يمكن تجاوز الألوان من layout إذا تم تعريفها */
 
 * {
     margin: 0;
@@ -94,8 +96,8 @@ body {
 }
 
 .brand-icon {
-    width: 40px;
-    height: 40px;
+    width: 48px;
+    height: 48px;
     background: rgba(255, 255, 255, 0.2);
     border-radius: 10px;
     display: flex;
@@ -105,14 +107,14 @@ body {
 }
 
 .brand-icon svg {
-    width: 24px;
-    height: 24px;
+    width: 28px;
+    height: 28px;
     color: white;
 }
 
 .brand-logo {
-    width: 40px;
-    height: 40px;
+    width: 48px;
+    height: 48px;
     object-fit: contain;
     border-radius: 8px;
 }
@@ -170,69 +172,34 @@ body {
 
 /* Main Content */
 .public-main {
-    min-height: calc(100vh - 200px);
+    min-height: calc(100vh - 70px);
     width: 100%;
     margin: 0;
     padding: 0;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 50%, #f1f5f9 100%);
 }
 
 /* Footer */
 .public-footer {
-    background: #1e293b;
-    color: white;
-    padding: 3rem 0 1.5rem;
+    background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+    color: #64748b;
+    padding: 2rem 0;
     margin-top: 4rem;
+    border-top: 1px solid #e2e8f0;
 }
 
 .footer-container {
     max-width: 1400px;
     margin: 0 auto;
     padding: 0 2rem;
-}
-
-.footer-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 3rem;
-    margin-bottom: 2rem;
-}
-
-.footer-title {
-    font-size: 1.25rem;
-    font-weight: 700;
-    margin-bottom: 1rem;
-    color: white;
-}
-
-.footer-text {
-    color: rgba(255, 255, 255, 0.8);
-    line-height: 1.8;
-}
-
-.footer-links {
-    list-style: none;
-}
-
-.footer-links li {
-    margin-bottom: 0.75rem;
-}
-
-.footer-links a {
-    color: rgba(255, 255, 255, 0.8);
-    text-decoration: none;
-    transition: color 0.3s;
-}
-
-.footer-links a:hover {
-    color: white;
-    padding-right: 5px;
-}
-
-.footer-bottom {
     text-align: center;
-    padding-top: 2rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    color: rgba(255, 255, 255, 0.6);
+}
+
+.footer-copyright {
+    font-size: 0.95rem;
+    color: #64748b;
+    font-weight: 500;
+    margin: 0;
 }
 
 /* Responsive */
@@ -250,11 +217,12 @@ body {
         top: 100%;
         right: 0;
         left: 0;
-        background: var(--primary-color);
+        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 50%, #f1f5f9 100%);
         flex-direction: column;
         padding: 1rem;
         gap: 0.5rem;
-        box-shadow: var(--shadow-lg);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        border-top: 1px solid rgba(0, 0, 0, 0.08);
         transform: translateY(-100%);
         opacity: 0;
         visibility: hidden;
@@ -270,11 +238,6 @@ body {
     .nav-link {
         width: 100%;
         text-align: right;
-    }
-    
-    .footer-grid {
-        grid-template-columns: 1fr;
-        gap: 2rem;
     }
 }
 
@@ -376,4 +339,3 @@ body {
         font-size: 1.1rem;
     }
 }
-

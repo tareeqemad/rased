@@ -38,15 +38,17 @@ class PublicHomeController extends Controller
 
         $governorateParam = $request->input('governorate');
 
-        // جلب المشغلين النشطين فقط مع الإحداثيات
-        $query = Operator::with('cityDetail')
-            ->where('status', 'active')
+        // جلب وحدات التوليد النشطة مع الإحداثيات والمشغلين
+        $query = \App\Models\GenerationUnit::with(['operator', 'cityDetail', 'governorateDetail'])
+            ->whereHas('operator', function($q) {
+                $q->where('status', 'active');
+            })
             ->whereNotNull('latitude')
             ->whereNotNull('longitude');
 
-        // إذا كانت القيمة "all" أو فارغة، نجلب جميع المشغلين
+        // إذا كانت القيمة "all" أو فارغة، نجلب جميع وحدات التوليد
         if ($governorateParam === 'all' || $governorateParam === '' || $governorateParam === null) {
-            // نجلب جميع المشغلين
+            // نجلب جميع وحدات التوليد
         } else {
             // التحقق من صحة رقم المحافظة
             $governorate = (int) $governorateParam;
@@ -56,54 +58,74 @@ class PublicHomeController extends Controller
                     'message' => 'رقم المحافظة غير صحيح',
                 ], 400);
             }
-            $query->where('governorate', $governorate);
+            
+            // البحث عن ID المحافظة في constant_details
+            $governorateDetail = \App\Helpers\ConstantsHelper::get(1)
+                ->where('value', (string) $governorate)
+                ->first();
+            
+            if ($governorateDetail) {
+                $query->where('governorate_id', $governorateDetail->id);
+            } else {
+                // إذا لم نجد المحافظة في الثوابت، نرجع مصفوفة فارغة
+                return response()->json([
+                    'success' => true,
+                    'data' => [],
+                ]);
+            }
         }
 
-        $operators = $query->select(
-                'id', 
-                'name', 
-                'city', 
+        $generationUnits = $query->select(
+                'id',
+                'operator_id',
+                'name',
+                'unit_code',
+                'unit_number',
                 'city_id',
-                'unit_number', 
-                'unit_name',
+                'governorate_id',
                 'latitude', 
                 'longitude', 
                 'phone', 
                 'phone_alt',
-                'address',
                 'detailed_address',
-                'governorate',
                 'total_capacity',
-                'generators_count',
-                'synchronization_available',
-                'max_synchronization_capacity',
-                'owner_name',
-                'operation_entity'
             )
-            ->orderBy('governorate')
+            ->orderBy('governorate_id')
             ->orderBy('name')
             ->get()
-            ->map(function ($operator) {
-                // تحسين الأداء بتقليل البيانات المرسلة
+            ->map(function ($unit) {
+                $operator = $unit->operator;
+                $governorateDetail = $unit->governorateDetail;
+                
+                // الحصول على اسم المحافظة من الثوابت أو من enum
+                $governorateLabel = 'غير محدد';
+                if ($governorateDetail) {
+                    $governorateLabel = $governorateDetail->label;
+                } elseif ($operator && $operator->governorate) {
+                    $governorateLabel = $operator->governorate->label();
+                }
+                
                 return [
-                    'id' => $operator->id,
-                    'name' => $operator->name,
-                    'city' => $operator->getCityName(),
-                    'unit_number' => $operator->unit_number,
-                    'unit_name' => $operator->unit_name,
-                    'latitude' => (float) $operator->latitude,
-                    'longitude' => (float) $operator->longitude,
-                    'phone' => $operator->phone,
-                    'phone_alt' => $operator->phone_alt,
-                    'address' => $operator->address,
-                    'detailed_address' => $operator->detailed_address,
-                    'governorate' => $operator->governorate?->label() ?? 'غير محدد',
+                    'id' => $unit->operator_id, // استخدام operator_id للتوافق مع الكود السابق
+                    'unit_id' => $unit->id, // إضافة unit_id للتمييز
+                    'name' => $operator ? $operator->name : ($unit->name ?? 'غير محدد'),
+                    'unit_name' => $unit->name,
+                    'unit_code' => $unit->unit_code,
+                    'unit_number' => $unit->unit_number,
+                    'city' => $unit->getCityName(),
+                    'latitude' => (float) $unit->latitude,
+                    'longitude' => (float) $unit->longitude,
+                    'phone' => $unit->phone ?? ($operator ? $operator->phone : null),
+                    'phone_alt' => $unit->phone_alt ?? ($operator ? $operator->phone_alt : null),
+                    'address' => $unit->detailed_address ?? ($operator ? $operator->address : null),
+                    'detailed_address' => $unit->detailed_address,
+                    'governorate' => $governorateLabel,
                 ];
             });
 
         return response()->json([
             'success' => true,
-            'data' => $operators,
+            'data' => $generationUnits,
         ])->header('Cache-Control', 'public, max-age=300');
     }
 
@@ -113,7 +135,7 @@ class PublicHomeController extends Controller
     public function map(): View
     {
         $governorates = ConstantsHelper::get(1); // رقم ثابت المحافظات
-        return view('front.map', compact('governorates'));
+        return view('public.home', compact('governorates'));
     }
 
     /**
@@ -155,5 +177,315 @@ class PublicHomeController extends Controller
     {
         return view('front.about');
     }
-}
 
+    /**
+     * Display join request page
+     */
+    public function join(): View
+    {
+        return view('front.join');
+    }
+
+    /**
+     * Store join request
+     */
+    public function storeJoinRequest(Request $request)
+    {
+        $validated = $request->validate([
+            'name_ar' => 'required|string|max:255',
+            'name_en' => 'required|string|max:255',
+            'id_number' => ['required', 'string', 'max:50', 'regex:/^\d+$/'],
+            'phone' => ['required', 'string', 'max:20', 'regex:/^0(59|56)\d{7}$/'],
+            'email' => 'nullable|email|max:255',
+            'data_accuracy' => 'required|accepted',
+        ], [
+            'name_ar.required' => 'الاسم بالعربية مطلوب',
+            'name_en.required' => 'الاسم بالإنجليزية مطلوب',
+            'id_number.required' => 'رقم الهوية مطلوب',
+            'id_number.regex' => 'رقم الهوية يجب أن يحتوي على أرقام فقط',
+            'phone.required' => 'رقم الموبايل مطلوب',
+            'phone.regex' => 'رقم الموبايل غير صحيح. يجب أن يبدأ بـ 059 أو 056',
+            'email.email' => 'البريد الإلكتروني غير صحيح',
+            'data_accuracy.required' => 'يجب الموافقة على الإقرار بصحة البيانات',
+            'data_accuracy.accepted' => 'يجب الموافقة على الإقرار بصحة البيانات',
+        ]);
+
+        // تنظيف رقم الجوال للتحقق
+        $cleanPhone = preg_replace('/[^0-9]/', '', $validated['phone']);
+
+        // التحقق من أن الرقم مصرح به في authorized_phones
+        if (!\App\Models\AuthorizedPhone::isAuthorized($cleanPhone)) {
+            return redirect()->back()
+                ->withInput()
+                ->withErrors(['phone' => 'غير مخول لك بالتسجيل. يرجى التواصل مع الإدارة.']);
+        }
+
+        // التحقق من أن الرقم غير مسجل مسبقاً كمستخدم (من خلال phone)
+        // التحقق من الرقم المنظف مباشرة
+        $existingUserByPhone = \App\Models\User::where('phone', $cleanPhone)
+            ->orWhere('phone', $validated['phone']) // التحقق من الرقم الأصلي أيضاً
+            ->first();
+        
+        if ($existingUserByPhone) {
+            // التحقق من أن المستخدم لديه مشغل
+            $existingOperator = \App\Models\Operator::where('owner_id', $existingUserByPhone->id)->first();
+            if ($existingOperator) {
+                return redirect()->back()
+                    ->withInput()
+                    ->withErrors(['phone' => 'مسجل مسبقاً. غير مسموح لك التسجيل مرة أخرى.']);
+            }
+        }
+
+        // التحقق من أن الرقم غير مسجل مسبقاً في جدول operators
+        // التحقق من الرقم المنظف مباشرة
+        $existingOperatorByPhone = \App\Models\Operator::where('phone', $cleanPhone)
+            ->orWhere('phone', $validated['phone']) // التحقق من الرقم الأصلي أيضاً
+            ->first();
+        
+        if ($existingOperatorByPhone) {
+            return redirect()->back()
+                ->withInput()
+                ->withErrors(['phone' => 'رقم الجوال مسجل مسبقاً. غير مسموح لك التسجيل مرة أخرى.']);
+        }
+
+        // التحقق من عدم وجود رقم هوية مسجل مسبقاً
+        $existingOperatorById = \App\Models\Operator::where('owner_id_number', $validated['id_number'])->first();
+        if ($existingOperatorById) {
+            return redirect()->back()
+                ->withInput()
+                ->withErrors(['id_number' => 'رقم الهوية مسجل مسبقاً']);
+        }
+
+        // التحقق من عدم وجود email مسجل مسبقاً (إذا تم إدخاله)
+        $email = !empty($validated['email']) ? $validated['email'] : null;
+        if ($email) {
+            $existingUser = \App\Models\User::where('email', $email)->first();
+            if ($existingUser) {
+                return redirect()->back()
+                    ->withInput()
+                    ->withErrors(['email' => 'البريد الإلكتروني مسجل مسبقاً']);
+            }
+        }
+
+        // توليد username تلقائياً (op_ + أول حرف من الاسم + اسم العائلة)
+        $nameEn = trim($validated['name_en']);
+        $nameParts = explode(' ', $nameEn);
+        
+        if (count($nameParts) >= 2) {
+            // أول حرف من الاسم الأول + اسم العائلة الكامل
+            $firstChar = strtolower(substr($nameParts[0], 0, 1));
+            $lastName = strtolower($nameParts[count($nameParts) - 1]);
+            // إزالة الأحرف الخاصة والمسافات
+            $lastName = preg_replace('/[^a-z0-9]/', '', $lastName);
+            $usernameBase = $firstChar . $lastName;
+        } else {
+            // إذا كان اسم واحد فقط، استخدم أول 8 أحرف
+            $usernameBase = strtolower(preg_replace('/[^a-z0-9]/', '', $nameEn));
+            $usernameBase = substr($usernameBase, 0, 8);
+        }
+        
+        // التأكد من أن usernameBase ليس فارغاً
+        if (empty($usernameBase)) {
+            $usernameBase = 'user' . substr($validated['id_number'], -4);
+        }
+        
+        $username = 'op_' . $usernameBase;
+        
+        // التأكد من أن username فريد
+        $counter = 1;
+        $originalUsername = $username;
+        while (\App\Models\User::where('username', $username)->exists()) {
+            $username = $originalUsername . $counter;
+            $counter++;
+        }
+
+        // توليد email فريد إذا لم يتم إدخاله (مطلوب في جدول users)
+        if (!$email) {
+            $email = $username . '@rased.local';
+            $counter = 1;
+            while (\App\Models\User::where('email', $email)->exists()) {
+                $email = $username . '_' . $counter . '@rased.local';
+                $counter++;
+            }
+        }
+
+        // توليد password تلقائياً (8 أحرف عشوائية - فقط أحرف وأرقام لتجنب مشاكل الترميز)
+        // استخدام فقط أحرف صغيرة وأرقام لتجنب مشاكل في SMS
+        $password = \Illuminate\Support\Str::random(8);
+        // التأكد من أن كلمة المرور لا تحتوي على أحرف خاصة قد تسبب مشاكل
+        $password = preg_replace('/[^a-zA-Z0-9]/', '', $password);
+        // إذا كانت قصيرة جداً بعد التنظيف، أعد توليدها
+        if (strlen($password) < 6) {
+            $password = \Illuminate\Support\Str::random(8);
+            $password = preg_replace('/[^a-zA-Z0-9]/', '', $password);
+        }
+        // تأكد من أن الطول 8 أحرف
+        if (strlen($password) < 8) {
+            $password = str_pad($password, 8, \Illuminate\Support\Str::random(1), STR_PAD_RIGHT);
+        }
+        $passwordPlain = $password; // حفظ كلمة المرور النصية لإرسالها عبر SMS
+
+        // Log كلمة المرور قبل الحفظ (للتأكد من أنها صحيحة)
+        \Log::info('Creating user with password', [
+            'username' => $username,
+            'password_length' => strlen($passwordPlain),
+            'password_preview' => substr($passwordPlain, 0, 2) . '****',
+        ]);
+
+        // إنشاء User جديد
+        $user = \App\Models\User::create([
+            'name' => $validated['name_ar'],
+            'email' => $email,
+            'username' => $username,
+            'password' => \Illuminate\Support\Facades\Hash::make($password),
+            'password_plain' => $passwordPlain,
+            'phone' => $cleanPhone, // استخدام الرقم المنظف
+            'role' => \App\Role::CompanyOwner,
+            'status' => 'active',
+        ]);
+
+        // التحقق من أن كلمة المرور محفوظة بشكل صحيح
+        \Log::info('User created, verifying password', [
+            'user_id' => $user->id,
+            'username' => $username,
+            'password_check' => \Illuminate\Support\Facades\Hash::check($passwordPlain, $user->password),
+        ]);
+
+        // إنشاء Operator جديد
+        $operator = \App\Models\Operator::create([
+            'name' => $validated['name_ar'],
+            'name_en' => $validated['name_en'],
+            'owner_id' => $user->id,
+            'owner_name' => $validated['name_ar'],
+            'owner_id_number' => $validated['id_number'],
+            'phone' => $cleanPhone, // استخدام الرقم المنظف
+            'email' => $validated['email'] ?? null,
+            'status' => 'active', // مفعل
+            'is_approved' => false, // غير معتمد - يحتاج موافقة Admin/Super Admin
+            'profile_completed' => false,
+        ]);
+
+        // إرسال إشعار للـ Admin و Super Admin
+        \App\Models\Notification::notifySuperAdmins(
+            'operator_created',
+            'تم إنشاء مشغل جديد',
+            "تم إنشاء مشغل جديد: {$operator->name} - يحتاج إلى اعتماد",
+            route('admin.users.index', ['operator_id' => $operator->id])
+        );
+
+        // إرسال إشعار للـ Admins أيضاً
+        \App\Models\User::where('role', \App\Role::Admin)
+            ->each(function ($admin) use ($operator) {
+                \App\Models\Notification::createNotification(
+                    $admin->id,
+                    'operator_created',
+                    'تم إنشاء مشغل جديد',
+                    "تم إنشاء مشغل جديد: {$operator->name} - يحتاج إلى اعتماد",
+                    route('admin.users.index', ['operator_id' => $operator->id])
+                );
+            });
+
+        // إرسال SMS بالـ username والـ password
+        try {
+            $this->sendCredentialsSMS($validated['phone'], $username, $passwordPlain);
+        } catch (\Exception $e) {
+            // في حالة فشل إرسال SMS، نكمل العملية لكن نسجل الخطأ
+            \Log::error('Failed to send SMS credentials', [
+                'phone' => $validated['phone'],
+                'username' => $username,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        return redirect()->route('front.join')->with('success', 'تم إرسال طلبك بنجاح! تم إرسال بيانات الدخول إلى رقم الموبايل المسجل.');
+    }
+
+    /**
+     * إرسال بيانات الدخول عبر SMS
+     */
+    private function sendCredentialsSMS(string $phone, string $username, string $password): void
+    {
+        // Log كلمة المرور قبل الإرسال
+        \Log::info('Preparing SMS with credentials', [
+            'phone' => $phone,
+            'username' => $username,
+            'password_length' => strlen($password),
+            'password_chars' => str_split($password), // للتأكد من الأحرف
+        ]);
+
+        // رسالة واضحة مع الرابط
+        $loginUrl = route('login');
+        
+        // بناء رسالة مختصرة مع الرابط
+        // استخدام صيغة مختصرة لتوفير المساحة للرابط
+        $message = "راصد\n";
+        $message .= "المستخدم: {$username}\n";
+        $message .= "كلمة المرور: {$password}\n";
+        $message .= "رابط: {$loginUrl}";
+
+        // Log طول الرسالة
+        \Log::info('SMS message length check', [
+            'message_length' => mb_strlen($message),
+            'max_length' => 70,
+            'login_url' => $loginUrl,
+            'url_length' => mb_strlen($loginUrl),
+        ]);
+
+        // إذا كانت الرسالة طويلة جداً (أكثر من 70 حرف للـ UTF-8)، نحاول تقصيرها
+        // لكن نضمن وجود الرابط دائماً
+        if (mb_strlen($message) > 70) {
+            // استخدام صيغة أقصر مع الحفاظ على الرابط
+            $message = "راصد\n";
+            $message .= "المستخدم: {$username}\n";
+            $message .= "كلمة المرور: {$password}\n";
+            $message .= $loginUrl; // بدون كلمة "رابط:" لتوفير المساحة
+        }
+        
+        // إذا كانت لا تزال طويلة جداً، نستخدم صيغة أقصر جداً
+        if (mb_strlen($message) > 70) {
+            $message = "راصد\n";
+            $message .= "المستخدم: {$username}\n";
+            $message .= "كلمة المرور: {$password}\n";
+            // استخدام فقط domain + path بدلاً من الرابط الكامل
+            $parsedUrl = parse_url($loginUrl);
+            $shortUrl = ($parsedUrl['host'] ?? '') . ($parsedUrl['path'] ?? '/login');
+            $message .= $shortUrl;
+        }
+
+        // Log الرسالة النهائية
+        \Log::info('SMS message content', [
+            'message' => $message,
+            'message_length' => mb_strlen($message),
+        ]);
+
+        try {
+            $smsService = new \App\Services\HotSMSService();
+            // استخدام type 2 للرسائل العربية (UTF-8)
+            $result = $smsService->sendSMS($phone, $message, 2);
+
+            if ($result['success']) {
+                \Log::info('SMS sent successfully', [
+                    'phone' => $phone,
+                    'username' => $username,
+                    'message_id' => $result['message_id'] ?? null,
+                ]);
+            } else {
+                \Log::error('Failed to send SMS', [
+                    'phone' => $phone,
+                    'username' => $username,
+                    'error_code' => $result['code'],
+                    'error_message' => $result['message'],
+                ]);
+                
+                // يمكن إضافة إشعار للمستخدم هنا إذا لزم الأمر
+            }
+        } catch (\Exception $e) {
+            \Log::error('SMS service exception', [
+                'phone' => $phone,
+                'username' => $username,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+        }
+    }
+}
