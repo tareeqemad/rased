@@ -16,6 +16,15 @@
                     <tr>
                         <td>
                             <code class="text-primary">{{ $unit->unit_code }}</code>
+                            @if($unit->qr_code_generated_at)
+                                <span class="badge bg-success ms-2" title="تم توليد QR Code في {{ $unit->qr_code_generated_at->format('Y-m-d H:i') }}">
+                                    <i class="bi bi-check-circle"></i> QR
+                                </span>
+                            @else
+                                <span class="badge bg-secondary ms-2" title="لم يتم توليد QR Code بعد">
+                                    <i class="bi bi-x-circle"></i> بدون QR
+                                </span>
+                            @endif
                         </td>
                         <td>{{ $unit->name }}</td>
                         <td>{{ $unit->operator->name }}</td>
@@ -40,6 +49,9 @@
                         <td class="text-end">
                             <div class="d-flex gap-2 justify-content-end">
                                 @can('view', $unit)
+                                    <a href="{{ route('admin.generation-units.qr-code', $unit) }}" target="_blank" class="btn btn-sm btn-success" title="طباعة QR Code">
+                                        <i class="bi bi-qr-code"></i>
+                                    </a>
                                     <a href="{{ route('admin.generation-units.show', $unit) }}" class="btn btn-sm btn-outline-info" title="عرض التفاصيل">
                                         <i class="bi bi-eye"></i>
                                     </a>

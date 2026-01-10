@@ -8,10 +8,11 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Models\ConstantDetail;
 use App\Models\Operator;
 use App\Models\GenerationUnit;
+use App\Traits\TracksUser;
 
 class FuelEfficiency extends Model
 {
-    use SoftDeletes;
+    use SoftDeletes, TracksUser;
 
     protected $fillable = [
         'operator_id',

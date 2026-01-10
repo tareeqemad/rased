@@ -219,7 +219,8 @@ class PermissionsController extends Controller
         // ✅ هذا اللي ناقصك (للـ JS / badges)
         $rolesMeta = [
             'super_admin' => ['label' => 'مدير النظام', 'color' => 'danger', 'icon' => 'bi-shield-check'],
-            'admin'       => ['label' => 'سلطة الطاقة', 'color' => 'info', 'icon' => 'bi-bank2'],
+            'admin'       => ['label' => 'مدير', 'color' => 'info', 'icon' => 'bi-person-badge'],
+            'energy_authority' => ['label' => 'سلطة الطاقة', 'color' => 'info', 'icon' => 'bi-bank2'],
             'company_owner' => ['label' => 'مشغل', 'color' => 'primary', 'icon' => 'bi-building'],
             'employee'      => ['label' => 'موظف', 'color' => 'success', 'icon' => 'bi-person'],
             'technician'    => ['label' => 'فني', 'color' => 'warning', 'icon' => 'bi-tools'],

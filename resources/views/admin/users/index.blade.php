@@ -108,7 +108,7 @@
                                     <input type="text" class="form-control" id="emailFilter" placeholder="ابحث بالبريد الإلكتروني..." autocomplete="off">
                                 </div>
 
-                                <div class="col-lg-3">
+                                <div class="col-lg-4">
                                     <label class="form-label fw-semibold">
                                         <i class="bi bi-shield-check me-1"></i>
                                         الدور
@@ -122,13 +122,15 @@
                                 </div>
 
                                 @if($isSuperAdmin)
-                                    <div class="col-lg-3" id="operatorFilterWrap">
+                                    <div class="col-lg-4" id="operatorFilterWrap" style="display: none;">
                                         <label class="form-label fw-semibold">
                                             <i class="bi bi-building me-1"></i>
                                             المشغل
                                         </label>
-                                        <select class="form-select" id="operatorFilter"></select>
-                                        <div class="form-text small">فلترة الموظفين/الفنيين حسب مشغل معيّن.</div>
+                                        <select class="form-select" id="operatorFilter">
+                                            <option value="">اختر المشغل</option>
+                                        </select>
+                                        <div class="form-text small">عند اختيار مشغل، سيتم عرض المشغل + موظفيه وفنييه.</div>
                                     </div>
                                 @endif
                             </div>
@@ -152,30 +154,42 @@
 
                     <hr class="my-3">
 
-                    <div class="table-responsive" id="usersTableContainer">
-                        <table class="table table-hover align-middle mb-0 general-table">
-                            <thead>
-                            <tr>
-                                <th style="min-width:220px;">الاسم</th>
-                                <th>اسم المستخدم</th>
-                                <th>البريد الإلكتروني</th>
-                                <th class="text-center">الدور</th>
-                                <th class="text-center">المشغل</th>
-                                <th class="text-center">عدد الموظفين</th>
-                                <th style="min-width:140px;" class="text-center">الإجراءات</th>
-                            </tr>
-                            </thead>
-                            <tbody id="usersTbody">
+                    <div class="position-relative" id="usersTableContainer">
+                        {{-- Loading overlay --}}
+                        <div id="usersLoading" class="data-table-loading d-none">
+                            <div class="text-center">
+                                <div class="spinner-border text-primary" role="status"></div>
+                                <div class="mt-2 text-muted fw-semibold">جاري التحميل...</div>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
                                 <tr>
-                                    <td colspan="7">
-                                        <div class="empty-state">
-                                            <div class="spinner-border" role="status"></div>
-                                            <div class="mt-2">جاري تحميل البيانات...</div>
-                                        </div>
-                                    </td>
+                                    <th style="min-width:220px;">الاسم</th>
+                                    <th>اسم المستخدم</th>
+                                    <th>البريد الإلكتروني</th>
+                                    <th>رقم الجوال</th>
+                                    <th class="text-center">الدور</th>
+                                    <th class="text-center">المشغل</th>
+                                    <th class="text-center">عدد الموظفين</th>
+                                    <th class="text-center">الحالة</th>
+                                    <th style="min-width:180px;" class="text-center">الإجراءات</th>
                                 </tr>
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody id="usersTbody">
+                                    <tr>
+                                        <td colspan="9">
+                                            <div class="empty-state text-center py-4">
+                                                <div class="spinner-border text-primary" role="status"></div>
+                                                <div class="mt-2 text-muted">جاري تحميل البيانات...</div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
 
                     <div class="d-flex flex-wrap justify-content-between align-items-center mt-3 gap-2">
@@ -207,25 +221,44 @@
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">الاسم <span class="text-danger">*</span></label>
-                                <input type="text" name="name" class="form-control">
+                                <input type="text" name="name" class="form-control" required>
                                 <div class="invalid-feedback"></div>
                             </div>
 
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold">اسم المستخدم <span class="text-danger">*</span></label>
-                                <input type="text" name="username" class="form-control">
+                            {{-- الاسم بالإنجليزي (للسوبر أدمن عند إنشاء أدوار رئيسية) --}}
+                            <div class="col-md-6 d-none" id="createNameEnField">
+                                <label class="form-label fw-semibold">
+                                    الاسم بالإنجليزي 
+                                    <span class="text-danger" id="createNameEnRequired">*</span>
+                                </label>
+                                <input type="text" name="name_en" class="form-control" placeholder="English Name">
                                 <div class="invalid-feedback"></div>
+                                <small class="form-text text-muted">سيتم استخدامه لتوليد username تلقائياً</small>
                             </div>
 
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold">البريد الإلكتروني <span class="text-danger">*</span></label>
+                            {{-- رقم الجوال (للسوبر أدمن عند إنشاء أدوار رئيسية) --}}
+                            <div class="col-md-6 d-none" id="createPhoneField">
+                                <label class="form-label fw-semibold">
+                                    رقم الجوال 
+                                    <span class="text-danger" id="createPhoneRequired">*</span>
+                                </label>
+                                <input type="text" name="phone" class="form-control" placeholder="059xxxxxxx أو 056xxxxxxx" maxlength="10">
+                                <div class="invalid-feedback"></div>
+                                <small class="form-text text-muted">سيتم إرسال بيانات الدخول عبر SMS</small>
+                            </div>
+
+                            {{-- البريد الإلكتروني (للسوبر أدمن عند إنشاء أدوار رئيسية) --}}
+                            <div class="col-md-6 d-none" id="createEmailField">
+                                <label class="form-label fw-semibold">
+                                    البريد الإلكتروني
+                                </label>
                                 <input type="email" name="email" class="form-control">
                                 <div class="invalid-feedback"></div>
                             </div>
 
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">الدور <span class="text-danger">*</span></label>
-                                <select name="role" class="form-select" id="createRole">
+                                <select name="role" class="form-select" id="createRole" required>
                                     <option value="">اختر الدور</option>
                                     @foreach($createRoleKeys as $rk)
                                         <option value="{{ $rk }}">{{ $roleMeta[$rk]['label'] ?? $rk }}</option>
@@ -236,25 +269,13 @@
 
                             @if($isSuperAdmin)
                                 <div class="col-md-12 d-none" id="createOperatorWrap">
-                                    <label class="form-label fw-semibold">المشغل</label>
+                                    <label class="form-label fw-semibold">المشغل <span class="text-danger">*</span></label>
                                     <select name="operator_id" class="form-select" id="createOperatorSelect"></select>
-                                    <div class="form-text">مطلوب عند إنشاء موظف/فني (حتى نربطه بالمشغل).</div>
+                                    <div class="form-text">مطلوب عند إنشاء موظف/فني أو مشغل جديد.</div>
                                     <div class="invalid-feedback"></div>
                                 </div>
                             @endif
 
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold">كلمة المرور <span class="text-danger">*</span></label>
-                                <input type="password" name="password" class="form-control" minlength="8">
-                                <div class="form-text">8 أحرف على الأقل.</div>
-                                <div class="invalid-feedback"></div>
-                            </div>
-
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold">تأكيد كلمة المرور <span class="text-danger">*</span></label>
-                                <input type="password" name="password_confirmation" class="form-control" minlength="8">
-                                <div class="invalid-feedback"></div>
-                            </div>
                         </div>
                     </form>
                 </div>
@@ -292,6 +313,46 @@
                     <button type="button" class="btn btn-danger" id="btnConfirmDelete">
                         <span class="spinner-border spinner-border-sm me-2 d-none" id="deleteSpinner"></span>
                         حذف
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Suspend User Modal --}}
+    <div class="modal fade" id="suspendUserModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold text-danger">
+                        <i class="bi bi-x-circle-fill me-1"></i>
+                        تعطيل/حظر مستخدم
+                    </h5>
+                    <button type="button" class="btn-close ms-0" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body pt-2">
+                    <div class="text-muted mb-3">هل أنت متأكد من تعطيل/حظر المستخدم:</div>
+                    <div class="fw-bold mb-3" id="suspendUserName">—</div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">
+                            سبب التعطيل/الحظر <span class="text-danger">*</span>
+                        </label>
+                        <textarea 
+                            class="form-control" 
+                            id="suspendReason" 
+                            rows="4" 
+                            placeholder="أدخل سبب التعطيل/الحظر (مطلوب)"
+                            maxlength="1000"
+                            required></textarea>
+                        <div class="form-text">الحد الأقصى 1000 حرف</div>
+                        <div class="invalid-feedback"></div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="button" class="btn btn-danger" id="btnConfirmSuspend">
+                        <span class="spinner-border spinner-border-sm me-2 d-none" id="suspendSpinner"></span>
+                        تعطيل/حظر
                     </button>
                 </div>
             </div>
@@ -377,11 +438,14 @@
             const $statTechnicians = $('#statTechnicians');
 
             function setLoading(on){
+                const $loading = $('#usersLoading');
                 if(on) {
+                    $loading.removeClass('d-none');
                     if(window.DataTableLoading) {
                         window.DataTableLoading.show($container[0]);
                     }
                 } else {
+                    $loading.addClass('d-none');
                     if(window.DataTableLoading) {
                         window.DataTableLoading.hide($container[0]);
                     }
@@ -398,10 +462,10 @@
             function renderEmpty(text){
                 $tbody.html(`
                     <tr>
-                        <td colspan="7">
-                            <div class="empty-state">
-                                <i class="bi bi-inbox fs-2 d-block mb-2"></i>
-                                ${escapeHtml(text || 'لا يوجد نتائج')}
+                        <td colspan="9">
+                            <div class="empty-state text-center py-5">
+                                <i class="bi bi-inbox fs-1 text-muted d-block mb-3"></i>
+                                <p class="text-muted mb-0">${escapeHtml(text || 'لا يوجد نتائج')}</p>
                             </div>
                         </td>
                     </tr>
@@ -418,16 +482,22 @@
                     const name = u.name || '-';
                     const username = u.username || '-';
                     const email = u.email || '-';
+                    const phone = u.phone || '';
                     const roleKey = u.role || u.role_key || '';
                     const roleLabel = u.role_label || '';
                     const operatorName = u.operator || u.operator_name || (u.operator && u.operator.name) || '';
                     const employeesCount = (u.employees_count !== undefined && u.employees_count !== null) ? u.employees_count : '-';
+                    const userStatus = u.status || 'active';
 
                     const initials = (name && name !== '-') ? name.trim().charAt(0) : '?';
 
                     const showUrl = (u.urls && u.urls.show) ? u.urls.show : `${USERS_BASE_URL}/${u.id}`;
                     const editUrl = (u.urls && u.urls.edit) ? u.urls.edit : `${USERS_BASE_URL}/${u.id}/edit`;
                     const permsUrl = (u.urls && u.urls.permissions) ? u.urls.permissions : `${USERS_BASE_URL}/${u.id}/permissions`;
+                    // رابط ملف المشغل (للمشغل فقط)
+                    const operatorProfileUrl = (roleKey === 'company_owner' && u.operator_id) 
+                        ? `{{ route('admin.operators.profile') }}` 
+                        : null;
 
                     // can flags (optional) - if not provided, show buttons and let server protect
                     const canView = (u.can && u.can.view !== undefined) ? !!u.can.view : true;
@@ -449,14 +519,13 @@
                     const impersonateBtn = (isSuperAdmin && targetUserId !== currentUserId) ? `
                         <form action="${escapeHtml(USERS_BASE_URL)}/${escapeHtml(u.id)}/impersonate" method="POST" class="d-inline" onsubmit="return confirm('هل أنت متأكد من الدخول بحساب ${escapeHtml(name)}؟');">
                             <input type="hidden" name="_token" value="{{ csrf_token() }}">
-                            <button type="submit" class="btn btn-light btn-icon text-info" title="الدخول بحساب هذا المستخدم">
+                            <button type="submit" class="btn btn-sm btn-outline-info" title="الدخول بحساب هذا المستخدم">
                                 <i class="bi bi-person-check"></i>
                             </button>
                         </form>
                     ` : '';
 
                     // زر toggle status (للسوبر أدمن والمشغل - وليس لنفسه)
-                    const userStatus = (u.status || 'active');
                     const isCompanyOwner = {{ $isCompanyOwner ? 'true' : 'false' }};
                     const canToggleStatus = (isSuperAdmin || isCompanyOwner) && targetUserId !== currentUserId;
                     const toggleStatusBtn = canToggleStatus ? `
@@ -466,6 +535,47 @@
                                 data-name="${escapeHtml(name)}"
                                 title="${userStatus === 'active' ? 'إيقاف' : 'تفعيل'}">
                             <i class="bi bi-${userStatus === 'active' ? 'pause' : 'play'}-fill"></i>
+                        </button>
+                    ` : '';
+
+                    const phoneCell = phone 
+                        ? `<a href="tel:${escapeHtml(phone)}" class="text-decoration-none">${escapeHtml(phone)}</a>`
+                        : `<span class="text-muted">-</span>`;
+
+                    // Status cell with suspended support
+                    let statusCell = '';
+                    if (userStatus === 'suspended') {
+                        statusCell = `<span class="badge bg-danger">
+                            <i class="bi bi-x-circle-fill me-1"></i>
+                            محظور/معطل
+                        </span>`;
+                    } else if (userStatus === 'active') {
+                        statusCell = `<span class="badge bg-success">فعال</span>`;
+                    } else {
+                        statusCell = `<span class="badge bg-danger">غير فعال</span>`;
+                    }
+
+                    // Suspend/Unsuspend buttons (requires users.suspend permission)
+                    // Note: Check permission server-side, but show button if user has permission
+                    // For now, show for Super Admin and Energy Authority (can check in controller)
+                    const canSuspend = isSuperAdmin && targetUserId !== currentUserId && userStatus !== 'suspended';
+                    const canUnsuspend = isSuperAdmin && targetUserId !== currentUserId && userStatus === 'suspended';
+                    
+                    const suspendBtn = canSuspend ? `
+                        <button type="button" class="btn btn-sm btn-outline-danger btn-suspend-user"
+                                data-id="${escapeHtml(u.id)}"
+                                data-name="${escapeHtml(name)}"
+                                title="تعطيل/حظر">
+                            <i class="bi bi-x-circle-fill"></i>
+                        </button>
+                    ` : '';
+                    
+                    const unsuspendBtn = canUnsuspend ? `
+                        <button type="button" class="btn btn-sm btn-outline-success btn-unsuspend-user"
+                                data-id="${escapeHtml(u.id)}"
+                                data-name="${escapeHtml(name)}"
+                                title="رفع الحظر">
+                            <i class="bi bi-check-circle-fill"></i>
                         </button>
                     ` : '';
 
@@ -480,20 +590,29 @@
                                     </div>
                                 </div>
                             </td>
-                            <td class="fw-semibold">${escapeHtml(username)}</td>
-                            <td>${escapeHtml(email)}</td>
-                            <td>${roleBadge(roleKey, roleLabel)}</td>
-                            <td>${operatorCell}</td>
-                            <td>${employeesCell}</td>
                             <td>
-                                <div class="d-flex gap-2">
-                                    ${canView ? `<a class="btn btn-light btn-icon" href="${escapeHtml(showUrl)}" title="عرض"><i class="bi bi-eye"></i></a>` : ``}
-                                    ${canEdit ? `<a class="btn btn-light btn-icon" href="${escapeHtml(editUrl)}" title="تعديل"><i class="bi bi-pencil"></i></a>` : ``}
-                                    <a class="btn btn-light btn-icon" href="${escapeHtml(permsUrl)}" title="الصلاحيات"><i class="bi bi-shield-check"></i></a>
+                                <code class="text-primary">${escapeHtml(username)}</code>
+                            </td>
+                            <td>
+                                ${email && email !== '-' ? `<a href="mailto:${escapeHtml(email)}" class="text-decoration-none">${escapeHtml(email)}</a>` : `<span class="text-muted">-</span>`}
+                            </td>
+                            <td>${phoneCell}</td>
+                            <td class="text-center">${roleBadge(roleKey, roleLabel)}</td>
+                            <td class="text-center">${operatorCell}</td>
+                            <td class="text-center">${employeesCell}</td>
+                            <td class="text-center">${statusCell}</td>
+                            <td>
+                                <div class="d-flex gap-1 justify-content-center">
+                                    ${canView ? `<a class="btn btn-sm btn-outline-info" href="${escapeHtml(showUrl)}" title="عرض"><i class="bi bi-eye"></i></a>` : ``}
+                                    ${canEdit ? `<a class="btn btn-sm btn-outline-primary" href="${escapeHtml(editUrl)}" title="تعديل"><i class="bi bi-pencil"></i></a>` : ``}
+                                    <a class="btn btn-sm btn-outline-warning" href="${escapeHtml(permsUrl)}" title="الصلاحيات"><i class="bi bi-shield-check"></i></a>
+                                    ${operatorProfileUrl ? `<a class="btn btn-sm btn-outline-info" href="${escapeHtml(operatorProfileUrl)}" title="ملف المشغل"><i class="bi bi-building"></i></a>` : ``}
                                     ${impersonateBtn}
                                     ${toggleStatusBtn}
+                                    ${suspendBtn}
+                                    ${unsuspendBtn}
                                     ${canDelete && (targetUserId !== currentUserId) ? `
-                                        <button type="button" class="btn btn-light btn-icon text-danger btn-delete-user"
+                                        <button type="button" class="btn btn-sm btn-outline-danger btn-delete-user"
                                                 data-id="${escapeHtml(u.id)}"
                                                 data-name="${escapeHtml(name)}"
                                                 title="حذف">
@@ -643,13 +762,24 @@
             $roleFilter.on('change', function(){
                 const role = $(this).val() || '';
 
-                // SuperAdmin: operator filter is meaningful mostly for employee/technician/all
+                // SuperAdmin: إظهار فلتر المشغل فقط عند اختيار دور "مشغل"
                 if(IS_SUPER_ADMIN){
-                    const shouldShowOperator = (role === '' || role === 'employee' || role === 'technician');
-                    $('#operatorFilterWrap').toggleClass('d-none', !shouldShowOperator);
+                    const shouldShowOperator = (role === 'company_owner');
+                    $('#operatorFilterWrap').toggle(shouldShowOperator);
 
                     if(!shouldShowOperator){
-                        try { $('#operatorFilter').val(null).trigger('change'); } catch(e){}
+                        try { 
+                            $('#operatorFilter').val(null).trigger('change');
+                            // إعادة تهيئة select2 إذا كان موجود
+                            if($('#operatorFilter').hasClass('select2-hidden-accessible')) {
+                                $('#operatorFilter').select2('destroy');
+                            }
+                        } catch(e){}
+                    } else {
+                        // إذا كان role = company_owner، نحمل قائمة المشغلين
+                        if(!$('#operatorFilter').hasClass('select2-hidden-accessible')) {
+                            initOperatorSelect2();
+                        }
                     }
                 }
                 // لا نقوم بتحميل البيانات تلقائياً - فقط عند الضغط على زر البحث
@@ -668,8 +798,13 @@
                 state.operator_id = 0;
 
                 if(IS_SUPER_ADMIN){
-                    try { $('#operatorFilter').val(null).trigger('change'); } catch(e){}
-                    $('#operatorFilterWrap').removeClass('d-none');
+                    try { 
+                        $('#operatorFilter').val(null).trigger('change');
+                        if($('#operatorFilter').hasClass('select2-hidden-accessible')) {
+                            $('#operatorFilter').select2('destroy');
+                        }
+                    } catch(e){}
+                    $('#operatorFilterWrap').hide();
                 }
 
                 // تفريغ الحقول فقط - لا تحميل تلقائي
@@ -685,8 +820,14 @@
             });
 
             // ===== Select2: operator filter (super admin)
-            if(IS_SUPER_ADMIN){
-                // init empty select2
+            function initOperatorSelect2(){
+                if(!IS_SUPER_ADMIN) return;
+                
+                // إذا كان select2 موجود، ندمّره أولاً
+                if($('#operatorFilter').hasClass('select2-hidden-accessible')) {
+                    $('#operatorFilter').select2('destroy');
+                }
+
                 $('#operatorFilter').select2({
                     dir: 'rtl',
                     width: '100%',
@@ -722,10 +863,9 @@
                     // لا نقوم بتحميل البيانات تلقائياً - فقط عند الضغط على زر البحث
                     // القيمة ستُقرأ في doSearch()
                 });
-
-                // hide initially only if role is not eligible
-                $('#operatorFilterWrap').removeClass('d-none');
             }
+
+            // لا نبدأ select2 إلا عند الحاجة (عند اختيار دور "مشغل")
 
             // ===== Create Modal (AJAX)
             @can('create', App\Models\User::class)
@@ -753,16 +893,48 @@
                     $input.closest('.col-md-6, .col-md-12, .col-12').find('.invalid-feedback').first().text(msg);
                 }
 
-                function toggleOperatorInCreate(){
-                    if(!IS_SUPER_ADMIN) return;
-
+                function updateCreateFormFields(){
                     const role = $createRole.val();
-                    const shouldShow = (role === 'employee' || role === 'technician');
-
-                    $('#createOperatorWrap').toggleClass('d-none', !shouldShow);
-
-                    if(!shouldShow){
-                        try { $('#createOperatorSelect').val(null).trigger('change'); } catch(e){}
+                    const isMainRole = ['super_admin', 'admin', 'energy_authority', 'company_owner'].includes(role);
+                    const isEmpOrTech = ['employee', 'technician'].includes(role);
+                    const isCompanyOwnerRole = role === 'company_owner';
+                    
+                    // For Super Admin: show name_en, phone, email for main roles
+                    if(IS_SUPER_ADMIN && isMainRole){
+                        $('#createNameEnField').removeClass('d-none');
+                        $('#createNameEnRequired').show();
+                        $('#createNameEnField input').prop('required', true);
+                        
+                        $('#createPhoneField').removeClass('d-none');
+                        $('#createPhoneRequired').show();
+                        $('#createPhoneField input').prop('required', true);
+                        
+                        $('#createEmailField').removeClass('d-none');
+                        $('#createEmailField input').prop('required', false);
+                    } else {
+                        $('#createNameEnField').addClass('d-none');
+                        $('#createNameEnRequired').hide();
+                        $('#createNameEnField input').prop('required', false);
+                        
+                        $('#createPhoneField').addClass('d-none');
+                        $('#createPhoneRequired').hide();
+                        $('#createPhoneField input').prop('required', false);
+                        
+                        $('#createEmailField').addClass('d-none');
+                        $('#createEmailField input').prop('required', false);
+                    }
+                    
+                    // Operator field for Super Admin
+                    if(IS_SUPER_ADMIN){
+                        const shouldShowOperator = isEmpOrTech || isCompanyOwnerRole;
+                        $('#createOperatorWrap').toggleClass('d-none', !shouldShowOperator);
+                        
+                        if(shouldShowOperator){
+                            $('#createOperatorSelect').prop('required', true);
+                        } else {
+                            $('#createOperatorSelect').prop('required', false);
+                            try { $('#createOperatorSelect').val(null).trigger('change'); } catch(e){}
+                        }
                     }
                 }
 
@@ -771,14 +943,14 @@
                     $createForm[0].reset();
 
                     if(IS_SUPER_ADMIN){
-                        toggleOperatorInCreate();
+                        updateCreateFormFields();
                     }
 
                     if(createModal) createModal.show();
                 });
 
                 $createRole.on('change', function(){
-                    toggleOperatorInCreate();
+                    updateCreateFormFields();
                 });
 
                 // Select2 for operator inside create modal (super admin)
@@ -901,6 +1073,129 @@
                 $deleteName.text(name || '—');
 
                 if(deleteModal) deleteModal.show();
+            });
+
+            // ===== Suspend User (AJAX)
+            const suspendModalEl = document.getElementById('suspendUserModal');
+            const suspendModal = suspendModalEl ? new bootstrap.Modal(suspendModalEl) : null;
+            let pendingSuspendId = null;
+
+            const $suspendName = $('#suspendUserName');
+            const $suspendReason = $('#suspendReason');
+            const $suspendSpinner = $('#suspendSpinner');
+
+            function setSuspendLoading(on){
+                $('#btnConfirmSuspend').prop('disabled', on);
+                $suspendReason.prop('disabled', on);
+                $suspendSpinner.toggleClass('d-none', !on);
+            }
+
+            function clearSuspendModal(){
+                $suspendReason.val('').removeClass('is-invalid');
+                $suspendReason.next('.invalid-feedback').text('');
+                pendingSuspendId = null;
+            }
+
+            $tbody.on('click', '.btn-suspend-user', function(){
+                const id = $(this).data('id');
+                const name = $(this).data('name');
+
+                pendingSuspendId = id;
+                $suspendName.text(name || '—');
+                clearSuspendModal();
+
+                if(suspendModal) suspendModal.show();
+            });
+
+            $('#suspendUserModal').on('hidden.bs.modal', function(){
+                clearSuspendModal();
+            });
+
+            $('#btnConfirmSuspend').on('click', function(){
+                if(!pendingSuspendId) return;
+
+                const reason = $suspendReason.val().trim();
+                if(!reason || reason.length < 5){
+                    $suspendReason.addClass('is-invalid');
+                    $suspendReason.next('.invalid-feedback').text('يجب إدخال سبب التعطيل (5 أحرف على الأقل)');
+                    return;
+                }
+
+                if(reason.length > 1000){
+                    $suspendReason.addClass('is-invalid');
+                    $suspendReason.next('.invalid-feedback').text('سبب التعطيل يجب أن لا يتجاوز 1000 حرف');
+                    return;
+                }
+
+                setSuspendLoading(true);
+
+                $.ajax({
+                    url: `${USERS_BASE_URL}/${pendingSuspendId}/suspend`,
+                    method: 'POST',
+                    dataType: 'json',
+                    data: {
+                        reason: reason
+                    },
+                    success: function(resp){
+                        if(resp.ok){
+                            notify('success', resp.message || 'تم تعطيل/حظر المستخدم بنجاح');
+                            if(suspendModal) suspendModal.hide();
+                            loadUsers(state.page || 1);
+                        } else {
+                            notify('error', resp.message || 'حدث خطأ');
+                        }
+                    },
+                    error: function(xhr){
+                        if(xhr.status === 422 && xhr.responseJSON && xhr.responseJSON.errors){
+                            const errs = xhr.responseJSON.errors;
+                            if(errs.reason && errs.reason[0]){
+                                $suspendReason.addClass('is-invalid');
+                                $suspendReason.next('.invalid-feedback').text(errs.reason[0]);
+                            }
+                            notify('error', 'تحقق من البيانات المدخلة');
+                            return;
+                        }
+
+                        const msg = (xhr.responseJSON && xhr.responseJSON.message)
+                            ? xhr.responseJSON.message
+                            : 'تعذر تعطيل/حظر المستخدم';
+                        notify('error', msg);
+                    },
+                    complete: function(){
+                        setSuspendLoading(false);
+                    }
+                });
+            });
+
+            // ===== Unsuspend User (AJAX)
+            $tbody.on('click', '.btn-unsuspend-user', function(){
+                const $btn = $(this);
+                const id = $btn.data('id');
+                const name = $btn.data('name');
+
+                if (!confirm(`هل أنت متأكد من رفع الحظر عن المستخدم "${name}"؟`)) {
+                    return;
+                }
+
+                $.ajax({
+                    url: `${USERS_BASE_URL}/${id}/unsuspend`,
+                    method: 'POST',
+                    dataType: 'json',
+                    success: function(resp){
+                        if(resp.ok){
+                            notify('success', resp.message || 'تم رفع الحظر عن المستخدم بنجاح');
+                            loadUsers(state.page || 1);
+                        } else {
+                            notify('error', resp.message || 'حدث خطأ');
+                        }
+                    },
+                    error: function(xhr){
+                        const msg = (xhr.responseJSON && xhr.responseJSON.message)
+                            ? xhr.responseJSON.message
+                            : 'تعذر رفع الحظر عن المستخدم';
+                        notify('error', msg);
+                    }
+                });
             });
 
             $('#btnConfirmDelete').on('click', function(){

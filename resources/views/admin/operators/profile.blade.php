@@ -6,21 +6,80 @@
 @endphp
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('assets/admin/css/operators.css') }}">
+<style>
+    .section-divider-container {
+        padding: 2rem 0;
+        position: relative;
+    }
+
+    .section-divider {
+        margin: 0;
+        border: none;
+        border-top: 2px solid transparent;
+        background: linear-gradient(90deg, transparent 0%, rgba(59, 130, 246, 0.2) 30%, rgba(59, 130, 246, 0.4) 50%, rgba(59, 130, 246, 0.2) 70%, transparent 100%);
+        height: 2px;
+        position: relative;
+        overflow: visible;
+    }
+
+    .section-divider::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 16px;
+        height: 16px;
+        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+        border: 2px solid #3b82f6;
+        border-radius: 50%;
+        z-index: 1;
+        box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+    }
+
+    .section-divider::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 8px;
+        height: 8px;
+        background: #3b82f6;
+        border-radius: 50%;
+        z-index: 2;
+    }
+
+    @media (max-width: 768px) {
+        .section-divider-container {
+            padding: 1.5rem 0;
+        }
+
+        .section-divider::before {
+            width: 14px;
+            height: 14px;
+        }
+
+        .section-divider::after {
+            width: 6px;
+            height: 6px;
+        }
+    }
+</style>
 @endpush
 
 @section('content')
-<div class="operators-page operator-profile-page">
+<div class="general-page">
     <div class="row g-3">
         <div class="col-12">
-            <div class="card op-card position-relative" id="profileCard">
-                <div class="op-card-header d-flex align-items-center justify-content-between gap-2 flex-wrap">
+            <div class="general-card position-relative" id="profileCard">
+                <div class="general-card-header">
                     <div>
-                        <div class="op-title">
+                        <h5 class="general-title">
                             <i class="bi bi-ui-checks-grid me-2"></i>
                             بيانات المشغل
-                        </div>
-                        <div class="op-subtitle">ملف المشغل</div>
+                        </h5>
+                        <div class="general-subtitle">ملف المشغل</div>
                     </div>
 
                     <button class="btn btn-primary" id="saveProfileBtn" type="button">
@@ -86,16 +145,23 @@
             </div>
         </div>
 
+        {{-- Divider between sections --}}
+        <div class="col-12">
+            <div class="section-divider-container">
+                <hr class="section-divider">
+            </div>
+        </div>
+
         {{-- قسم وحدات التوليد --}}
         <div class="col-12">
-            <div class="card op-card">
-                <div class="op-card-header d-flex align-items-center justify-content-between gap-2 flex-wrap">
+            <div class="general-card">
+                <div class="general-card-header">
                     <div>
-                        <div class="op-title">
+                        <h5 class="general-title">
                             <i class="bi bi-lightning-charge me-2"></i>
                             وحدات التوليد
-                        </div>
-                        <div class="op-subtitle">إدارة وحدات التوليد والمولدات التابعة لها</div>
+                        </h5>
+                        <div class="general-subtitle">إدارة وحدات التوليد والمولدات التابعة لها</div>
                     </div>
                     @can('create', App\Models\GenerationUnit::class)
                         <a href="{{ route('admin.generation-units.create') }}" class="btn btn-primary">

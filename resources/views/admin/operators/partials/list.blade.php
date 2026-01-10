@@ -41,13 +41,17 @@
                     </td>
 
                     <td class="text-center d-none d-md-table-cell">
-                        @if($operator->status === 'active')
-                            <span class="badge bg-success">فعّال</span>
-                        @elseif($operator->status === 'inactive')
-                            <span class="badge bg-secondary">غير فعّال</span>
-                        @else
-                            <span class="badge bg-light text-dark">غير محدد</span>
-                        @endif
+                        <div class="d-flex flex-column gap-1 align-items-center">
+                            @if($operator->status === 'active' && $operator->is_approved)
+                                <span class="badge bg-success">فعّال ومعتمد</span>
+                            @elseif($operator->status === 'active' && !$operator->is_approved)
+                                <span class="badge bg-info text-white">فعّال وغير معتمد</span>
+                            @elseif($operator->status === 'inactive' && $operator->is_approved)
+                                <span class="badge bg-secondary">غير فعّال ومعتمد</span>
+                            @else
+                                <span class="badge bg-warning text-dark">غير فعّال وغير معتمد</span>
+                            @endif
+                        </div>
                     </td>
 
                     <td class="d-none d-xl-table-cell">
@@ -72,7 +76,7 @@
                                 </a>
                             @endcan
 
-                            @if(auth()->user()->isSuperAdmin())
+                            @if(auth()->user()->isSuperAdmin() || auth()->user()->isAdmin())
                                 <button type="button"
                                         class="btn btn-sm btn-outline-{{ $operator->status === 'active' ? 'warning' : 'success' }}"
                                         title="{{ $operator->status === 'active' ? 'إيقاف' : 'تفعيل' }}"
@@ -80,6 +84,15 @@
                                         data-status="{{ $operator->status }}"
                                         data-url="{{ route('admin.operators.toggle-status', $operator) }}">
                                     <i class="bi bi-{{ $operator->status === 'active' ? 'pause' : 'play' }}-fill"></i>
+                                </button>
+                                
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-{{ $operator->is_approved ? 'danger' : 'primary' }}"
+                                        title="{{ $operator->is_approved ? 'إلغاء الاعتماد' : 'اعتماد' }}"
+                                        data-action="toggle-approval-operator"
+                                        data-approved="{{ $operator->is_approved ? '1' : '0' }}"
+                                        data-url="{{ route('admin.operators.toggle-approval', $operator) }}">
+                                    <i class="bi bi-{{ $operator->is_approved ? 'x-circle' : 'check-circle' }}-fill"></i>
                                 </button>
                             @endif
 

@@ -17,14 +17,16 @@ use App\Http\Controllers\Admin\OperatorProfileController;
 use App\Http\Controllers\Admin\OperatorUnitNumberController;
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\AuthorizedPhoneController;
+use App\Http\Controllers\Admin\LogController;
 use App\Http\Controllers\Admin\PermissionAuditLogController;
 use App\Http\Controllers\Admin\PermissionsController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\GuideController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware(['auth', 'admin'])->group(function () {
+Route::middleware(['auth', 'admin', 'operator.approved'])->group(function () {
 
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
@@ -94,6 +96,8 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::post('users/{user}/impersonate', [UserController::class, 'impersonate'])->name('users.impersonate');
     Route::post('users/stop-impersonating', [UserController::class, 'stopImpersonating'])->name('users.stop-impersonating');
     Route::post('users/{user}/toggle-status', [UserController::class, 'toggleStatus'])->name('users.toggle-status');
+    Route::post('users/{user}/suspend', [UserController::class, 'suspend'])->name('users.suspend');
+    Route::post('users/{user}/unsuspend', [UserController::class, 'unsuspend'])->name('users.unsuspend');
     Route::resource('users', UserController::class);
 
     // Operator employees (lock it via policy at route-level too)
@@ -105,6 +109,7 @@ Route::middleware(['auth', 'admin'])->group(function () {
      * Operator profile must be before resource
      */
     Route::get('operators/profile', [OperatorProfileController::class, 'show'])->name('operators.profile');
+    Route::get('operators/{operator}/profile', [OperatorProfileController::class, 'show'])->name('operators.profile.show');
     Route::put('operators/profile', [OperatorProfileController::class, 'update'])->name('operators.profile.update');
 
     Route::get('operators/next-unit-number/{governorate}', [OperatorUnitNumberController::class, 'getNextUnitNumber'])->name('operators.next-unit-number');
@@ -118,6 +123,7 @@ Route::middleware(['auth', 'admin'])->group(function () {
      * Operators
      */
     Route::post('operators/{operator}/toggle-status', [OperatorController::class, 'toggleStatus'])->name('operators.toggle-status');
+    Route::post('operators/{operator}/toggle-approval', [OperatorController::class, 'toggleApproval'])->name('operators.toggle-approval');
     Route::resource('operators', OperatorController::class);
     
     // Electricity Tariff Prices (nested under operators)
@@ -138,7 +144,9 @@ Route::middleware(['auth', 'admin'])->group(function () {
      */
     Route::resource('generation-units', GenerationUnitController::class);
     Route::get('/operators/{operator}/data', [GenerationUnitController::class, 'getOperatorData'])->name('operators.data');
+    Route::get('/generation-units/{generationUnit}/qr-code', [GenerationUnitController::class, 'qrCode'])->name('generation-units.qr-code');
     Route::resource('generators', GeneratorController::class);
+    Route::get('/generators/{generator}/qr-code', [GeneratorController::class, 'qrCode'])->name('generators.qr-code');
     Route::get('/operators/{operator}/generation-units', [GeneratorController::class, 'getGenerationUnits'])->name('operators.generation-units');
     Route::post('/generators/generate-number/{generationUnit}', [GeneratorController::class, 'generateGeneratorNumber'])->name('generators.generate-number');
     Route::resource('operation-logs', OperationLogController::class);
@@ -181,5 +189,35 @@ Route::middleware(['auth', 'admin'])->group(function () {
     /**
      * Authorized Phones (Super Admin only)
      */
+    Route::post('authorized-phones/{authorizedPhone}/toggle-status', [AuthorizedPhoneController::class, 'toggleStatus'])->name('authorized-phones.toggle-status');
+    Route::post('authorized-phones/notify-pending', [AuthorizedPhoneController::class, 'notifyPending'])->name('authorized-phones.notify-pending');
+    Route::post('authorized-phones/import', [AuthorizedPhoneController::class, 'import'])->name('authorized-phones.import');
+    Route::delete('authorized-phones/delete-all', [AuthorizedPhoneController::class, 'deleteAll'])->name('authorized-phones.delete-all');
     Route::resource('authorized-phones', AuthorizedPhoneController::class);
+
+    /**
+     * System Logs (Super Admin only)
+     */
+    Route::get('logs', [LogController::class, 'index'])->name('logs.index');
+    Route::post('logs/clear', [LogController::class, 'clear'])->name('logs.clear');
+    Route::get('logs/download', [LogController::class, 'download'])->name('logs.download');
+
+    /**
+     * User Guide (الدليل الإرشادي)
+     */
+    Route::get('guide', [GuideController::class, 'index'])->name('guide.index');
+
+    /**
+     * Welcome Messages (الرسائل الترحيبية)
+     */
+    Route::get('welcome-messages', [\App\Http\Controllers\Admin\WelcomeMessageController::class, 'index'])->name('welcome-messages.index');
+    Route::get('welcome-messages/{welcomeMessage}/edit', [\App\Http\Controllers\Admin\WelcomeMessageController::class, 'edit'])->name('welcome-messages.edit');
+    Route::put('welcome-messages/{welcomeMessage}', [\App\Http\Controllers\Admin\WelcomeMessageController::class, 'update'])->name('welcome-messages.update');
+
+    /**
+     * SMS Templates (قوالب رسائل الجوال)
+     */
+    Route::get('sms-templates', [\App\Http\Controllers\Admin\SmsTemplateController::class, 'index'])->name('sms-templates.index');
+    Route::get('sms-templates/{smsTemplate}/edit', [\App\Http\Controllers\Admin\SmsTemplateController::class, 'edit'])->name('sms-templates.edit');
+    Route::put('sms-templates/{smsTemplate}', [\App\Http\Controllers\Admin\SmsTemplateController::class, 'update'])->name('sms-templates.update');
 });

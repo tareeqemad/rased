@@ -12,251 +12,131 @@ use Illuminate\Support\Facades\Hash;
 class UserSeeder extends Seeder
 {
     /**
+     * توليد username بناءً على الآلية الجديدة
+     * SuperAdmin: sp_ + الحرف الأول + اسم العائلة
+     * Admin: ad_ + الحرف الأول + اسم العائلة  
+     * EnergyAuthority: ea_ + الحرف الأول + اسم العائلة
+     * CompanyOwner: co_ + الحرف الأول + اسم العائلة
+     */
+    private function generateUsername(string $nameEn, Role $role): string
+    {
+        // تقسيم الاسم إلى كلمات
+        $nameParts = preg_split('/[\s\-_]+/', trim($nameEn));
+        $firstName = $nameParts[0] ?? '';
+        $lastName = $nameParts[count($nameParts) - 1] ?? $firstName;
+
+        // الحصول على الحرف الأول من الاسم الأول
+        $firstChar = mb_substr($firstName, 0, 1, 'UTF-8');
+        $firstChar = mb_strtolower($firstChar, 'UTF-8');
+
+        // تنظيف اسم العائلة
+        $cleanLastName = preg_replace('/[^a-zA-Z0-9]/', '', $lastName);
+        $cleanLastName = mb_strtolower($cleanLastName, 'UTF-8');
+
+        // تحديد البادئة حسب الدور
+        $prefix = match($role) {
+            Role::SuperAdmin => 'sp_',
+            Role::EnergyAuthority => 'ea_',
+            Role::CompanyOwner => 'co_',
+            default => 'ad_',
+        };
+
+        // username = prefix + first_char + last_name
+        $usernameBase = $prefix . $firstChar . $cleanLastName;
+
+        // التأكد من أن username فريد
+        $counter = 1;
+        $username = $usernameBase;
+        while (User::where('username', $username)->whereNull('deleted_at')->exists()) {
+            $username = $usernameBase . $counter;
+            $counter++;
+        }
+
+        return $username;
+    }
+
+    /**
      * Run the database seeds.
      */
     public function run(): void
     {
-        // الحصول على الأدوار
+        // Get super admin role
         $superAdminRole = RoleModel::where('name', 'super_admin')->first();
-        $adminRole = RoleModel::where('name', 'admin')->first();
-        $companyOwnerRole = RoleModel::where('name', 'company_owner')->first();
-        $employeeRole = RoleModel::where('name', 'employee')->first();
 
-        // Super Admins - 5 super admins
-        $plainPassword = 'tareq123';
-        User::firstOrCreate(
-            ['email' => 'tareq@rased.ps'],
+        $defaultPassword = 'tareq123';
+
+        // 1. Super Admin - طارق البواب
+        $superAdmin1Username = $this->generateUsername('Tareq Elbawab', Role::SuperAdmin);
+        $superAdmin1 = User::updateOrCreate(
+            ['email' => 'tareq@gazarased.com'],
             [
-                'name' => 'طارق',
-                'username' => 'tareeqemad',
-                'password' => Hash::make($plainPassword),
-                'password_plain' => $plainPassword,
+                'name' => 'طارق البواب',
+                'name_en' => 'Tareq Elbawab',
+                'username' => $superAdmin1Username,
+                'password' => Hash::make($defaultPassword),
+                'password_plain' => $defaultPassword,
                 'role' => Role::SuperAdmin,
                 'role_id' => $superAdminRole?->id,
                 'status' => 'active',
+                'phone' => '0591234567',
             ]
         );
 
-        User::firstOrCreate(
-            ['email' => 'faheem@rased.ps'],
+        // 2. Super Admin - أدهم أبو شملة
+        $superAdmin2Username = $this->generateUsername('Adham Abu Shmeleh', Role::SuperAdmin);
+        $superAdmin2 = User::updateOrCreate(
+            ['email' => 'adham@gazarased.com'],
             [
-                'name' => 'فهيم',
-                'username' => 'faheem',
-                'password' => Hash::make($plainPassword),
-                'password_plain' => $plainPassword,
+                'name' => 'أدهم أبو شملة',
+                'name_en' => 'Adham Abu Shmeleh',
+                'username' => $superAdmin2Username,
+                'password' => Hash::make($defaultPassword),
+                'password_plain' => $defaultPassword,
                 'role' => Role::SuperAdmin,
                 'role_id' => $superAdminRole?->id,
                 'status' => 'active',
+                'phone' => '0592345678',
             ]
         );
 
-        User::firstOrCreate(
-            ['email' => 'adham@rased.ps'],
+        // 3. Super Admin - فهيم المملوك
+        $superAdmin3Username = $this->generateUsername('Fahim Almalook', Role::SuperAdmin);
+        $superAdmin3 = User::updateOrCreate(
+            ['email' => 'fahim@gazarased.com'],
             [
-                'name' => 'أدهم',
-                'username' => 'adham',
-                'password' => Hash::make($plainPassword),
-                'password_plain' => $plainPassword,
+                'name' => 'فهيم المملوك',
+                'name_en' => 'Fahim Almalook',
+                'username' => $superAdmin3Username,
+                'password' => Hash::make($defaultPassword),
+                'password_plain' => $defaultPassword,
                 'role' => Role::SuperAdmin,
                 'role_id' => $superAdminRole?->id,
                 'status' => 'active',
+                'phone' => '0593456789',
             ]
         );
 
-        User::firstOrCreate(
-            ['email' => 'admin@rased.ps'],
+        // 4. System User - منصة راصد (for system messages)
+        $systemUser = User::updateOrCreate(
+            ['username' => 'platform_rased'],
             [
-                'name' => 'أدمن',
-                'username' => 'admin',
-                'password' => Hash::make($plainPassword),
-                'password_plain' => $plainPassword,
-                'role' => Role::SuperAdmin,
+                'name' => 'منصة راصد',
+                'name_en' => 'Rased Platform',
+                'email' => 'platform@gazarased.com',
+                'username' => 'platform_rased',
+                'password' => Hash::make('system_user_' . uniqid() . '_' . time()), // Random password, cannot login
+                'password_plain' => null, // No plain password
+                'role' => Role::SuperAdmin, // Use SuperAdmin role for permissions, but prevent login
                 'role_id' => $superAdminRole?->id,
-                'status' => 'active',
+                'status' => 'active', // Active but cannot login
+                'phone' => null,
             ]
         );
-
-        User::firstOrCreate(
-            ['email' => 'khalid@rased.ps'],
-            [
-                'name' => 'خالد',
-                'username' => 'khalid',
-                'password' => Hash::make($plainPassword),
-                'password_plain' => $plainPassword,
-                'role' => Role::SuperAdmin,
-                'role_id' => $superAdminRole?->id,
-                'status' => 'active',
-            ]
-        );
-
-        // Admin (سلطة الطاقة)
-        $adminPassword = 'password';
-        User::firstOrCreate(
-            ['email' => 'admin@power.ps'],
-            [
-                'name' => 'مدير سلطة الطاقة',
-                'username' => 'admin_power',
-                'password' => Hash::make($adminPassword),
-                'password_plain' => $adminPassword,
-                'role' => Role::Admin,
-                'role_id' => $adminRole?->id,
-                'status' => 'active',
-            ]
-        );
-
-        // Company Owner - mmluk
-        $mmlukOwner = User::firstOrCreate(
-            ['email' => 'mmluk@operator.ps'],
-            [
-                'name' => 'مشغل المملوك',
-                'username' => 'mmluk',
-                'password' => Hash::make($plainPassword),
-                'password_plain' => $plainPassword,
-                'role' => Role::CompanyOwner,
-                'role_id' => $companyOwnerRole?->id,
-                'status' => 'active',
-            ]
-        );
-
-        // إنشاء أدوار خاصة لمشغل المملوك (سيتم إنشاؤها في OperatorsWithDataSeeder)
-
-        // 5 Employees for mmluk with different permissions
-        $employeePassword = 'password';
-        $employee1 = User::firstOrCreate(
-            ['email' => 'emp1@mmluk.ps'],
-            [
-                'name' => 'موظف 1 - عرض فقط',
-                'username' => 'emp1_mmluk',
-                'password' => Hash::make($employeePassword),
-                'password_plain' => $employeePassword,
-                'role' => Role::Employee,
-                'role_id' => $employeeRole?->id,
-                'status' => 'active',
-            ]
-        );
-
-        $employee2 = User::firstOrCreate(
-            ['email' => 'emp2@mmluk.ps'],
-            [
-                'name' => 'موظف 2 - عرض وتحديث',
-                'username' => 'emp2_mmluk',
-                'password' => Hash::make($employeePassword),
-                'password_plain' => $employeePassword,
-                'role' => Role::Employee,
-                'role_id' => $employeeRole?->id,
-                'status' => 'active',
-            ]
-        );
-
-        $employee3 = User::firstOrCreate(
-            ['email' => 'emp3@mmluk.ps'],
-            [
-                'name' => 'موظف 3 - كامل الصلاحيات',
-                'username' => 'emp3_mmluk',
-                'password' => Hash::make($employeePassword),
-                'password_plain' => $employeePassword,
-                'role' => Role::Employee,
-                'role_id' => $employeeRole?->id,
-                'status' => 'active',
-            ]
-        );
-
-        $employee4 = User::firstOrCreate(
-            ['email' => 'emp4@mmluk.ps'],
-            [
-                'name' => 'موظف 4 - سجلات فقط',
-                'username' => 'emp4_mmluk',
-                'password' => Hash::make($employeePassword),
-                'password_plain' => $employeePassword,
-                'role' => Role::Employee,
-                'role_id' => $employeeRole?->id,
-                'status' => 'active',
-            ]
-        );
-
-        $employee5 = User::firstOrCreate(
-            ['email' => 'emp5@mmluk.ps'],
-            [
-                'name' => 'موظف 5 - مولدات فقط',
-                'username' => 'emp5_mmluk',
-                'password' => Hash::make($employeePassword),
-                'password_plain' => $employeePassword,
-                'role' => Role::Employee,
-                'role_id' => $employeeRole?->id,
-                'status' => 'active',
-            ]
-        );
-
-        // منح صلاحيات مختلفة للموظفين
-        $permissions = Permission::all();
-
-        // Employee 1: عرض فقط
-        $employee1->permissions()->sync($permissions->whereIn('name', [
-            'generators.view',
-            'operation_logs.view',
-            'fuel_efficiencies.view',
-            'maintenance_records.view',
-            'compliance_safeties.view',
-        ])->pluck('id'));
-
-        // Employee 2: عرض وتحديث
-        $employee2->permissions()->sync($permissions->whereIn('name', [
-            'generators.view',
-            'generators.update',
-            'operation_logs.view',
-            'operation_logs.update',
-            'operation_logs.create',
-            'fuel_efficiencies.view',
-            'fuel_efficiencies.update',
-            'fuel_efficiencies.create',
-            'maintenance_records.view',
-            'maintenance_records.update',
-            'maintenance_records.create',
-        ])->pluck('id'));
-
-        // Employee 3: كامل الصلاحيات (ما عدا الحذف)
-        $employee3->permissions()->sync($permissions->whereIn('name', [
-            'generators.view',
-            'generators.create',
-            'generators.update',
-            'operation_logs.view',
-            'operation_logs.create',
-            'operation_logs.update',
-            'fuel_efficiencies.view',
-            'fuel_efficiencies.create',
-            'fuel_efficiencies.update',
-            'maintenance_records.view',
-            'maintenance_records.create',
-            'maintenance_records.update',
-            'compliance_safeties.view',
-            'compliance_safeties.create',
-            'compliance_safeties.update',
-        ])->pluck('id'));
-
-        // Employee 4: سجلات فقط
-        $employee4->permissions()->sync($permissions->whereIn('name', [
-            'operation_logs.view',
-            'operation_logs.create',
-            'operation_logs.update',
-            'fuel_efficiencies.view',
-            'fuel_efficiencies.create',
-            'fuel_efficiencies.update',
-            'maintenance_records.view',
-            'maintenance_records.create',
-            'maintenance_records.update',
-        ])->pluck('id'));
-
-        // Employee 5: مولدات فقط
-        $employee5->permissions()->sync($permissions->whereIn('name', [
-            'generators.view',
-            'generators.create',
-            'generators.update',
-        ])->pluck('id'));
 
         $this->command->info('تم إنشاء المستخدمين بنجاح!');
-        $this->command->info('Super Admins: tareeqemad, faheem, adham, admin, khalid / tareq123');
-        $this->command->info('Admin: admin_power / password');
-        $this->command->info('Company Owner (mmluk): mmluk / tareq123');
-        $this->command->info('Employees: emp1_mmluk, emp2_mmluk, emp3_mmluk, emp4_mmluk, emp5_mmluk / password');
+        $this->command->info("Super Admin 1 ({$superAdmin1->name}): {$superAdmin1->username} / {$defaultPassword}");
+        $this->command->info("Super Admin 2 ({$superAdmin2->name}): {$superAdmin2->username} / {$defaultPassword}");
+        $this->command->info("Super Admin 3 ({$superAdmin3->name}): {$superAdmin3->username} / {$defaultPassword}");
+        $this->command->info("System User ({$systemUser->name}): {$systemUser->username} (Cannot login - for system messages only)");
     }
 }

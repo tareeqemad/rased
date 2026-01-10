@@ -63,4 +63,12 @@ class AuthorizedPhonePolicy
     {
         return $user->isSuperAdmin();
     }
+
+    /**
+     * Determine whether the user can delete all authorized phones.
+     */
+    public function deleteAll(User $user): bool
+    {
+        return $user->isSuperAdmin() || $user->isAdmin();
+    }
 }

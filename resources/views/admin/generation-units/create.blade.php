@@ -9,22 +9,23 @@
 @endphp
 
 @push('styles')
-    <link rel="stylesheet" href="{{ asset('assets/admin/css/operators.css') }}">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 @endpush
 
 @section('content')
-<div class="operators-page operator-profile-page">
+<div class="general-page">
     <div class="row g-3">
         <div class="col-12">
-            <div class="card op-card position-relative" id="generationUnitCard">
-                <div class="op-card-header d-flex align-items-center justify-content-between gap-2 flex-wrap">
+            <div class="general-card position-relative" id="generationUnitCard">
+                <div class="general-card-header">
                     <div>
-                        <div class="op-title">
+                        <h5 class="general-title">
                             <i class="bi bi-lightning-charge me-2"></i>
                             إضافة وحدة توليد جديدة
+                        </h5>
+                        <div class="general-subtitle">
+                            إدخال بيانات وحدة التوليد
                         </div>
-                        <div class="op-subtitle">إدخال بيانات وحدة التوليد</div>
                     </div>
 
                     <div class="d-flex gap-2">
@@ -33,13 +34,13 @@
                             العودة
                         </a>
                         <button class="btn btn-primary" id="saveBtn" type="button">
-                            <i class="bi bi-save me-1"></i>
+                            <i class="bi bi-check-lg me-1"></i>
                             حفظ
                         </button>
                     </div>
                 </div>
 
-                <div class="card-body">
+                <div class="card-body pb-4">
                     <form id="generationUnitForm" action="{{ route('admin.generation-units.store') }}" method="POST">
                         @csrf
 
@@ -50,7 +51,7 @@
                                     <select name="operator_id" id="operator_id" class="form-select @error('operator_id') is-invalid @enderror" required>
                                         <option value="">اختر المشغل</option>
                                         @foreach($allOperators as $op)
-                                            <option value="{{ $op->id }}" {{ old('operator_id') == $op->id ? 'selected' : '' }}>
+                                            <option value="{{ $op->id }}" {{ (old('operator_id') == $op->id || (isset($operator) && $operator && $operator->id == $op->id)) ? 'selected' : '' }}>
                                                 {{ $op->name }}
                                             </option>
                                         @endforeach
@@ -64,7 +65,7 @@
                             <input type="hidden" name="operator_id" id="operator_id" value="{{ $operator->id }}">
                         @endif
 
-                        <ul class="nav nav-pills op-tabs" id="profileTabs" role="tablist">
+                        <ul class="nav nav-pills mb-3" id="profileTabs" role="tablist">
                             <li class="nav-item" role="presentation">
                                 <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#tab-basic" type="button" role="tab">
                                     <i class="bi bi-info-circle me-1"></i> البيانات الأساسية
@@ -242,7 +243,7 @@
 
                                     <div class="col-md-6">
                                         <label class="form-label fw-semibold">المدينة <span class="text-danger">*</span></label>
-                                        <select name="city_id" id="city_id" class="form-select @error('city_id') is-invalid @enderror" {{ empty($cities) ? 'disabled' : '' }} required>
+                                        <select name="city_id" id="city_id" class="form-select @error('city_id') is-invalid @enderror" required>
                                             <option value="">اختر المدينة</option>
                                             @foreach($cities as $city)
                                                 <option value="{{ $city->id }}"
@@ -431,9 +432,9 @@
                     </form>
                 </div>
 
-                <div class="op-loading d-none" id="loading">
+                <div class="data-table-loading d-none" id="loading">
                     <div class="text-center">
-                        <div class="spinner-border" role="status"></div>
+                        <div class="spinner-border text-primary" role="status"></div>
                         <div class="mt-2 text-muted fw-semibold">جاري الحفظ...</div>
                     </div>
                 </div>
@@ -688,17 +689,36 @@
             // الآن governorateSelect.value هو ID وليس code
             const governorateId = this.value;
             if (governorateId) {
+                // تفعيل المدينة قبل تحديثها (في حالة كانت معطلة)
+                if (citySelect) {
+                    citySelect.disabled = false;
+                }
                 GeneralHelpers.updateCitiesSelect('#governorate', '#city_id');
+            } else {
+                // إذا لم يتم اختيار محافظة، تعطيل المدينة
+                if (citySelect) {
+                    citySelect.innerHTML = '<option value="">اختر المدينة</option>';
+                    citySelect.disabled = true;
+                }
             }
         }
     });
 
     // تحميل المدن تلقائياً عند تحميل الصفحة إذا كانت المحافظة محددة
     document.addEventListener('DOMContentLoaded', function() {
+        // تعطيل المدينة في البداية إذا لم تكن هناك مدن محملة (أي إذا كان هناك فقط option واحد "اختر المدينة")
+        if (citySelect && citySelect.options.length <= 1) {
+            citySelect.disabled = true;
+        }
+        
         if (governorateSelect && governorateSelect.value) {
             // الآن governorateSelect.value هو ID وليس code
             const governorateId = governorateSelect.value;
             if (governorateId && typeof GeneralHelpers !== 'undefined' && GeneralHelpers.updateCitiesSelect) {
+                // تفعيل المدينة قبل تحديثها
+                if (citySelect) {
+                    citySelect.disabled = false;
+                }
                 const cityId = citySelect ? citySelect.value : null;
                 GeneralHelpers.updateCitiesSelect('#governorate', '#city_id', {
                     selectedValue: cityId

@@ -16,6 +16,7 @@ class Message extends Model
         'operator_id',
         'subject',
         'body',
+        'attachment',
         'type',
         'is_read',
         'read_at',
@@ -47,6 +48,22 @@ class Message extends Model
     }
 
     /**
+     * Get attachment URL if exists
+     */
+    public function getAttachmentUrlAttribute(): ?string
+    {
+        return $this->attachment ? asset('storage/' . $this->attachment) : null;
+    }
+
+    /**
+     * Check if message has attachment
+     */
+    public function hasAttachment(): bool
+    {
+        return !empty($this->attachment);
+    }
+
+    /**
      * تحديد ما إذا كانت الرسالة موجهة لجميع موظفي المشغل
      */
     public function isBroadcastToStaff(): bool
@@ -63,45 +80,42 @@ class Message extends Model
     }
 
     /**
-     * تحديد ما إذا كان المستخدم يمكنه رؤية الرسالة
+     * Check if user can view this message
+     * Each user can only see messages they sent or received
      */
     public function canBeViewedBy(User $user): bool
     {
-        // SuperAdmin و Admin يمكنهما رؤية جميع الرسائل
-        if ($user->isSuperAdmin() || $user->isAdmin()) {
-            return true;
-        }
-
-        // المرسل يمكنه رؤية رسالته
+        // Sender can always view their own messages
         if ($this->sender_id === $user->id) {
             return true;
         }
 
-        // إذا كانت موجهة لمستخدم محدد
+        // If message is sent to a specific user
         if ($this->receiver_id === $user->id) {
             return true;
         }
 
-        // إذا كانت موجهة لجميع موظفي مشغل معين
+        // If message is broadcast to all staff of a specific operator
         if ($this->isBroadcastToStaff() && $this->operator_id) {
             if ($user->isCompanyOwner()) {
                 return $user->ownedOperators()->where('id', $this->operator_id)->exists();
             }
-            if ($user->isEmployee() || $user->isTechnician()) {
-                return $user->operators()->where('operators.id', $this->operator_id)->exists();
+            // Check if user has custom role linked to this operator
+            if ($user->hasOperatorLinkedCustomRole()) {
+                return $user->roleModel->operator_id === $this->operator_id;
             }
         }
 
-        // إذا كانت موجهة لمشغل معين (من أدمن)
+        // If message is sent to a specific operator (from admin)
         if ($this->type === 'admin_to_operator' && $this->operator_id) {
             if ($user->isCompanyOwner()) {
                 return $user->ownedOperators()->where('id', $this->operator_id)->exists();
             }
         }
 
-        // إذا كانت موجهة لجميع المشغلين (من أدمن)
+        // If message is broadcast to all operators (from admin)
         if ($this->isBroadcastToOperators()) {
-            return $user->isCompanyOwner() || $user->isSuperAdmin() || $user->isAdmin();
+            return $user->isCompanyOwner();
         }
 
         return false;
@@ -132,5 +146,29 @@ class Message extends Model
         }
 
         return false;
+    }
+
+    /**
+     * Get sender display name
+     * For system messages (from platform_rased user), show "منصة راصد" instead of user name
+     */
+    public function getSenderDisplayNameAttribute(): string
+    {
+        // Check if this is a system message (from platform_rased user)
+        if ($this->isSystemMessage()) {
+            return 'منصة راصد';
+        }
+
+        // For regular messages, return sender name
+        return $this->sender ? $this->sender->name : 'غير معروف';
+    }
+
+    /**
+     * Check if this is a system message (from platform_rased user)
+     */
+    public function isSystemMessage(): bool
+    {
+        // Check if sender is system user (platform_rased)
+        return $this->sender && $this->sender->isSystemUser();
     }
 }

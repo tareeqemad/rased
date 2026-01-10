@@ -18,12 +18,14 @@ class PermissionSeeder extends Seeder
             ['name' => 'users.create', 'label' => 'إنشاء مستخدم', 'group' => 'users', 'group_label' => 'المستخدمون', 'description' => 'القدرة على إنشاء مستخدم جديد', 'order' => 2],
             ['name' => 'users.update', 'label' => 'تحديث مستخدم', 'group' => 'users', 'group_label' => 'المستخدمون', 'description' => 'القدرة على تحديث بيانات المستخدم', 'order' => 3],
             ['name' => 'users.delete', 'label' => 'حذف مستخدم', 'group' => 'users', 'group_label' => 'المستخدمون', 'description' => 'القدرة على حذف المستخدم', 'order' => 4],
+            ['name' => 'users.suspend', 'label' => 'تعطيل/حظر مستخدم', 'group' => 'users', 'group_label' => 'المستخدمون', 'description' => 'القدرة على تعطيل أو حظر المستخدمين الذين يسببون مشاكل', 'order' => 5],
 
             // المشغلون
             ['name' => 'operators.view', 'label' => 'عرض المشغلين', 'group' => 'operators', 'group_label' => 'المشغلون', 'description' => 'القدرة على عرض قائمة المشغلين', 'order' => 5],
             ['name' => 'operators.create', 'label' => 'إنشاء مشغل', 'group' => 'operators', 'group_label' => 'المشغلون', 'description' => 'القدرة على إنشاء مشغل جديد', 'order' => 6],
             ['name' => 'operators.update', 'label' => 'تحديث مشغل', 'group' => 'operators', 'group_label' => 'المشغلون', 'description' => 'القدرة على تحديث بيانات المشغل', 'order' => 7],
             ['name' => 'operators.delete', 'label' => 'حذف مشغل', 'group' => 'operators', 'group_label' => 'المشغلون', 'description' => 'القدرة على حذف المشغل', 'order' => 8],
+            ['name' => 'operators.approve', 'label' => 'اعتماد/تفعيل مشغل', 'group' => 'operators', 'group_label' => 'المشغلون', 'description' => 'القدرة على اعتماد وتفعيل المشغلين', 'order' => 9],
 
             // المولدات
             ['name' => 'generators.view', 'label' => 'عرض المولدات', 'group' => 'generators', 'group_label' => 'المولدات', 'description' => 'القدرة على عرض قائمة المولدات', 'order' => 9],
@@ -75,6 +77,38 @@ class PermissionSeeder extends Seeder
             ['name' => 'authorized_phones.create', 'label' => 'إنشاء رقم مصرح به', 'group' => 'authorized_phones', 'group_label' => 'الأرقام المصرح بها', 'description' => 'القدرة على إضافة رقم جديد للقائمة المصرح بها', 'order' => 39],
             ['name' => 'authorized_phones.update', 'label' => 'تحديث رقم مصرح به', 'group' => 'authorized_phones', 'group_label' => 'الأرقام المصرح بها', 'description' => 'القدرة على تحديث بيانات الرقم المصرح به', 'order' => 40],
             ['name' => 'authorized_phones.delete', 'label' => 'حذف رقم مصرح به', 'group' => 'authorized_phones', 'group_label' => 'الأرقام المصرح بها', 'description' => 'القدرة على حذف رقم من القائمة المصرح بها', 'order' => 41],
+
+            // سجل الأخطاء
+            ['name' => 'logs.view', 'label' => 'عرض سجل الأخطاء', 'group' => 'logs', 'group_label' => 'سجل الأخطاء', 'description' => 'القدرة على عرض سجل أخطاء النظام', 'order' => 42],
+            ['name' => 'logs.clear', 'label' => 'حذف سجل الأخطاء', 'group' => 'logs', 'group_label' => 'سجل الأخطاء', 'description' => 'القدرة على حذف سجل الأخطاء', 'order' => 43],
+            ['name' => 'logs.download', 'label' => 'تحميل سجل الأخطاء', 'group' => 'logs', 'group_label' => 'سجل الأخطاء', 'description' => 'القدرة على تحميل ملف سجل الأخطاء', 'order' => 44],
+
+            // الدليل الإرشادي
+            ['name' => 'guide.view', 'label' => 'عرض الدليل الإرشادي', 'group' => 'guide', 'group_label' => 'الدليل الإرشادي', 'description' => 'القدرة على عرض الدليل الإرشادي', 'order' => 45],
+
+            // الرسائل الترحيبية
+            ['name' => 'welcome_messages.view', 'label' => 'عرض الرسائل الترحيبية', 'group' => 'welcome_messages', 'group_label' => 'الرسائل الترحيبية', 'description' => 'القدرة على عرض الرسائل الترحيبية', 'order' => 46],
+            ['name' => 'welcome_messages.update', 'label' => 'تعديل الرسائل الترحيبية', 'group' => 'welcome_messages', 'group_label' => 'الرسائل الترحيبية', 'description' => 'القدرة على تعديل الرسائل الترحيبية', 'order' => 47],
+
+            // قوالب SMS
+            ['name' => 'sms_templates.view', 'label' => 'عرض قوالب SMS', 'group' => 'sms_templates', 'group_label' => 'قوالب SMS', 'description' => 'القدرة على عرض قوالب رسائل الجوال', 'order' => 48],
+            ['name' => 'sms_templates.update', 'label' => 'تعديل قوالب SMS', 'group' => 'sms_templates', 'group_label' => 'قوالب SMS', 'description' => 'القدرة على تعديل قوالب رسائل الجوال', 'order' => 49],
+
+            // إعدادات الموقع (SuperAdmin only)
+            ['name' => 'settings.view', 'label' => 'عرض إعدادات الموقع', 'group' => 'settings', 'group_label' => 'إعدادات الموقع', 'description' => 'القدرة على عرض إعدادات الموقع', 'order' => 50],
+            ['name' => 'settings.update', 'label' => 'تعديل إعدادات الموقع', 'group' => 'settings', 'group_label' => 'إعدادات الموقع', 'description' => 'القدرة على تعديل إعدادات الموقع', 'order' => 51],
+
+            // إدارة الثوابت (SuperAdmin only)
+            ['name' => 'constants.view', 'label' => 'عرض الثوابت', 'group' => 'constants', 'group_label' => 'إدارة الثوابت', 'description' => 'القدرة على عرض الثوابت', 'order' => 52],
+            ['name' => 'constants.create', 'label' => 'إنشاء ثابت', 'group' => 'constants', 'group_label' => 'إدارة الثوابت', 'description' => 'القدرة على إنشاء ثابت جديد', 'order' => 53],
+            ['name' => 'constants.update', 'label' => 'تحديث ثابت', 'group' => 'constants', 'group_label' => 'إدارة الثوابت', 'description' => 'القدرة على تحديث الثوابت', 'order' => 54],
+            ['name' => 'constants.delete', 'label' => 'حذف ثابت', 'group' => 'constants', 'group_label' => 'إدارة الثوابت', 'description' => 'القدرة على حذف الثوابت', 'order' => 55],
+
+            // إدارة الأدوار (SuperAdmin and Energy Authority)
+            ['name' => 'roles.view', 'label' => 'عرض الأدوار', 'group' => 'roles', 'group_label' => 'الأدوار', 'description' => 'القدرة على عرض الأدوار', 'order' => 56],
+            ['name' => 'roles.create', 'label' => 'إنشاء دور', 'group' => 'roles', 'group_label' => 'الأدوار', 'description' => 'القدرة على إنشاء دور جديد', 'order' => 57],
+            ['name' => 'roles.update', 'label' => 'تحديث دور', 'group' => 'roles', 'group_label' => 'الأدوار', 'description' => 'القدرة على تحديث الأدوار', 'order' => 58],
+            ['name' => 'roles.delete', 'label' => 'حذف دور', 'group' => 'roles', 'group_label' => 'الأدوار', 'description' => 'القدرة على حذف الأدوار', 'order' => 59],
         ];
 
         foreach ($permissions as $permission) {

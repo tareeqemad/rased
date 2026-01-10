@@ -1,6 +1,6 @@
 @forelse($logs as $log)
     <tr>
-        <td>{{ $log->id }}</td>
+        <td>{{ $logs->firstItem() + $loop->index }}</td>
         <td>
             @if($log->user)
                 <div class="d-flex align-items-center">

@@ -18,15 +18,19 @@ class User extends Authenticatable
     use HasFactory, Notifiable, SoftDeletes;
 
     protected $fillable = [
-        'name',
+        'name', // اسم المستخدم (العربي) - مثل: "أحمد محمد"
+        'name_en', // اسم المستخدم (بالإنجليزية) - مثل: "Ahmad Mohammed" - يستخدم لتوليد username تلقائياً
         'email',
-        'username',
+        'username', // اسم المستخدم للدخول - مثل: "sp_ahmad" أو "ad_mohammed"
         'password',
         'password_plain',
-        'phone',
+        'phone', // رقم جوال المستخدم
         'role',
         'role_id',
-        'status',
+        'status', // active, inactive, suspended
+        'suspended_at', // تاريخ التعطيل/الحظر
+        'suspended_reason', // سبب التعطيل/الحظر
+        'suspended_by', // المستخدم الذي قام بالتعطيل/الحظر
     ];
 
     protected $hidden = [
@@ -41,6 +45,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'role' => Role::class,
+            'suspended_at' => 'datetime',
         ];
     }
 
@@ -84,6 +89,44 @@ class User extends Authenticatable
     public function roleModel(): BelongsTo
     {
         return $this->belongsTo(RoleModel::class, 'role_id');
+    }
+
+    public function suspendedByUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'suspended_by');
+    }
+
+    /**
+     * Check if user is suspended/banned
+     */
+    public function isSuspended(): bool
+    {
+        return $this->status === 'suspended' && $this->suspended_at !== null;
+    }
+
+    /**
+     * Check if user can login (not suspended and status is active)
+     */
+    public function canLogin(): bool
+    {
+        // System user (platform_rased) cannot login
+        if ($this->isSystemUser()) {
+            return false;
+        }
+
+        if ($this->status === 'suspended') {
+            return false;
+        }
+
+        return $this->status === 'active';
+    }
+
+    /**
+     * Check if this is the system user (منصة راصد) used for system messages
+     */
+    public function isSystemUser(): bool
+    {
+        return $this->username === 'platform_rased' || $this->email === 'platform@gazarased.com';
     }
 
     public function isSuperAdmin(): bool
@@ -131,6 +174,15 @@ class User extends Authenticatable
         return $this->role === Role::Admin;
     }
 
+    public function isEnergyAuthority(): bool
+    {
+        if ($this->role_id) {
+            return $this->roleModel?->name === 'energy_authority';
+        }
+
+        return $this->role === Role::EnergyAuthority;
+    }
+
     public function ownsOperator(Operator $operator): bool
     {
         return $this->isSuperAdmin() || $this->ownedOperators()->where('id', $operator->id)->exists();
@@ -143,24 +195,110 @@ class User extends Authenticatable
             || $this->operators()->where('operators.id', $operator->id)->exists();
     }
 
+    /**
+     * Check if user has a custom role (not a system role)
+     * Custom roles are defined by Energy Authority or Company Owner
+     */
+    public function hasCustomRole(): bool
+    {
+        if (! $this->roleModel) {
+            return false;
+        }
+
+        // System roles are: super_admin, admin, energy_authority, company_owner
+        $systemRoles = ['super_admin', 'admin', 'energy_authority', 'company_owner'];
+
+        return ! in_array($this->roleModel->name, $systemRoles, true);
+    }
+
+    /**
+     * Check if user's custom role is linked to an operator
+     */
+    public function hasOperatorLinkedCustomRole(): bool
+    {
+        if (! $this->hasCustomRole() || ! $this->roleModel) {
+            return false;
+        }
+
+        return $this->roleModel->operator_id !== null;
+    }
+
+    /**
+     * Check if operator is approved and active
+     * Required for Company Owner to have full access to all permissions
+     */
+    public function hasApprovedOperator(): bool
+    {
+        // SuperAdmin and Admin always have access
+        if ($this->isSuperAdmin() || $this->isAdmin() || $this->isEnergyAuthority()) {
+            return true;
+        }
+
+        // Company Owner needs approved operator
+        if ($this->isCompanyOwner()) {
+            $operator = $this->ownedOperators()->first();
+
+            return $operator && $operator->is_approved && $operator->status === 'active';
+        }
+
+        // Users with custom roles linked to operator: check if operator is approved
+        if ($this->hasOperatorLinkedCustomRole()) {
+            $operator = $this->roleModel->operator;
+
+            return $operator && $operator->is_approved && $operator->status === 'active';
+        }
+
+        // Users with custom roles not linked to operator (general roles from Energy Authority)
+        if ($this->hasCustomRole() && ! $this->hasOperatorLinkedCustomRole()) {
+            return true; // General custom roles don't need operator approval
+        }
+
+        return false;
+    }
+
     public function hasPermission(string $permissionName): bool
     {
+        // SuperAdmin has all permissions (including settings, constants, logs)
         if ($this->isSuperAdmin()) {
             return true;
         }
 
-        // إذا كان لديه role_id، استخدم صلاحيات الدور أولاً
+        // Company Owner: Check if operator is approved before granting full access
+        // Settings, constants, and logs are always restricted for Company Owner
+        $restrictedPermissions = ['settings.view', 'settings.update', 'constants.view', 'constants.create', 'constants.update', 'constants.delete', 'logs.view', 'logs.clear', 'logs.download'];
+        if ($this->isCompanyOwner() && in_array($permissionName, $restrictedPermissions, true)) {
+            return false; // Company Owner never has access to settings, constants, logs
+        }
+
+        // Company Owner needs approved operator for full access to their permissions
+        if ($this->isCompanyOwner() && ! $this->hasApprovedOperator()) {
+            // Before approval, Company Owner has limited access
+            // Only basic view permissions until approved
+            return in_array($permissionName, [
+                'guide.view',
+                'operators.view',
+                'generators.view',
+                'generation_units.view',
+                'operation_logs.view',
+                'fuel_efficiencies.view',
+                'maintenance_records.view',
+                'compliance_safeties.view',
+                'electricity_tariff_prices.view',
+            ]);
+        }
+
+        // If user has roleModel, use role permissions first
         if ($this->roleModel) {
             if ($this->roleModel->hasPermission($permissionName)) {
-                // تحقق من أن الصلاحية لم يتم إلغاؤها
-                if (!$this->revokedPermissions()->where('name', $permissionName)->exists()) {
+                // Check if permission is not revoked
+                if (! $this->revokedPermissions()->where('name', $permissionName)->exists()) {
                     return true;
                 }
             }
         }
 
-        // Fallback للـ Admin (إذا لم يكن لديه role_id)
-        if ($this->isAdmin() && !$this->roleModel) {
+        // Fallback for Admin (if no roleModel)
+        if ($this->isAdmin() && ! $this->roleModel) {
             return in_array($permissionName, [
                 'operators.view',
                 'generators.view',
@@ -169,14 +307,17 @@ class User extends Authenticatable
                 'fuel_efficiencies.view',
                 'maintenance_records.view',
                 'compliance_safeties.view',
-                'electricity_tariff_prices.view', // الأدمن يمكنهم الاستعلام فقط
+                'electricity_tariff_prices.view',
+                'guide.view',
             ]);
         }
 
+        // Check if permission is revoked
         if ($this->revokedPermissions()->where('name', $permissionName)->exists()) {
             return false;
         }
 
+        // Check direct user permissions (assigned individually)
         if ($this->permissions()->where('name', $permissionName)->exists()) {
             return true;
         }
@@ -186,23 +327,52 @@ class User extends Authenticatable
 
     public function hasAnyPermission(array $permissionNames): bool
     {
+        // SuperAdmin has all permissions
         if ($this->isSuperAdmin()) {
             return true;
         }
 
-        // إذا كان لديه role_id، استخدم صلاحيات الدور أولاً
+        // Company Owner: Check if operator is approved and restrictions apply
+        $restrictedPermissions = ['settings.view', 'settings.update', 'constants.view', 'constants.create', 'constants.update', 'constants.delete', 'logs.view', 'logs.clear', 'logs.download'];
+        if ($this->isCompanyOwner()) {
+            // Check if any requested permission is restricted
+            $hasRestricted = ! empty(array_intersect($permissionNames, $restrictedPermissions));
+            if ($hasRestricted) {
+                return false; // Company Owner never has access to settings, constants, logs
+            }
+
+            // Company Owner needs approved operator for full access
+            if (! $this->hasApprovedOperator()) {
+                // Before approval, only basic view permissions
+                $allowedPermissions = [
+                    'guide.view',
+                    'operators.view',
+                    'generators.view',
+                    'generation_units.view',
+                    'operation_logs.view',
+                    'fuel_efficiencies.view',
+                    'maintenance_records.view',
+                    'compliance_safeties.view',
+                    'electricity_tariff_prices.view',
+                ];
+
+                return ! empty(array_intersect($permissionNames, $allowedPermissions));
+            }
+        }
+
+        // If user has roleModel, use role permissions first
         if ($this->roleModel) {
             foreach ($permissionNames as $permissionName) {
                 if ($this->roleModel->hasPermission($permissionName)) {
-                    if (!$this->revokedPermissions()->where('name', $permissionName)->exists()) {
+                    if (! $this->revokedPermissions()->where('name', $permissionName)->exists()) {
                         return true;
                     }
                 }
             }
         }
 
-        // Fallback للـ Admin (إذا لم يكن لديه role_id)
-        if ($this->isAdmin() && !$this->roleModel) {
+        // Fallback for Admin (if no roleModel)
+        if ($this->isAdmin() && ! $this->roleModel) {
             $adminPermissions = [
                 'operators.view',
                 'generators.view',
@@ -211,10 +381,11 @@ class User extends Authenticatable
                 'fuel_efficiencies.view',
                 'maintenance_records.view',
                 'compliance_safeties.view',
-                'electricity_tariff_prices.view', // الأدمن يمكنهم الاستعلام فقط
+                'electricity_tariff_prices.view',
+                'guide.view',
             ];
 
-            return !empty(array_intersect($permissionNames, $adminPermissions));
+            return ! empty(array_intersect($permissionNames, $adminPermissions));
         }
 
         $revokedPermissionNames = $this->revokedPermissions()
@@ -245,25 +416,56 @@ class User extends Authenticatable
 
     public function hasAllPermissions(array $permissionNames): bool
     {
+        // SuperAdmin has all permissions
         if ($this->isSuperAdmin()) {
             return true;
         }
 
-        // إذا كان لديه role_id، استخدم صلاحيات الدور أولاً
+        // Company Owner: Check if operator is approved and restrictions apply
+        $restrictedPermissions = ['settings.view', 'settings.update', 'constants.view', 'constants.create', 'constants.update', 'constants.delete', 'logs.view', 'logs.clear', 'logs.download'];
+        if ($this->isCompanyOwner()) {
+            // Check if any requested permission is restricted
+            $hasRestricted = ! empty(array_intersect($permissionNames, $restrictedPermissions));
+            if ($hasRestricted) {
+                return false; // Company Owner never has access to settings, constants, logs
+            }
+
+            // Company Owner needs approved operator for full access
+            if (! $this->hasApprovedOperator()) {
+                // Before approval, only basic view permissions
+                $allowedPermissions = [
+                    'guide.view',
+                    'operators.view',
+                    'generators.view',
+                    'generation_units.view',
+                    'operation_logs.view',
+                    'fuel_efficiencies.view',
+                    'maintenance_records.view',
+                    'compliance_safeties.view',
+                    'electricity_tariff_prices.view',
+                ];
+                $intersection = array_intersect($permissionNames, $allowedPermissions);
+
+                return count($permissionNames) === count($intersection);
+            }
+        }
+
+        // If user has roleModel, use role permissions first
         if ($this->roleModel) {
             $rolePermissions = [];
             foreach ($permissionNames as $permissionName) {
                 if ($this->roleModel->hasPermission($permissionName)) {
-                    if (!$this->revokedPermissions()->where('name', $permissionName)->exists()) {
+                    if (! $this->revokedPermissions()->where('name', $permissionName)->exists()) {
                         $rolePermissions[] = $permissionName;
                     }
                 }
             }
+
             return count($permissionNames) === count($rolePermissions);
         }
 
-        // Fallback للـ Admin (إذا لم يكن لديه role_id)
-        if ($this->isAdmin() && !$this->roleModel) {
+        // Fallback for Admin (if no roleModel)
+        if ($this->isAdmin() && ! $this->roleModel) {
             $adminPermissions = [
                 'operators.view',
                 'generators.view',
@@ -273,9 +475,12 @@ class User extends Authenticatable
                 'maintenance_records.view',
                 'compliance_safeties.view',
                 'electricity_tariff_prices.view',
+                'guide.view',
             ];
 
-            return count($permissionNames) === count(array_intersect($permissionNames, $adminPermissions));
+            $intersection = array_intersect($permissionNames, $adminPermissions);
+
+            return count($permissionNames) === count($intersection);
         }
 
         $revokedPermissionNames = $this->revokedPermissions()
@@ -338,8 +543,8 @@ class User extends Authenticatable
     {
         // الحصول على Super Admin لإرسال الرسائل منه
         $superAdmin = User::where('role', Role::SuperAdmin)->first();
-        
-        if (!$superAdmin) {
+
+        if (! $superAdmin) {
             return;
         }
 
@@ -351,41 +556,24 @@ class User extends Authenticatable
             $operator = $this->operators()->first();
         }
 
-        $messages = [
-            [
-                'sender_id' => $superAdmin->id,
-                'receiver_id' => $this->id,
-                'operator_id' => $operator?->id,
-                'subject' => 'مرحباً بك في منصة راصد',
-                'body' => "عزيزي/عزيزتي {$this->name}،\n\nنرحب بك في منصة راصد لإدارة وحدات التوليد. نتمنى أن تجد في النظام كل ما تحتاجه لإدارة عملك بكفاءة وفعالية.\n\nنتمنى لك تجربة ممتعة!",
-                'type' => 'admin_to_operator',
-                'is_read' => false,
-                'read_at' => null,
-            ],
-            [
-                'sender_id' => $superAdmin->id,
-                'receiver_id' => $this->id,
-                'operator_id' => $operator?->id,
-                'subject' => 'دليل الاستخدام السريع',
-                'body' => "عزيزي/عزيزتي {$this->name}،\n\nيمكنك من خلال النظام:\n- إدارة بيانات المولدات ووحدات التوليد\n- متابعة سجلات التشغيل والوقود\n- إدارة أعمال الصيانة\n- التواصل مع الفريق من خلال نظام الرسائل\n\nللمزيد من المعلومات، يرجى مراجعة الدليل الإرشادي.",
-                'type' => 'admin_to_operator',
-                'is_read' => false,
-                'read_at' => null,
-            ],
-            [
-                'sender_id' => $superAdmin->id,
-                'receiver_id' => $this->id,
-                'operator_id' => $operator?->id,
-                'subject' => 'معلومات مهمة',
-                'body' => "عزيزي/عزيزتي {$this->name}،\n\nنود تذكيرك بأن:\n- يرجى إكمال بيانات المشغل في أقرب وقت ممكن\n- يمكنك التواصل معنا في أي وقت من خلال نظام الرسائل\n- ننصح بتغيير كلمة المرور بعد تسجيل الدخول لأول مرة\n\nنتمنى لك تجربة ناجحة!",
-                'type' => 'admin_to_operator',
-                'is_read' => false,
-                'read_at' => null,
-            ],
-        ];
+        // الحصول على الرسائل الترحيبية النشطة من قاعدة البيانات
+        $welcomeMessages = \App\Models\WelcomeMessage::getActiveMessages();
 
-        foreach ($messages as $messageData) {
-            Message::create($messageData);
+        foreach ($welcomeMessages as $welcomeMessage) {
+            // استبدال المتغيرات في الرسالة
+            $body = str_replace('{name}', $this->name, $welcomeMessage->body);
+            $subject = str_replace('{name}', $this->name, $welcomeMessage->subject);
+
+            Message::create([
+                'sender_id' => $superAdmin->id,
+                'receiver_id' => $this->id,
+                'operator_id' => $operator?->id,
+                'subject' => $subject,
+                'body' => $body,
+                'type' => 'admin_to_operator',
+                'is_read' => false,
+                'read_at' => null,
+            ]);
         }
     }
 }

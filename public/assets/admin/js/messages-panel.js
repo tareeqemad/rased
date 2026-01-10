@@ -7,7 +7,7 @@
     const MessagesPanel = {
         unreadCount: 0,
         updateInterval: null,
-        updateIntervalMs: 30000, // 30 seconds
+        updateIntervalMs: 15000, // 15 seconds (realtime)
 
         init: function() {
             this.loadUnreadCount();

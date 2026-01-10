@@ -11,25 +11,55 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Traits\TracksUser;
 
 class Operator extends Model
 {
-    use SoftDeletes;
+    use SoftDeletes, TracksUser;
 
     protected $table = 'operators';
 
     protected $fillable = [
-        'name',
-        'name_en',
-        'owner_id',
-        'owner_name',
-        'owner_id_number',
-        'operator_id_number',
-        'phone',
-        'email',
-        'status',
-        'is_approved',
-        'profile_completed',
+        // البيانات الأساسية للمشغل (الشركة/الوحدة)
+        'name', // اسم المشغل بالعربي - مثل: "مشغل الطاقة النظيفة" أو "شركة توليد الكهرباء"
+        'name_en', // اسم المشغل بالإنجليزية - مثل: "Clean Energy Operator" - للعرض والتقارير الدولية
+        
+        // العلاقة مع المستخدم (المالك)
+        'owner_id', // ID المستخدم الذي يملك هذا المشغل (User::id) - المستخدم له name و name_en
+        
+        // بيانات المالك (قد تكون مختلفة عن بيانات المستخدم في owner_id)
+        'owner_name', // اسم المالك الفعلي - قد يكون مختلف عن owner->name
+        'owner_id_number', // رقم هوية المالك
+        'operator_id_number', // رقم هوية المشغل
+        
+        // معلومات الاتصال
+        'phone', // رقم جوال المشغل (ليس المستخدم)
+        'phone_alt', // رقم جوال بديل للمشغل
+        'email', // بريد المشغل (ليس المستخدم)
+        'address', // عنوان المشغل
+        
+        // بيانات الوحدة
+        'unit_number', // رقم الوحدة - مثل: "001"
+        'unit_code', // رمز الوحدة - مثل: "GU-PP-CC-001"
+        'unit_name', // اسم الوحدة - مثل: "وحدة توليد رام الله"
+        
+        // الموقع
+        'governorate', // المحافظة (Governorate enum)
+        'city_id', // ID المدينة من constant_details
+        'detailed_address', // العنوان التفصيلي
+        'latitude', // خط العرض
+        'longitude', // خط الطول
+        
+        // القدرات الفنية
+        'total_capacity', // القدرة الإجمالية
+        'generators_count', // عدد المولدات
+        'synchronization_available', // إمكانية المزامنة
+        'max_synchronization_capacity', // أقصى قدرة مزامنة
+        
+        // الحالة
+        'status', // active/inactive
+        'is_approved', // معتمد/غير معتمد
+        'profile_completed', // اكتمال الملف الشخصي
     ];
 
     protected function casts(): array
@@ -58,11 +88,15 @@ class Operator extends Model
     }
 
     /**
-     * الموظفين + الفنيين التابعين لهذا المشغل
+     * Users with custom roles linked to this operator
+     * Custom roles are defined dynamically by Energy Authority or Company Owner
      */
     public function staff(): BelongsToMany
     {
-        return $this->users()->whereIn('role', [Role::Employee, Role::Technician]);
+        return $this->users()->whereHas('roleModel', function($q) {
+            $q->where('is_system', false)
+              ->where('operator_id', $this->id);
+        });
     }
 
     /**
@@ -211,6 +245,27 @@ class Operator extends Model
      */
     public function getCityName(): ?string
     {
-        return $this->cityDetail?->label ?? $this->city;
+        return $this->cityDetail?->label;
+    }
+
+    /**
+     * Boot the model and register event listeners
+     */
+    protected static function boot(): void
+    {
+        parent::boot();
+
+        // When a new operator is created and is not approved, send notification to all approvers
+        static::created(function (Operator $operator) {
+            if (!$operator->is_approved && $operator->owner) {
+                // Send notification to all users who can approve operators (Super Admin, Admin, Energy Authority)
+                \App\Models\Notification::notifyOperatorApprovers(
+                    'operator_pending_approval',
+                    'مشغل جديد يحتاج للاعتماد',
+                    "تم إنشاء مشغل جديد ({$operator->name}) يحتاج للاعتماد والتفعيل. المالك: {$operator->owner->name}",
+                    route('admin.operators.show', $operator)
+                );
+            }
+        });
     }
 }

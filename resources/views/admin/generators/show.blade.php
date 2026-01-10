@@ -60,6 +60,10 @@
                         </div>
                     </div>
                     <div class="d-flex gap-2">
+                        <a href="{{ route('admin.generators.qr-code', $generator) }}" target="_blank" class="btn btn-success">
+                            <i class="bi bi-qr-code me-1"></i>
+                            طباعة QR Code
+                        </a>
                         @can('update', $generator)
                             <a href="{{ route('admin.generators.edit', $generator) }}" class="btn btn-primary">
                                 <i class="bi bi-pencil me-1"></i>

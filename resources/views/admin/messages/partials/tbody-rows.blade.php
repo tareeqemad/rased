@@ -8,6 +8,9 @@
                             <div class="msg-row-title">
                                 <i class="bi bi-envelope me-2 text-primary"></i>
                                 <span class="fw-bold">{{ $message->subject }}</span>
+                                @if($message->hasAttachment())
+                                    <i class="bi bi-image text-success ms-2" title="يوجد صورة مرفقة"></i>
+                                @endif
                                 @if(!$message->is_read && $message->receiver_id === auth()->id())
                                     <span class="badge bg-primary ms-2 pulse">جديد</span>
                                 @endif
@@ -32,8 +35,10 @@
                                     <div class="msg-detail-item">
                                         <i class="bi bi-person me-2 text-muted"></i>
                                         <span class="text-muted">المرسل:</span>
-                                        <strong>{{ $message->sender->name }}</strong>
-                                        <small class="text-muted">({{ $message->sender->role_name }})</small>
+                                        <strong>{{ $message->sender_display_name }}</strong>
+                                        @if(!$message->isSystemMessage() && $message->sender)
+                                            <small class="text-muted">({{ $message->sender->role_name }})</small>
+                                        @endif
                                     </div>
                                 </div>
 
@@ -74,7 +79,19 @@
                                     <div class="msg-detail-item">
                                         <i class="bi bi-eye me-2 text-muted"></i>
                                         <span class="text-muted">الحالة:</span>
-                                        @if($message->receiver_id === auth()->id() || ($message->type === 'operator_to_staff' && auth()->user()->operators->contains($message->operator_id)))
+                                        @php
+                                            $user = auth()->user();
+                                            $isReceiver = $message->receiver_id === $user->id;
+                                            $isBroadcastReceiver = false;
+                                            if ($message->type === 'operator_to_staff' && $message->operator_id) {
+                                                if ($user->isCompanyOwner()) {
+                                                    $isBroadcastReceiver = $user->ownedOperators()->where('id', $message->operator_id)->exists();
+                                                } elseif ($user->hasOperatorLinkedCustomRole()) {
+                                                    $isBroadcastReceiver = $user->roleModel->operator_id === $message->operator_id;
+                                                }
+                                            }
+                                        @endphp
+                                        @if($isReceiver || $isBroadcastReceiver)
                                             @if($message->is_read)
                                                 <span class="badge bg-success">مقروء</span>
                                             @else

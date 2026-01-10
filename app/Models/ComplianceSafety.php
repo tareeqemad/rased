@@ -6,10 +6,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Models\ConstantDetail;
+use App\Traits\TracksUser;
 
 class ComplianceSafety extends Model
 {
-    use SoftDeletes;
+    use SoftDeletes, TracksUser;
 
     protected $fillable = [
         'operator_id',

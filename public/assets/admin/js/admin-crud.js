@@ -768,6 +768,9 @@
                         if (response.success) {
                             this.notify('success', response.message || 'تم الحفظ بنجاح');
                             
+                            // تحديث فوري للإشعارات والرسائل
+                            this.refreshNotificationsAndMessages();
+                            
                             if (resetOnSuccess) {
                                 $form[0].reset();
                                 $form.find('.is-invalid').removeClass('is-invalid');
@@ -896,6 +899,22 @@
                     return this._ajaxRequest(options, attempt + 1);
                 }
                 throw error;
+            }
+        }
+
+        /**
+         * تحديث فوري للإشعارات والرسائل
+         */
+        refreshNotificationsAndMessages() {
+            // تحديث الإشعارات
+            if (window.notificationPanel && typeof window.notificationPanel.loadNotifications === 'function') {
+                window.notificationPanel.loadNotifications();
+            }
+            
+            // تحديث الرسائل
+            if (window.MessagesPanel && typeof window.MessagesPanel.loadUnreadCount === 'function') {
+                window.MessagesPanel.loadUnreadCount();
+                window.MessagesPanel.loadRecentMessages();
             }
         }
 

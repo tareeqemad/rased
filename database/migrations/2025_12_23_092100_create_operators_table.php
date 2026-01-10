@@ -13,14 +13,19 @@ return new class extends Migration
     {
         Schema::create('operators', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
+            
+            // البيانات الأساسية
+            $table->string('name'); // اسم المشغل (العربي)
+            $table->string('name_en')->nullable(); // اسم المشغل (بالإنجليزية) - للعرض والتقارير
             $table->string('email')->nullable();
             $table->string('phone')->nullable();
             $table->string('phone_alt')->nullable();
             $table->text('address')->nullable();
+            
+            // العلاقة مع المستخدم (المالك)
             $table->foreignId('owner_id')->constrained('users')->cascadeOnDelete();
             
-            // تتبع المستخدمين
+            // تتبع المستخدمين (من TracksUser trait)
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('last_updated_by')->nullable()->constrained('users')->nullOnDelete();
 
@@ -30,12 +35,10 @@ return new class extends Migration
             $table->string('unit_name')->nullable();
 
             // الموقع
-            $table->integer('governorate')->nullable();
-            // المدينة - تخزن ID من constant_details، ثابت Master رقم 20
+            $table->integer('governorate')->nullable(); // Governorate enum
             $table->foreignId('city_id')->nullable()
                 ->constrained('constant_details')->nullOnDelete()
                 ->comment('ID من constant_details - ثابت Master رقم 20 (المدن)');
-            $table->string('city')->nullable();
             $table->text('detailed_address')->nullable();
             $table->decimal('latitude', 10, 8)->nullable();
             $table->decimal('longitude', 11, 8)->nullable();
@@ -46,26 +49,21 @@ return new class extends Migration
             $table->boolean('synchronization_available')->default(false);
             $table->decimal('max_synchronization_capacity', 10, 2)->nullable();
 
-            // الملكية والتشغيل
-            $table->string('owner_name')->nullable();
-            $table->string('owner_id_number')->nullable();
-            $table->string('operation_entity')->nullable();
-            $table->string('operator_id_number')->nullable();
-
-            // المستفيدون والبيئة
-            $table->integer('beneficiaries_count')->nullable();
-            $table->text('beneficiaries_description')->nullable();
-            $table->string('environmental_compliance_status')->nullable();
+            // الملكية
+            $table->string('owner_name')->nullable(); // اسم المالك (قد يكون مختلف عن owner_id)
+            $table->string('owner_id_number')->nullable(); // رقم هوية المالك
+            $table->string('operator_id_number')->nullable(); // رقم هوية المشغل
 
             // الحالة العامة
-            $table->string('status')->default('active');
+            $table->string('status')->default('active'); // active, inactive
+            $table->boolean('is_approved')->default(false)->comment('حالة الاعتماد - المشغل يحتاج موافقة Admin/Super Admin');
             $table->boolean('profile_completed')->default(false);
 
             $table->timestamps();
             $table->softDeletes();
             
             // فهارس للبحث السريع
-            $table->index(['governorate', 'city'], 'idx_operators_location');
+            $table->index(['governorate', 'city_id'], 'idx_operators_location');
             $table->index(['name', 'unit_number'], 'idx_operators_search');
         });
     }

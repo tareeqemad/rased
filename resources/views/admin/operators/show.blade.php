@@ -9,47 +9,143 @@
 @endphp
 
 @push('styles')
-    <link rel="stylesheet" href="{{ asset('assets/admin/css/operators.css') }}">
+<style>
+    .stat-card {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        transition: all 0.3s ease;
+        height: 100%;
+    }
+
+    .stat-card:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        transform: translateY(-2px);
+    }
+
+    .stat-icon {
+        width: 56px;
+        height: 56px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        color: #fff;
+        flex-shrink: 0;
+    }
+
+    .stat-content {
+        flex: 1;
+    }
+
+    .stat-label {
+        font-size: 0.875rem;
+        color: #6b7280;
+        font-weight: 500;
+        margin-bottom: 0.25rem;
+    }
+
+    .stat-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #1f2937;
+    }
+
+    .generation-unit-item {
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .generation-unit-item:last-child {
+        border-bottom: none;
+    }
+
+    .generator-item-small {
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #f3f4f6;
+    }
+
+    .generator-item-small:last-child {
+        border-bottom: none;
+    }
+
+    .info-item {
+        margin-bottom: 1rem;
+    }
+
+    .info-label {
+        font-size: 0.875rem;
+        color: #6b7280;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        display: block;
+    }
+
+    .info-value {
+        font-size: 0.95rem;
+        color: #1f2937;
+        font-weight: 500;
+    }
+</style>
 @endpush
 
 @section('content')
-    <div class="operators-page operator-show-page">
+    <div class="general-page">
         <div class="row g-3">
             {{-- Header Card with Summary --}}
             <div class="col-12">
-                <div class="card op-card">
-                    <div class="op-card-header">
-                        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
-                            <div>
-                                <div class="op-title">
-                                    <i class="bi bi-person-badge me-2"></i>
-                                    {{ $operator->name }}
-                                </div>
-                                <div class="op-subtitle">
-                                    {{ $operator->unit_number ? $operator->unit_number . ' - ' : '' }}{{ $operator->unit_name ?? '—' }}
-                                    @if($operator->getGovernorateLabel())
-                                        | {{ $operator->getGovernorateLabel() }}
-                                    @endif
-                                </div>
+                <div class="general-card">
+                    <div class="general-card-header">
+                        <div>
+                            <h5 class="general-title">
+                                <i class="bi bi-person-badge me-2"></i>
+                                {{ $operator->name }}
+                            </h5>
+                            <div class="general-subtitle d-flex align-items-center gap-2 flex-wrap">
+                                <span>{{ $operator->unit_number ? $operator->unit_number . ' - ' : '' }}{{ $operator->unit_name ?? '—' }}</span>
+                                @if($operator->getGovernorateLabel())
+                                    <span>|</span>
+                                    <span>{{ $operator->getGovernorateLabel() }}</span>
+                                @endif
+                                @if($operator->is_approved !== null)
+                                    <span>|</span>
+                                    <span class="badge {{ $operator->is_approved ? 'bg-success' : 'bg-warning' }}">
+                                        <i class="bi bi-{{ $operator->is_approved ? 'check-circle' : 'clock' }} me-1"></i>
+                                        {{ $operator->is_approved ? 'معتمد' : 'في انتظار الاعتماد' }}
+                                    </span>
+                                @endif
                             </div>
-                            <div class="d-flex gap-2">
-                                @can('viewAny', [\App\Models\ElectricityTariffPrice::class, $operator])
-                                    <a href="{{ route('admin.operators.tariff-prices.index', $operator) }}" class="btn btn-info">
-                                        <i class="bi bi-currency-exchange me-2"></i>
-                                        أسعار التعرفة
-                                    </a>
-                                @endcan
-                                @can('update', $operator)
-                                    <a href="{{ route('admin.operators.edit', $operator) }}" class="btn btn-primary">
-                                        <i class="bi bi-pencil me-2"></i>
-                                        تعديل
-                                    </a>
-                                @endcan
-                                <a href="{{ route('admin.operators.index') }}" class="btn btn-outline-secondary">
-                                    <i class="bi bi-arrow-left me-2"></i>
-                                    رجوع
+                        </div>
+                        <div class="d-flex gap-2">
+                            @can('approve', $operator)
+                                <form action="{{ route('admin.operators.toggle-approval', $operator) }}" method="POST" class="d-inline" id="approvalForm">
+                                    @csrf
+                                    <button type="submit" class="btn {{ $operator->is_approved ? 'btn-warning' : 'btn-success' }}" id="approvalBtn">
+                                        <i class="bi bi-{{ $operator->is_approved ? 'x-circle' : 'check-circle' }} me-2"></i>
+                                        {{ $operator->is_approved ? 'إلغاء الاعتماد' : 'اعتماد المشغل' }}
+                                    </button>
+                                </form>
+                            @endcan
+                            @can('viewAny', [\App\Models\ElectricityTariffPrice::class, $operator])
+                                <a href="{{ route('admin.operators.tariff-prices.index', $operator) }}" class="btn btn-info">
+                                    <i class="bi bi-currency-exchange me-2"></i>
+                                    أسعار التعرفة
                                 </a>
-                            </div>
+                            @endcan
+                            @can('update', $operator)
+                                <a href="{{ route('admin.operators.edit', $operator) }}" class="btn btn-primary">
+                                    <i class="bi bi-pencil me-2"></i>
+                                    تعديل
+                                </a>
+                            @endcan
+                            <a href="{{ route('admin.operators.index') }}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-2"></i>
+                                رجوع
+                            </a>
                         </div>
                     </div>
 
@@ -120,11 +216,13 @@
 
             {{-- Main Information --}}
             <div class="col-12 col-lg-8">
-                <div class="card op-card">
-                    <div class="op-card-header">
-                        <div class="op-title">
-                            <i class="bi bi-info-circle me-2"></i>
-                            معلومات المشغل
+                <div class="general-card">
+                    <div class="general-card-header">
+                        <div>
+                            <h5 class="general-title">
+                                <i class="bi bi-info-circle me-2"></i>
+                                معلومات المشغل
+                            </h5>
                         </div>
                     </div>
                     <div class="card-body">
@@ -357,16 +455,26 @@
 
             {{-- Sidebar: Generation Units List --}}
             <div class="col-12 col-lg-4">
-                <div class="card op-card">
-                    <div class="op-card-header">
-                        <div class="d-flex align-items-center justify-content-between">
-                            <div class="op-title">
-                                <i class="bi bi-lightning-charge me-2"></i>
-                                وحدات التوليد
+                <div class="general-card">
+                    <div class="general-card-header">
+                        <div class="d-flex align-items-center justify-content-between w-100">
+                            <div>
+                                <h5 class="general-title">
+                                    <i class="bi bi-lightning-charge me-2"></i>
+                                    وحدات التوليد
+                                </h5>
                             </div>
-                            @if($operator->generation_units_count > 0)
-                                <span class="badge bg-primary">{{ $operator->generation_units_count }}</span>
-                            @endif
+                            <div class="d-flex align-items-center gap-2">
+                                @if($operator->generation_units_count > 0)
+                                    <span class="badge bg-primary">{{ $operator->generation_units_count }}</span>
+                                @endif
+                                @can('create', App\Models\GenerationUnit::class)
+                                    <a href="{{ route('admin.generation-units.create', ['operator_id' => $operator->id]) }}" class="btn btn-primary btn-sm">
+                                        <i class="bi bi-plus-lg me-1"></i>
+                                        إضافة وحدة توليد
+                                    </a>
+                                @endcan
+                            </div>
                         </div>
                     </div>
                     <div class="card-body">
@@ -442,23 +550,20 @@
                             <div class="text-center text-muted py-4">
                                 <i class="bi bi-lightning-charge fs-1 d-block mb-2"></i>
                                 <p>لا توجد وحدات توليد</p>
-                                @can('create', App\Models\GenerationUnit::class)
-                                    <a href="{{ route('admin.operators.profile') }}" class="btn btn-sm btn-primary">
-                                        <i class="bi bi-plus-circle me-1"></i>
-                                        إضافة وحدة توليد
-                                    </a>
-                                @endcan
+                                <p class="small">ابدأ بإضافة وحدة توليد جديدة من الزر أعلاه</p>
                             </div>
                         @endif
                     </div>
                 </div>
 
                 {{-- Profile Completion Status --}}
-                <div class="card op-card mt-3">
-                    <div class="op-card-header">
-                        <div class="op-title">
-                            <i class="bi bi-check-circle me-2"></i>
-                            حالة الملف
+                <div class="general-card mt-3">
+                    <div class="general-card-header">
+                        <div>
+                            <h5 class="general-title">
+                                <i class="bi bi-check-circle me-2"></i>
+                                حالة الملف
+                            </h5>
                         </div>
                     </div>
                     <div class="card-body">
@@ -492,3 +597,82 @@
         </div>
     </div>
 @endsection
+
+@push('scripts')
+<script>
+(function() {
+    function notify(type, msg, title) {
+        if (window.adminNotifications && typeof window.adminNotifications[type] === 'function') {
+            window.adminNotifications[type](msg, title);
+            return;
+        }
+        alert(msg);
+    }
+
+    const approvalForm = document.getElementById('approvalForm');
+    const approvalBtn = document.getElementById('approvalBtn');
+
+    if (approvalForm && approvalBtn) {
+        approvalForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const originalText = approvalBtn.innerHTML;
+            const isCurrentlyApproved = approvalBtn.classList.contains('btn-warning');
+            const newText = isCurrentlyApproved ? 'جاري إلغاء الاعتماد...' : 'جاري الاعتماد...';
+
+            approvalBtn.disabled = true;
+            approvalBtn.innerHTML = `
+                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                ${newText}
+            `;
+
+            try {
+                const formData = new FormData(approvalForm);
+                const response = await fetch(approvalForm.action, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    },
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    notify('success', data.message || 'تمت العملية بنجاح');
+
+                    // Update button state
+                    if (data.operator && data.operator.is_approved !== undefined) {
+                        if (data.operator.is_approved) {
+                            approvalBtn.classList.remove('btn-success');
+                            approvalBtn.classList.add('btn-warning');
+                            approvalBtn.innerHTML = '<i class="bi bi-x-circle me-2"></i>إلغاء الاعتماد';
+                        } else {
+                            approvalBtn.classList.remove('btn-warning');
+                            approvalBtn.classList.add('btn-success');
+                            approvalBtn.innerHTML = '<i class="bi bi-check-circle me-2"></i>اعتماد المشغل';
+                        }
+                    } else {
+                        // Refresh page to update state
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1500);
+                    }
+                } else {
+                    notify('error', data.message || 'حدث خطأ أثناء تنفيذ العملية');
+                    approvalBtn.innerHTML = originalText;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                notify('error', 'حدث خطأ أثناء الاتصال بالخادم');
+                approvalBtn.innerHTML = originalText;
+            } finally {
+                approvalBtn.disabled = false;
+            }
+        });
+    }
+})();
+</script>
+@endpush

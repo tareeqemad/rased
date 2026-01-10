@@ -7,37 +7,38 @@
 @endphp
 
 @push('styles')
-    <link rel="stylesheet" href="{{ asset('assets/admin/css/generators.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/admin/css/data-table-loading.css') }}">
 @endpush
 
 @section('content')
     <input type="hidden" id="csrfToken" value="{{ csrf_token() }}">
 
-    <div class="generators-page">
+    <div class="general-page">
         <div class="row g-3">
-            {{-- Main: قائمة وحدات التوليد --}}
             <div class="col-12">
-                <div class="card gen-card">
-                    <div class="gen-card-header gen-toolbar-header">
-                        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
-                            <div>
-                                <div class="gen-title">
-                                    <i class="bi bi-lightning-charge me-2"></i>
-                                    إدارة وحدات التوليد
-                                </div>
-                                <div class="gen-subtitle">
-                                    البحث والفلترة وإدارة وحدات التوليد. العدد: <span id="generationUnitsCount">{{ $generationUnits->total() }}</span>
-                                </div>
+                <div class="general-card">
+                    <div class="general-card-header">
+                        <div>
+                            <h5 class="general-title">
+                                <i class="bi bi-lightning-charge me-2"></i>
+                                إدارة وحدات التوليد
+                            </h5>
+                            <div class="general-subtitle">
+                                البحث والفلترة وإدارة وحدات التوليد. العدد: <span id="generationUnitsCount">{{ $generationUnits->total() }}</span>
                             </div>
+                        </div>
 
+                        <div class="d-flex gap-2">
                             @can('create', App\Models\GenerationUnit::class)
                                 <a href="{{ route('admin.generation-units.create') }}" class="btn btn-primary">
-                                    <i class="bi bi-plus-circle me-2"></i>
+                                    <i class="bi bi-plus-lg me-1"></i>
                                     إضافة وحدة توليد جديدة
                                 </a>
                             @endcan
                         </div>
+                    </div>
 
+                    <div class="card-body pb-4">
                         {{-- كارد واحد للفلاتر --}}
                         <div class="filter-card">
                             <div class="card-header">
@@ -110,15 +111,18 @@
                             </div>
                         </div>
 
-                        <div id="generationUnitsListWrap" class="data-table-container">
-                            @include('admin.generation-units.partials.list', ['generationUnits' => $generationUnits])
-                        </div>
+                        <hr class="my-3">
 
-                        <div id="genLoading" class="gen-loading d-none">
-                            <div class="text-center">
-                                <div class="spinner-border text-primary" role="status"></div>
-                                <div class="mt-2 text-muted">جاري التحميل...</div>
+                        <div id="generationUnitsListWrap" class="position-relative">
+                            {{-- Loading overlay --}}
+                            <div id="genLoading" class="data-table-loading d-none">
+                                <div class="text-center">
+                                    <div class="spinner-border text-primary" role="status"></div>
+                                    <div class="mt-2 text-muted fw-semibold">جاري التحميل...</div>
+                                </div>
                             </div>
+                            
+                            @include('admin.generation-units.partials.list', ['generationUnits' => $generationUnits])
                         </div>
                     </div>
                 </div>
@@ -219,4 +223,3 @@
 })();
 </script>
 @endpush
-

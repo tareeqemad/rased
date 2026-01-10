@@ -7,10 +7,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Models\ConstantDetail;
+use App\Traits\TracksUser;
 
 class Generator extends Model
 {
-    use SoftDeletes;
+    use SoftDeletes, TracksUser;
 
     protected $fillable = [
         'name',
@@ -46,6 +47,7 @@ class Generator extends Model
         // خزانات الوقود
         'external_fuel_tank',
         'fuel_tanks_count',
+        'qr_code_generated_at', // تاريخ توليد QR Code
     ];
 
     protected function casts(): array
@@ -58,6 +60,7 @@ class Generator extends Model
             'control_panel_available' => 'boolean',
             'external_fuel_tank' => 'boolean',
             'last_major_maintenance_date' => 'date',
+            'qr_code_generated_at' => 'datetime',
         ];
     }
 

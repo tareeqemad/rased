@@ -140,4 +140,23 @@ class OperatorPolicy
 
         return $user->ownsOperator($operator);
     }
+
+    /**
+     * Determine whether the user can approve/activate the operator.
+     * Only Super Admin, Admin, and Energy Authority with operators.approve permission can approve operators.
+     */
+    public function approve(User $user, Operator $operator): bool
+    {
+        // Super Admin always has permission to approve operators
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
+
+        // Admin and Energy Authority need operators.approve permission
+        if ($user->isAdmin() || $user->isEnergyAuthority()) {
+            return $user->hasPermission('operators.approve');
+        }
+
+        return false;
+    }
 }

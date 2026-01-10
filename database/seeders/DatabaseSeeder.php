@@ -19,11 +19,11 @@ class DatabaseSeeder extends Seeder
             RoleSeeder::class,
             ConstantSeeder::class,
             SettingsSeeder::class,
+            WelcomeMessageSeeder::class,
+            SmsTemplateSeeder::class,
             UserSeeder::class,
-            AuthorizedPhoneSeeder::class,
-            OperatorsWithDataSeeder::class,
-            ComplaintSuggestionSeeder::class,
-            MessageSeeder::class,
+            // Note: OperatorSeeder, AuthorizedPhoneSeeder, ComplaintSuggestionSeeder, MessageSeeder are not called
+            // Only basic seeders (permissions, roles, constants, settings, messages, users) are seeded
         ]);
     }
 }

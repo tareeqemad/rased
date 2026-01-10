@@ -14,17 +14,31 @@ use Illuminate\View\View;
 
 class OperatorProfileController extends Controller
 {
-    public function show(Request $request): View
+    public function show(Request $request, ?\App\Models\Operator $operator = null): View
     {
         $user = auth()->user();
 
-        if (! $user->isCompanyOwner()) {
-            abort(403);
-        }
-
-        $operator = $user->ownedOperators()->first();
-        if (! $operator) {
-            abort(404, 'المشغل غير موجود');
+        // السوبر أدمن يمكنه رؤية ملف أي مشغل
+        if ($user->isSuperAdmin() || $user->isEnergyAuthority()) {
+            // إذا تم تمرير operator_id في الـ request
+            $operatorId = $request->query('operator_id');
+            if ($operatorId) {
+                $operator = \App\Models\Operator::findOrFail($operatorId);
+            } elseif ($operator) {
+                // إذا تم تمرير operator كـ route parameter
+                $operator = $operator;
+            } else {
+                // إذا لم يتم تحديد مشغل، نعرض رسالة خطأ
+                abort(404, 'يرجى تحديد المشغل');
+            }
+        } elseif ($user->isCompanyOwner()) {
+            // المشغل يشوف ملفه فقط
+            $operator = $user->ownedOperators()->first();
+            if (! $operator) {
+                abort(404, 'المشغل غير موجود');
+            }
+        } else {
+            abort(403, 'غير مصرح لك بالوصول إلى هذه الصفحة');
         }
 
         // جلب وحدات التوليد للمشغل

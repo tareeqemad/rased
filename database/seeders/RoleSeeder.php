@@ -23,31 +23,24 @@ class RoleSeeder extends Seeder
             ],
             [
                 'name' => 'admin',
-                'label' => 'سلطة الطاقة',
-                'description' => 'يراقب ملفات المشغلين وبيانات المولدات - نظام استعلام فقط',
+                'label' => 'مدير',
+                'description' => 'مدير عادي - صلاحيات إدارية محدودة',
                 'is_system' => true,
                 'order' => 2,
+            ],
+            [
+                'name' => 'energy_authority',
+                'label' => 'سلطة الطاقة',
+                'description' => 'دور رئيسي في النظام - يمكنه إدارة المشغلين والموظفين والفنيين والأدوار والرسائل - لديه صلاحيات واسعة على النظام',
+                'is_system' => true,
+                'order' => 3,
             ],
             [
                 'name' => 'company_owner',
                 'label' => 'مشغل',
                 'description' => 'مشغل المولدات - يمكنه إدارة بياناته وموظفيه',
                 'is_system' => true,
-                'order' => 3,
-            ],
-            [
-                'name' => 'employee',
-                'label' => 'موظف',
-                'description' => 'موظف يعمل تحت إشراف المشغل',
-                'is_system' => true,
                 'order' => 4,
-            ],
-            [
-                'name' => 'technician',
-                'label' => 'فني',
-                'description' => 'فني يعمل تحت إشراف المشغل',
-                'is_system' => true,
-                'order' => 5,
             ],
         ];
 
@@ -59,16 +52,22 @@ class RoleSeeder extends Seeder
                 $roleData
             );
 
-            // منح الصلاحيات حسب الدور (إزالة الصلاحيات القديمة أولاً ثم إضافة الجديدة)
+            // Grant permissions based on role (remove old permissions first, then add new ones)
             $role->permissions()->detach();
+            
             if ($role->name === 'super_admin') {
-                // SuperAdmin لديه جميع الصلاحيات
+                // SuperAdmin has ALL permissions including settings, constants, logs
                 $role->permissions()->attach($permissions->pluck('id'));
-            } elseif ($role->name === 'admin') {
-                // Admin (سلطة الطاقة) - صلاحيات كاملة ما عدا إعدادات الموقع
-                // يمكنه إنشاء وتحديث السجلات، لكن لا يمكنه إدارة المستخدمين/المشغلين/الصلاحيات
+                
+            } elseif ($role->name === 'energy_authority') {
+                // EnergyAuthority (Energy Authority) - Main role in the system
+                // Full permissions EXCEPT site settings, constants, logs
+                // Can manage users, custom roles, operators under their authority
+                // Can create and update records
+                // Can add operators through authorized phone numbers
+                // Has access to roles and permissions definition
                 $role->permissions()->attach($permissions->whereIn('name', [
-                    // عرض
+                    // View
                     'operators.view',
                     'generators.view',
                     'generation_units.view',
@@ -77,7 +76,13 @@ class RoleSeeder extends Seeder
                     'maintenance_records.view',
                     'compliance_safeties.view',
                     'electricity_tariff_prices.view',
-                    // إنشاء وتحديث السجلات
+                    'guide.view',
+                    // Welcome messages and SMS templates
+                    'welcome_messages.view',
+                    'welcome_messages.update',
+                    'sms_templates.view',
+                    'sms_templates.update',
+                    // Create and update records
                     'operation_logs.create',
                     'operation_logs.update',
                     'maintenance_records.create',
@@ -86,34 +91,97 @@ class RoleSeeder extends Seeder
                     'compliance_safeties.update',
                     'fuel_efficiencies.create',
                     'fuel_efficiencies.update',
-                ])->pluck('id'));
-            } elseif ($role->name === 'company_owner') {
-                // CompanyOwner - صلاحيات كاملة على بياناته وموظفيه
-                $role->permissions()->attach($permissions->whereIn('name', [
-                    'operators.view',
-                    'operators.update',
-                    'generators.view',
                     'generators.create',
                     'generators.update',
-                    'operation_logs.view',
-                    'operation_logs.create',
-                    'operation_logs.update',
-                    'fuel_efficiencies.view',
-                    'fuel_efficiencies.create',
-                    'fuel_efficiencies.update',
-                    'maintenance_records.view',
-                    'maintenance_records.create',
-                    'maintenance_records.update',
-                    'compliance_safeties.view',
-                    'compliance_safeties.create',
-                    'compliance_safeties.update',
+                    'generation_units.create',
+                    'generation_units.update',
+                    // Manage users and custom roles (under their authority)
                     'users.view',
                     'users.create',
                     'users.update',
+                    'users.suspend',
                     'permissions.manage',
+                    'roles.view',
+                    'roles.create',
+                    'roles.update',
+                    // Manage operators (approve/activate operators)
+                    'operators.approve',
+                    // Manage authorized phones (for adding operators)
+                    'authorized_phones.view',
+                    'authorized_phones.create',
+                    'authorized_phones.update',
+                    'authorized_phones.delete',
+                ])->pluck('id'));
+                
+            } elseif ($role->name === 'admin') {
+                // Admin - Limited administrative permissions (view only + approve operators)
+                // Can view data and approve operators, but cannot modify other data
+                $role->permissions()->attach($permissions->whereIn('name', [
+                    // View only (no create, update, delete except approve)
+                    'operators.view',
+                    'operators.approve', // Admin can approve operators
+                    'generators.view',
+                    'generation_units.view',
+                    'operation_logs.view',
+                    'fuel_efficiencies.view',
+                    'maintenance_records.view',
+                    'compliance_safeties.view',
+                    'electricity_tariff_prices.view',
+                    'guide.view',
+                ])->pluck('id'));
+                
+            } elseif ($role->name === 'company_owner') {
+                // CompanyOwner (Operator) - Same permissions as SuperAdmin
+                // EXCEPT site settings, constants, logs, and system-wide roles/users management
+                // Permissions are granted by SuperAdmin through the role
+                // Full access is available only after operator approval (is_approved = true)
+                // Can manage their own data and users with custom roles
+                $role->permissions()->attach($permissions->whereIn('name', [
+                    'guide.view',
+                    // Operators
+                    'operators.view',
+                    'operators.update',
+                    // Generators
+                    'generators.view',
+                    'generators.create',
+                    'generators.update',
+                    // Generation Units
+                    'generation_units.view',
+                    'generation_units.create',
+                    'generation_units.update',
+                    // Operation Logs
+                    'operation_logs.view',
+                    'operation_logs.create',
+                    'operation_logs.update',
+                    // Fuel Efficiencies
+                    'fuel_efficiencies.view',
+                    'fuel_efficiencies.create',
+                    'fuel_efficiencies.update',
+                    // Maintenance Records
+                    'maintenance_records.view',
+                    'maintenance_records.create',
+                    'maintenance_records.update',
+                    // Compliance & Safety
+                    'compliance_safeties.view',
+                    'compliance_safeties.create',
+                    'compliance_safeties.update',
+                    // Electricity Tariff Prices
+                    'electricity_tariff_prices.view',
+                    'electricity_tariff_prices.create',
+                    'electricity_tariff_prices.update',
+                    // Manage users with custom roles (under their operator only)
+                    'users.view',
+                    'users.create',
+                    'users.update',
+                    // Manage permissions for custom role users (under their operator)
+                    'permissions.manage',
+                    // Can view and manage custom roles (created by Energy Authority or themselves)
+                    'roles.view',
+                    'roles.create',
+                    'roles.update',
                 ])->pluck('id'));
             }
-            // employee و technician لا يحصلون على صلاحيات افتراضية - يتم منحها يدوياً
+            // Custom roles (defined by Energy Authority or Company Owner) get permissions assigned when created
         }
 
         $this->command->info('تم إنشاء الأدوار بنجاح!');

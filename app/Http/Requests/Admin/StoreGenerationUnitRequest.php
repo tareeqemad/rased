@@ -14,8 +14,16 @@ class StoreGenerationUnitRequest extends FormRequest
 
     public function rules(): array
     {
+        $user = $this->user();
+        
+        // Super Admin يجب أن يختار مشغل
+        $operatorIdRule = ['nullable', 'exists:operators,id'];
+        if ($user && $user->isSuperAdmin()) {
+            $operatorIdRule = ['required', 'exists:operators,id'];
+        }
+        
         return [
-            'operator_id' => ['nullable', 'exists:operators,id'],
+            'operator_id' => $operatorIdRule,
             
             // الحقول الأساسية المطلوبة فقط
             'name' => ['required', 'string', 'max:255'],
@@ -65,6 +73,8 @@ class StoreGenerationUnitRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'operator_id.required' => 'يجب اختيار المشغل.',
+            'operator_id.exists' => 'المشغل المحدد غير موجود.',
             'name.required' => 'اسم وحدة التوليد مطلوب.',
             'governorate_id.required' => 'المحافظة مطلوبة.',
             'governorate_id.exists' => 'المحافظة المحددة غير صحيحة.',

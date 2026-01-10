@@ -1,6 +1,6 @@
 @foreach($complianceSafeties as $compliance)
     <tr>
-        <td>{{ $compliance->id }}</td>
+        <td>{{ $complianceSafeties->firstItem() + $loop->index }}</td>
         <td>
             @if($compliance->operator)
                 <span class="badge bg-info">{{ $compliance->operator->name }}</span>

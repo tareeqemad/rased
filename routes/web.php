@@ -34,4 +34,8 @@ Route::get('/complaints-suggestions/operators/by-governorate/{governorate}', [\A
 Route::get('/complaints-suggestions/generators', [\App\Http\Controllers\ComplaintSuggestionController::class, 'getGeneratorsByLocation'])->name('complaints-suggestions.generators');
 Route::get('/complaints-suggestions/generators-by-operator', [\App\Http\Controllers\ComplaintSuggestionController::class, 'getGeneratorsByOperator'])->name('complaints-suggestions.generators-by-operator');
 
+// QR Code Public Routes
+Route::get('/qr/generation-unit/{code}', [\App\Http\Controllers\PublicQrController::class, 'generationUnit'])->name('qr.generation-unit');
+Route::get('/qr/generator/{code}', [\App\Http\Controllers\PublicQrController::class, 'generator'])->name('qr.generator');
+
 

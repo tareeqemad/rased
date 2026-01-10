@@ -8,10 +8,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Traits\TracksUser;
 
 class GenerationUnit extends Model
 {
-    use SoftDeletes;
+    use SoftDeletes, TracksUser;
 
     protected $table = 'generation_units';
 
@@ -46,6 +47,7 @@ class GenerationUnit extends Model
         'beneficiaries_count',
         'beneficiaries_description',
         'environmental_compliance_status_id', // تم تغييره من environmental_compliance_status
+        'qr_code_generated_at', // تاريخ توليد QR Code
     ];
 
     protected function casts(): array
@@ -56,6 +58,7 @@ class GenerationUnit extends Model
             'total_capacity' => 'decimal:2',
             'max_synchronization_capacity' => 'decimal:2',
             'beneficiaries_count' => 'integer',
+            'qr_code_generated_at' => 'datetime',
         ];
     }
 

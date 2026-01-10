@@ -2,11 +2,8 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Helpers\GeneralHelper;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Admin\StoreOperatorRequest;
 use App\Http\Requests\Admin\UpdateOperatorRequest;
-use App\Mail\OperatorCredentialsMail;
 use App\Models\Notification;
 use App\Models\Operator;
 use App\Models\Role as RoleModel;
@@ -16,8 +13,6 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\URL;
 use Illuminate\View\View;
 
 class OperatorController extends Controller
@@ -108,113 +103,104 @@ class OperatorController extends Controller
         abort(404, 'تم إلغاء هذه الصفحة. المشغلون يقدمون طلبات انضمام من الموقع العام.');
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(StoreOperatorRequest $request): RedirectResponse|JsonResponse
-    {
-        $this->authorize('create', Operator::class);
-
-        $companyOwnerRole = RoleModel::where('name', 'company_owner')->first();
-        if (! $companyOwnerRole) {
-            $msg = 'لم يتم العثور على دور المشغل. يرجى تشغيل RoleSeeder أولاً.';
-            if ($request->ajax() || $request->wantsJson()) {
-                return response()->json(['success' => false, 'message' => $msg], 422);
-            }
-            return redirect()->back()->with('error', $msg);
-        }
-
-        // إنشاء User للمشغل
-        $plainPassword = $request->validated('password');
-        
-        $user = User::create([
-            'name' => $request->validated('username'),
-            'username' => $request->validated('username'),
-            'email' => $request->validated('email') ?? ($request->validated('username') . '@rased.ps'),
-            'password' => Hash::make($plainPassword),
-            'password_plain' => $plainPassword,
-            'role' => Role::CompanyOwner,
-            'role_id' => $companyOwnerRole->id,
-        ]);
-
-        // إنشاء Operator
-        $operator = Operator::create([
-            'name' => $request->validated('username'),
-            'email' => $user->email,
-            'owner_id' => $user->id,
-            'profile_completed' => false,
-        ]);
-
-        // إنشاء 3 رسائل افتراضية للمستخدم الجديد
-        try {
-            $user->createDefaultMessages();
-        } catch (\Exception $e) {
-            \Log::error('فشل إنشاء الرسائل الافتراضية للمستخدم: ' . $e->getMessage());
-        }
-
-        // إرسال إيميل (اختياري)
-        if ($request->boolean('send_email') && $user->email) {
-            try {
-                $loginUrl = URL::route('login');
-                Mail::to($user->email)->send(new OperatorCredentialsMail(
-                    $user->username,
-                    $request->validated('password'),
-                    $loginUrl
-                ));
-            } catch (\Throwable $e) {
-                \Log::error('فشل إرسال الإيميل للمشغل: ' . $e->getMessage());
-            }
-        }
-
-        $message = 'تم إنشاء المشغل بنجاح. اسم المستخدم: ' . $user->username;
-
-        Notification::notifySuperAdmins(
-            'operator_added',
-            'تم إضافة مشغل جديد',
-            "تم إضافة المشغل: {$operator->name}",
-            route('admin.operators.show', $operator)
-        );
-
-        if ($request->ajax() || $request->wantsJson()) {
-            return response()->json([
-                'success' => true,
-                'message' => $message,
-                'operator' => [
-                    'id' => $operator->id,
-                    'name' => $operator->name,
-                ],
-            ], 201);
-        }
-
-        return redirect()->route('admin.operators.index')->with('success', $message);
-    }
 
     /**
-     * Toggle operator status (active/inactive)
+     * Toggle operator status (active/inactive) - فقط التفعيل/الإيقاف
      */
     public function toggleStatus(Request $request, Operator $operator): RedirectResponse|JsonResponse
     {
         $this->authorize('update', $operator);
 
-        // فقط السوبر أدمن يمكنه تغيير الحالة
-        if (!auth()->user()->isSuperAdmin()) {
+        // فقط السوبر أدمن و Admin يمكنهما تغيير الحالة
+        $user = auth()->user();
+        if (!$user->isSuperAdmin() && !$user->isAdmin()) {
             abort(403, 'لا تملك صلاحية لتغيير حالة المشغل');
         }
 
         $oldStatus = $operator->status;
+        
+        // تبديل الحالة فقط (active/inactive)
         $operator->status = $operator->status === 'active' ? 'inactive' : 'active';
         $operator->save();
 
-        // إذا تم إيقاف المشغل، إيقاف كل الموظفين التابعين له
-        if ($operator->status === 'inactive' && $oldStatus === 'active') {
+        if ($operator->status === 'active') {
+            // عند التفعيل: تفعيل المشغل (owner) والموظفين التابعين له
+            if ($operator->owner) {
+                $operator->owner->update(['status' => 'active']);
+            }
+            $operator->users()->update(['status' => 'active']);
+            
+            // إرسال إشعار للمشغل عند التفعيل
+            if ($operator->owner) {
+                \App\Models\Notification::createNotification(
+                    $operator->owner_id,
+                    'operator_activated',
+                    'تم تفعيل حسابك',
+                    "تم تفعيل حسابك في منصة راصد. يمكنك الآن الوصول للنظام.",
+                    route('admin.operators.profile')
+                );
+            }
+            
+            $message = "تم تفعيل المشغل بنجاح";
+        } else {
+            // عند الإيقاف: إيقاف المشغل (owner) وجميع الموظفين التابعين له
+            if ($operator->owner) {
+                $operator->owner->update(['status' => 'inactive']);
+            }
             $operator->users()->update(['status' => 'inactive']);
-        }
-
-        $statusLabel = $operator->status === 'active' ? 'تفعيل' : 'إيقاف';
-        $message = "تم {$statusLabel} المشغل بنجاح";
-        
-        if ($operator->status === 'inactive') {
-            $message .= " (تم إيقاف جميع الموظفين التابعين له)";
+            
+            // الحصول على system user (منصة راصد) لإرسال الرسائل منه
+            $systemUser = \App\Models\User::where('username', 'platform_rased')->first();
+            
+            if ($systemUser) {
+                // إرسال رسالة للمشغل (owner)
+                if ($operator->owner) {
+                    \App\Models\Message::create([
+                        'sender_id' => $systemUser->id,
+                        'receiver_id' => $operator->owner_id,
+                        'operator_id' => $operator->id,
+                        'subject' => 'تم إيقاف حسابك',
+                        'body' => "عزيزي/عزيزتي {$operator->owner->name}،\n\nنود إعلامك بأنه تم إيقاف حسابك في منصة راصد.\n\nلن تتمكن من الوصول للنظام حتى يتم تفعيل حسابك مرة أخرى من قبل سلطة الطاقة.\n\nإذا كان لديك أي استفسار، يرجى التواصل معنا.",
+                        'type' => 'admin_to_operator',
+                        'is_read' => false,
+                    ]);
+                    
+                    // إرسال إشعار أيضاً
+                    \App\Models\Notification::createNotification(
+                        $operator->owner_id,
+                        'operator_deactivated',
+                        'تم إيقاف حسابك',
+                        "تم إيقاف حسابك في منصة راصد. لن تتمكن من الوصول للنظام حتى يتم تفعيل حسابك مرة أخرى.",
+                        route('admin.operators.profile')
+                    );
+                }
+                
+                // إرسال رسائل لجميع الموظفين التابعين للمشغل
+                $operator->users()
+                    ->whereIn('role', [\App\Role::Employee, \App\Role::Technician])
+                    ->each(function ($employee) use ($systemUser, $operator) {
+                        \App\Models\Message::create([
+                            'sender_id' => $systemUser->id,
+                            'receiver_id' => $employee->id,
+                            'operator_id' => $operator->id,
+                            'subject' => 'تم إيقاف حسابك',
+                            'body' => "عزيزي/عزيزتي {$employee->name}،\n\nنود إعلامك بأنه تم إيقاف حساب المشغل الذي تعمل لديه ({$operator->name})، وبالتالي تم إيقاف حسابك أيضاً.\n\nلن تتمكن من الوصول للنظام حتى يتم تفعيل حساب المشغل مرة أخرى من قبل سلطة الطاقة.\n\nإذا كان لديك أي استفسار، يرجى التواصل معنا.",
+                            'type' => 'admin_to_operator',
+                            'is_read' => false,
+                        ]);
+                        
+                        // إرسال إشعار أيضاً
+                        \App\Models\Notification::createNotification(
+                            $employee->id,
+                            'operator_deactivated',
+                            'تم إيقاف حسابك',
+                            "تم إيقاف حساب المشغل الذي تعمل لديه، وبالتالي تم إيقاف حسابك أيضاً.",
+                            route('admin.dashboard')
+                        );
+                    });
+            }
+            
+            $message = "تم إيقاف المشغل بنجاح (تم إيقاف المشغل وجميع الموظفين التابعين له وتم إرسال رسائل لهم)";
         }
 
         if ($request->ajax() || $request->wantsJson()) {
@@ -224,6 +210,73 @@ class OperatorController extends Controller
                 'operator' => [
                     'id' => $operator->id,
                     'status' => $operator->status,
+                    'is_approved' => $operator->is_approved,
+                ],
+            ]);
+        }
+
+        return redirect()->back()->with('success', $message);
+    }
+
+    /**
+     * Toggle operator approval (is_approved) - فقط الاعتماد/إلغاء الاعتماد
+     */
+    /**
+     * Toggle operator approval (is_approved) - only approval/activation
+     * Only Super Admin, Admin, and Energy Authority with operators.approve permission can approve operators
+     */
+    public function toggleApproval(Request $request, Operator $operator): RedirectResponse|JsonResponse
+    {
+        // Check permission: Only users with operators.approve permission can approve operators
+        $this->authorize('approve', $operator);
+
+        $oldApproved = $operator->is_approved;
+        
+        // تبديل الاعتماد فقط
+        $operator->is_approved = !$operator->is_approved;
+        $operator->save();
+
+        if ($operator->is_approved) {
+            // عند الاعتماد: إرسال رسالة وإشعار للمشغل
+            if ($operator->owner) {
+                // الحصول على system user (منصة راصد) لإرسال الرسالة منه
+                $systemUser = \App\Models\User::where('username', 'platform_rased')->first();
+                
+                if ($systemUser) {
+                    // إرسال رسالة للمشغل
+                    \App\Models\Message::create([
+                        'sender_id' => $systemUser->id,
+                        'receiver_id' => $operator->owner_id,
+                        'operator_id' => $operator->id,
+                        'subject' => 'تم اعتماد حسابك',
+                        'body' => "عزيزي/عزيزتي {$operator->owner->name}،\n\nنود إعلامك بأنه تم اعتماد حسابك في منصة راصد.\n\nيمكنك الآن الوصول لجميع خصائص النظام:\n- إضافة موظفين وفنيين\n- إدارة الصلاحيات\n- إدارة الشجرة\n- الوصول لجميع السجلات\n\nنتمنى لك تجربة ممتعة مع منصة راصد.",
+                        'type' => 'admin_to_operator',
+                        'is_read' => false,
+                    ]);
+                }
+                
+                // إرسال إشعار أيضاً
+                \App\Models\Notification::createNotification(
+                    $operator->owner_id,
+                    'operator_approved',
+                    'تم اعتماد حسابك',
+                    "تم اعتماد حسابك في منصة راصد. يمكنك الآن الوصول لجميع خصائص النظام.",
+                    route('admin.operators.profile')
+                );
+            }
+            $message = "تم اعتماد المشغل بنجاح";
+        } else {
+            $message = "تم إلغاء اعتماد المشغل";
+        }
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => $message,
+                'operator' => [
+                    'id' => $operator->id,
+                    'status' => $operator->status,
+                    'is_approved' => $operator->is_approved,
                 ],
             ]);
         }

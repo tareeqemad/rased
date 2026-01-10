@@ -113,7 +113,7 @@
                                         </div>
                                         <small class="text-muted d-block mt-2">
                                             <i class="bi bi-lightbulb me-1"></i>
-                                            عند الضغط على "إعادة ضبط" لأي لون، سيعود إلى القيمة المحفوظة أعلاه
+                                            عند الضغط على "إعادة ضبط" لأي لون، سيعود إلى القيمة الافتراضية الأصلية (#19228f للون الأساسي و Header، #3b4863 للون الداكن)
                                         </small>
                                     </div>
                                 </div>
@@ -496,8 +496,10 @@
             const primaryColorInput = $('#primaryColorInput');
             const primaryColorHex = $('#primaryColorHex');
             const resetPrimaryColorBtn = $('#resetPrimaryColor');
-            // Use current saved color as default (from database)
-            const DEFAULT_PRIMARY_COLOR = primaryColorInput.val() || '#19228f';
+            // الألوان الافتراضية الأصلية (لا تتغير حتى لو غير المستخدم الألوان)
+            const ORIGINAL_DEFAULT_PRIMARY_COLOR = '#19228f';
+            const ORIGINAL_DEFAULT_DARK_COLOR = '#3b4863';
+            const ORIGINAL_DEFAULT_HEADER_COLOR = '#19228f';
             
             /**
              * Convert hex color to RGB values (format: "25, 34, 143")
@@ -552,12 +554,14 @@
                 // The color will be applied from layouts/admin.blade.php on initial load
             }
             
-            // Reset Primary Color Button
+            // Reset Primary Color Button - يعيد إلى القيمة الافتراضية الأصلية
             if (resetPrimaryColorBtn.length) {
                 resetPrimaryColorBtn.on('click', function() {
-                    primaryColorInput.val(DEFAULT_PRIMARY_COLOR);
-                    primaryColorHex.val(DEFAULT_PRIMARY_COLOR);
-                    updatePrimaryColor(DEFAULT_PRIMARY_COLOR);
+                    if (confirm('هل أنت متأكد من إعادة ضبط اللون إلى القيمة الافتراضية الأصلية؟')) {
+                        primaryColorInput.val(ORIGINAL_DEFAULT_PRIMARY_COLOR);
+                        primaryColorHex.val(ORIGINAL_DEFAULT_PRIMARY_COLOR);
+                        updatePrimaryColor(ORIGINAL_DEFAULT_PRIMARY_COLOR);
+                    }
                 });
             }
 
@@ -639,8 +643,6 @@
             
             // Dark Color Picker Sync & Dynamic Preview
             const resetDarkColorBtn = $('#resetDarkColor');
-            // Use current saved color as default (from database)
-            const DEFAULT_DARK_COLOR = darkColorInput.val() || '#3b4863';
             
             if (darkColorInput.length && darkColorHex.length) {
                 // Sync color picker with text input
@@ -663,12 +665,14 @@
                 // The color will be applied from layouts/admin.blade.php on initial load
             }
             
-            // Reset Dark Color Button
+            // Reset Dark Color Button - يعيد إلى القيمة الافتراضية الأصلية
             if (resetDarkColorBtn.length) {
                 resetDarkColorBtn.on('click', function() {
-                    darkColorInput.val(DEFAULT_DARK_COLOR);
-                    darkColorHex.val(DEFAULT_DARK_COLOR);
-                    updateDarkColor(DEFAULT_DARK_COLOR);
+                    if (confirm('هل أنت متأكد من إعادة ضبط اللون إلى القيمة الافتراضية الأصلية؟')) {
+                        darkColorInput.val(ORIGINAL_DEFAULT_DARK_COLOR);
+                        darkColorHex.val(ORIGINAL_DEFAULT_DARK_COLOR);
+                        updateDarkColor(ORIGINAL_DEFAULT_DARK_COLOR);
+                    }
                 });
             }
 
@@ -799,8 +803,6 @@
             
             // Header Color Picker Sync & Dynamic Preview
             const resetHeaderColorBtn = $('#resetHeaderColor');
-            // Use current saved color as default (from database)
-            const DEFAULT_HEADER_COLOR = headerColorInput.val() || '#19228f';
             
             if (headerColorInput.length && headerColorHex.length) {
                 // Sync color picker with text input
@@ -819,12 +821,14 @@
                 });
             }
             
-            // Reset Header Color Button
+            // Reset Header Color Button - يعيد إلى القيمة الافتراضية الأصلية
             if (resetHeaderColorBtn.length) {
                 resetHeaderColorBtn.on('click', function() {
-                    headerColorInput.val(DEFAULT_HEADER_COLOR);
-                    headerColorHex.val(DEFAULT_HEADER_COLOR);
-                    updateHeaderColor(DEFAULT_HEADER_COLOR);
+                    if (confirm('هل أنت متأكد من إعادة ضبط اللون إلى القيمة الافتراضية الأصلية؟')) {
+                        headerColorInput.val(ORIGINAL_DEFAULT_HEADER_COLOR);
+                        headerColorHex.val(ORIGINAL_DEFAULT_HEADER_COLOR);
+                        updateHeaderColor(ORIGINAL_DEFAULT_HEADER_COLOR);
+                    }
                 });
             }
 

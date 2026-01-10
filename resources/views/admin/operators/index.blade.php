@@ -543,12 +543,56 @@
                     if (res.success) {
                         notify('success', res.message);
                         loadList({ page: 1 });
+                        // تحديث فوري للإشعارات والرسائل
+                        if (window.notificationPanel) window.notificationPanel.loadNotifications();
+                        if (window.MessagesPanel) {
+                            window.MessagesPanel.loadUnreadCount();
+                            window.MessagesPanel.loadRecentMessages();
+                        }
                     } else {
                         notify('error', res.message || 'حدث خطأ');
                     }
                 },
                 error: function () {
                     notify('error', 'حدث خطأ أثناء تغيير الحالة');
+                }
+            });
+        });
+
+        // toggle approval
+        $wrap.find('[data-action="toggle-approval-operator"]').off('click').on('click', function () {
+            const $btn = $(this);
+            const url = $btn.data('url');
+            const currentApproved = $btn.data('approved') === '1';
+            const action = currentApproved ? 'إلغاء اعتماد' : 'اعتماد';
+            
+            if (!confirm(`هل أنت متأكد من ${action} هذا المشغل؟`)) {
+                return;
+            }
+
+            $.ajax({
+                url: url,
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                success: function (res) {
+                    if (res.success) {
+                        notify('success', res.message);
+                        loadList({ page: 1 });
+                        // تحديث فوري للإشعارات والرسائل
+                        if (window.notificationPanel) window.notificationPanel.loadNotifications();
+                        if (window.MessagesPanel) {
+                            window.MessagesPanel.loadUnreadCount();
+                            window.MessagesPanel.loadRecentMessages();
+                        }
+                    } else {
+                        notify('error', res.message || 'حدث خطأ');
+                    }
+                },
+                error: function () {
+                    notify('error', 'حدث خطأ أثناء تغيير الاعتماد');
                 }
             });
         });

@@ -8,7 +8,7 @@ class NotificationPanel {
         this.notificationCount = document.getElementById('notification-count');
         this.markAllReadBtn = document.getElementById('mark-all-read');
         this.notificationsUrl = '/admin/notifications';
-        this.pollInterval = 60000; // تحديث كل دقيقة
+        this.pollInterval = 15000; // تحديث كل 15 ثانية (realtime)
         this.pollTimer = null;
         
         this.init();

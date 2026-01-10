@@ -12,23 +12,18 @@ class MessagePolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->isSuperAdmin() 
-            || $user->isAdmin() 
-            || $user->isCompanyOwner() 
-            || $user->isEmployee() 
-            || $user->isTechnician();
+        // All authenticated users can view messages (but only their own)
+        return true;
     }
 
     /**
      * Determine whether the user can view the model.
+     * Each user can only see messages they sent or received
      */
     public function view(User $user, Message $message): bool
     {
-        // SuperAdmin و Admin يمكنهما رؤية جميع الرسائل
-        if ($user->isSuperAdmin() || $user->isAdmin()) {
-            return true;
-        }
-
+        // SuperAdmin cannot see other users' private messages
+        // Each user can only see messages they sent or received
         return $message->canBeViewedBy($user);
     }
 
@@ -37,9 +32,8 @@ class MessagePolicy
      */
     public function create(User $user): bool
     {
-        return $user->isSuperAdmin() 
-            || $user->isAdmin() 
-            || $user->isCompanyOwner();
+        // All authenticated users can create messages
+        return true;
     }
 
     /**

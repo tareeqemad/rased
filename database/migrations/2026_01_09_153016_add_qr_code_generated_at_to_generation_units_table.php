@@ -11,8 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('operators', function (Blueprint $table) {
-            $table->string('name_en')->nullable()->after('name');
+        Schema::table('generation_units', function (Blueprint $table) {
+            $table->timestamp('qr_code_generated_at')->nullable()->after('environmental_compliance_status_id')
+                ->comment('تاريخ توليد QR Code');
         });
     }
 
@@ -21,8 +22,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('operators', function (Blueprint $table) {
-            $table->dropColumn('name_en');
+        Schema::table('generation_units', function (Blueprint $table) {
+            $table->dropColumn('qr_code_generated_at');
         });
     }
 };

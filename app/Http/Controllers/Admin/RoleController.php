@@ -22,34 +22,66 @@ class RoleController extends Controller
         $this->authorize('viewAny', Role::class);
 
         $user = auth()->user();
-        $query = Role::withCount(['users', 'permissions'])->with('operator');
+        $query = Role::withCount(['users', 'permissions'])->with(['operator', 'creator']);
 
-        // فلترة الأدوار حسب المستخدم
+        // Filter roles based on user authority
+        // Super Admin and Admin can see general roles (operator_id = null) that they or Super Admin created
+        // Energy Authority and Company Owner cannot see general roles - they only see roles they created themselves
         if ($user->isAdmin()) {
-            // Admin يشوف جميع الأدوار النظامية والأدوار العامة (operator_id = null)
-            // ولا يشوف الأدوار الخاصة بمشغلين محددين
+            // Admin can see system roles and general roles (operator_id = null) created by Admin or Super Admin
+            // Admin cannot see roles specific to operators
             $query->where(function ($q) {
                 $q->where('is_system', true)
-                  ->orWhereNull('operator_id');
+                  ->orWhere(function($q2) {
+                      // General roles (operator_id = null) created by Admin or Super Admin
+                      $q2->whereNull('operator_id')
+                         ->where(function($q3) {
+                             $q3->whereNull('created_by') // System roles or legacy roles
+                                ->orWhereHas('creator', function($q4) {
+                                    $q4->whereIn('role', ['super_admin', 'admin']);
+                                });
+                         });
+                  });
+            });
+        } elseif ($user->isEnergyAuthority()) {
+            // Energy Authority can see:
+            // 1. System roles
+            // 2. General roles created by Energy Authority or Super Admin/Admin (for reference)
+            // 3. Operator-specific roles created by Energy Authority
+            $query->where(function ($q) use ($user) {
+                $q->where('is_system', true)
+                  ->orWhere('created_by', $user->id) // Roles created by this Energy Authority (general or operator-specific)
+                  ->orWhere(function($q2) {
+                      // General roles (operator_id = null) created by Super Admin or Admin (for reference only)
+                      $q2->whereNull('operator_id')
+                         ->where('is_system', false)
+                         ->where(function($q3) {
+                             $q3->whereNull('created_by')
+                                ->orWhereHas('creator', function($q4) {
+                                    $q4->whereIn('role', ['super_admin', 'admin']);
+                                });
+                         });
+                  });
             });
         } elseif ($user->isCompanyOwner()) {
             $operator = $user->ownedOperators()->first();
             if ($operator) {
-                // المشغل يشوف أدواره فقط + الأدوار النظامية (لا يشوف الأدوار العامة أو أدوار مشغلين آخرين)
-                $query->where(function ($q) use ($operator) {
-                    $q->where('is_system', true)
-                      ->orWhere('operator_id', $operator->id);
-                });
+                // Company Owner can ONLY see roles they created for their operator
+                // No system roles, no general roles, no roles from Energy Authority, no roles from other operators
+                $query->where('operator_id', $operator->id)
+                      ->where('created_by', $user->id)
+                      ->where('is_system', false); // Only custom roles they created
             } else {
-                // إذا لم يكن لديه مشغل، يشوف الأدوار النظامية فقط
-                $query->where('is_system', true);
+                // If no operator, no roles (cannot create users without operator)
+                $query->whereRaw('1 = 0'); // Empty result
             }
         } elseif (!$user->isSuperAdmin()) {
-            // غير مصرح
+            // Unauthorized
             abort(403);
         }
+        // Super Admin sees all roles (no filter needed)
 
-        // البحث
+        // Search
         if ($request->filled('search')) {
             $search = $request->input('search');
             $query->where(function ($q) use ($search) {
@@ -76,17 +108,17 @@ class RoleController extends Controller
 
         $user = auth()->user();
         
-        // الحصول على الصلاحيات المتاحة
+        // Get available permissions
         $permissions = Permission::orderBy('group')->orderBy('order')->get();
         
         if ($user->isAdmin()) {
-            // Admin: لا يمكنه منح صلاحيات إعدادات النظام (users, operators, permissions)
+            // Admin: cannot grant system permissions (users, operators, permissions, settings, constants, logs)
             $systemPermissions = $this->getSystemPermissions();
             $permissions = $permissions->reject(function ($permission) use ($systemPermissions) {
                 return in_array($permission->name, $systemPermissions);
             });
-        } elseif ($user->isCompanyOwner()) {
-            // فلترة الصلاحيات - إزالة صلاحيات النظام
+        } elseif ($user->isEnergyAuthority() || $user->isCompanyOwner()) {
+            // Energy Authority and Company Owner: filter system permissions
             $systemPermissions = $this->getSystemPermissions();
             $permissions = $permissions->reject(function ($permission) use ($systemPermissions) {
                 return in_array($permission->name, $systemPermissions);
@@ -95,9 +127,12 @@ class RoleController extends Controller
         
         $permissions = $permissions->groupBy('group');
 
-        // الحصول على المشغلين (للسوبر أدمن فقط - Admin لا يحتاج لأنه ينشئ أدوار عامة)
+        // Get operators list
+        // Super Admin and Energy Authority can create general roles or operator-specific roles (can select operator or leave null)
+        // Admin can only create general roles (no operator selection needed)
+        // Company Owner can only create roles for their own operator (no selection needed)
         $operators = collect();
-        if ($user->isSuperAdmin()) {
+        if ($user->isSuperAdmin() || $user->isEnergyAuthority()) {
             $operators = \App\Models\Operator::orderBy('name')->get(['id', 'name', 'unit_number']);
         }
 
@@ -112,9 +147,21 @@ class RoleController extends Controller
         $user = auth()->user();
         $operatorId = null;
         
-        // Admin يمكنه إنشاء أدوار عامة (operator_id = null) فقط
+        // Determine operator_id based on user authority
+        // Super Admin, Admin, and Energy Authority can create general roles (operator_id = null)
+        // Energy Authority can also create operator-specific roles (operator_id = specific operator)
+        // Company Owner can only create operator-specific roles (for their own operator)
         if ($user->isAdmin()) {
-            $operatorId = null; // أدوار عامة فقط
+            // Admin can only create general roles (operator_id = null)
+            $operatorId = null;
+        } elseif ($user->isEnergyAuthority()) {
+            // Energy Authority can create:
+            // 1. General roles (operator_id = null) - for the entire system
+            // 2. Operator-specific roles (operator_id = specific operator) - for specific operators
+            $operatorId = $request->validated('operator_id');
+            if ($operatorId === '' || $operatorId === null) {
+                $operatorId = null; // General role for the entire system
+            }
         } elseif ($user->isCompanyOwner()) {
             $operator = $user->ownedOperators()->first();
             if (!$operator) {
@@ -122,13 +169,16 @@ class RoleController extends Controller
                     ->withInput()
                     ->with('error', 'لا يوجد مشغل مرتبط بحسابك. أكمل ملف المشغل أولاً.');
             }
+            // Company Owner can only create roles for their own operator
             $operatorId = $operator->id;
         } elseif ($user->isSuperAdmin()) {
-            // السوبر أدمن يمكنه اختيار المشغل أو تركه null (دور عام)
+            // Super Admin can choose operator or leave null (general role)
             $operatorId = $request->validated('operator_id');
             if ($operatorId === '' || $operatorId === null) {
                 $operatorId = null;
             }
+        } else {
+            abort(403);
         }
 
         // التحقق من الصلاحيات - منع منح صلاحيات النظام
@@ -146,6 +196,7 @@ class RoleController extends Controller
             'is_system' => false,
             'order' => $request->validated('order', 0),
             'operator_id' => $operatorId,
+            'created_by' => $user->id, // Track who created this role
         ]);
 
         // ربط الصلاحيات بالدور
@@ -178,11 +229,17 @@ class RoleController extends Controller
 
         $user = auth()->user();
         
-        // الحصول على الصلاحيات المتاحة
+        // Get available permissions
         $permissions = Permission::orderBy('group')->orderBy('order')->get();
         
-        if ($user->isCompanyOwner()) {
-            // فلترة الصلاحيات - إزالة صلاحيات النظام
+        if ($user->isAdmin()) {
+            // Admin: cannot grant system permissions
+            $systemPermissions = $this->getSystemPermissions();
+            $permissions = $permissions->reject(function ($permission) use ($systemPermissions) {
+                return in_array($permission->name, $systemPermissions);
+            });
+        } elseif ($user->isEnergyAuthority() || $user->isCompanyOwner()) {
+            // Energy Authority and Company Owner: filter system permissions
             $systemPermissions = $this->getSystemPermissions();
             $permissions = $permissions->reject(function ($permission) use ($systemPermissions) {
                 return in_array($permission->name, $systemPermissions);
@@ -192,9 +249,12 @@ class RoleController extends Controller
         $permissions = $permissions->groupBy('group');
         $rolePermissions = $role->permissions->pluck('id')->toArray();
 
-        // الحصول على المشغلين (للسوبر أدمن فقط)
+        // Get operators list (for Super Admin and Energy Authority to change operator)
+        // Admin cannot change operator (general roles only)
+        // Company Owner cannot change operator (their own operator only)
         $operators = collect();
-        if ($user->isSuperAdmin()) {
+        if ($user->isSuperAdmin() || $user->isEnergyAuthority()) {
+            // Super Admin and Energy Authority can change operator (can set to null for general role or specific operator)
             $operators = \App\Models\Operator::orderBy('name')->get(['id', 'name', 'unit_number']);
         }
 
@@ -223,9 +283,13 @@ class RoleController extends Controller
                 'order' => $request->validated('order', $role->order),
             ];
             
-            // السوبر أدمن يمكنه تغيير المشغل
-            if ($user->isSuperAdmin() && $request->has('operator_id')) {
+            // Super Admin and Energy Authority can change operator
+            // Admin cannot change operator (general roles only)
+            // Company Owner cannot change operator (their own operator only)
+            if (($user->isSuperAdmin() || $user->isEnergyAuthority()) && $request->has('operator_id')) {
                 $operatorId = $request->validated('operator_id');
+                // Both Super Admin and Energy Authority can create general roles (operator_id = null)
+                // or operator-specific roles (operator_id = specific operator)
                 $updateData['operator_id'] = $operatorId === '' || $operatorId === null ? null : $operatorId;
             }
         }
@@ -306,7 +370,8 @@ class RoleController extends Controller
     }
 
     /**
-     * الحصول على قائمة الصلاحيات النظامية التي لا يمكن للمشغل منحها
+     * Get list of system permissions that cannot be granted by Admin, Energy Authority, or Company Owner
+     * Note: operators.approve is not included here because Admin and Energy Authority can have it
      */
     private function getSystemPermissions(): array
     {
@@ -319,7 +384,21 @@ class RoleController extends Controller
             'operators.create',
             'operators.update',
             'operators.delete',
+            // Note: operators.approve is allowed for Admin and Energy Authority, so not included here
             'permissions.manage',
+            'settings.view',
+            'settings.update',
+            'constants.view',
+            'constants.create',
+            'constants.update',
+            'constants.delete',
+            'logs.view',
+            'logs.clear',
+            'logs.download',
+            'roles.view',
+            'roles.create',
+            'roles.update',
+            'roles.delete',
         ];
     }
 }

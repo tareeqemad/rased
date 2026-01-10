@@ -11,12 +11,71 @@ use App\Role;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
+/**
+ * ============================================
+ * MessageController - كنترولر إدارة الرسائل
+ * ============================================
+ * 
+ * هذا الكنترولر مسؤول عن إدارة جميع الرسائل في النظام
+ * 
+ * الأدوار الرئيسية:
+ * ------------------
+ * 1. السوبر أدمن (SuperAdmin):
+ *    - يرى جميع الرسائل في النظام
+ *    - يمكنه إرسال رسائل لجميع المشغلين أو لمشغل معين
+ *    - لديه كنترول كامل على الرسائل
+ * 
+ * 2. سلطة الطاقة (Admin) - دور رئيسي في النظام:
+ *    - يرى جميع الرسائل في النظام
+ *    - يمكنه إرسال رسائل لجميع المشغلين أو لمشغل معين
+ *    - لديه كنترول كامل على الرسائل
+ *    - يمكنه التواصل مع جميع المشغلين والموظفين
+ * 
+ * 3. المشغل (CompanyOwner):
+ *    - يرى الرسائل المرسلة منه
+ *    - يرى الرسائل الموجهة له (من أدمن أو مشغلين آخرين)
+ *    - يرى الرسائل الموجهة لموظفيه
+ *    - يمكنه إرسال رسائل لموظفيه أو لمشغلين آخرين
+ * 
+ * 4. الموظف/الفني (Employee/Technician):
+ *    - يرى الرسائل الموجهة له
+ *    - يرى الرسائل الموجهة لجميع موظفي المشغل
+ *    - يمكنه إرسال رسائل للمشغل
+ * 
+ * ============================================
+ */
 class MessageController extends Controller
 {
     /**
-     * Display a listing of messages.
+     * عرض قائمة الرسائل
+     * 
+     * ============================================
+     * سياسة عرض الرسائل حسب الدور:
+     * ============================================
+     * 
+     * 1. السوبر أدمن (SuperAdmin):
+     *    - يرى جميع الرسائل في النظام
+     * 
+     * 2. سلطة الطاقة (EnergyAuthority):
+     *    - يرى جميع الرسائل في النظام
+     *    - يمكنه إرسال رسائل لجميع المشغلين أو لمشغل معين
+     *    - لديه كنترول كامل على الرسائل
+     * 
+     * 3. المشغل (CompanyOwner):
+     *    - يرى الرسائل المرسلة منه
+     *    - يرى الرسائل الموجهة له (من أدمن أو مشغلين آخرين)
+     *    - يرى الرسائل الموجهة لموظفيه
+     *    - يمكنه إرسال رسائل لموظفيه أو لمشغلين آخرين
+     * 
+     * 4. الموظف/الفني (Employee/Technician):
+     *    - يرى الرسائل الموجهة له
+     *    - يرى الرسائل الموجهة لجميع موظفي المشغل
+     *    - يمكنه إرسال رسائل للمشغل
+     * 
+     * ============================================
      */
     public function index(Request $request): View|JsonResponse
     {
@@ -25,31 +84,30 @@ class MessageController extends Controller
         $user = auth()->user();
         $query = Message::with(['sender', 'receiver', 'operator']);
 
-        // فلترة حسب نوع المستخدم
+        // Filter messages: Each user can only see messages they sent or received
         if ($user->isCompanyOwner()) {
             $operator = $user->ownedOperators()->first();
             if ($operator) {
-                // الرسائل المرسلة من المشغل
-                // الرسائل الموجهة للمشغل
-                // الرسائل الموجهة لموظفيه
                 $query->where(function ($q) use ($user, $operator) {
+                    // Messages sent by this user
                     $q->where('sender_id', $user->id)
+                      // Messages received by this user (including welcome messages)
+                      ->orWhere('receiver_id', $user->id)
+                      // Messages sent to this operator (from admin/energy authority) - even if receiver_id is set, this ensures operator messages are visible
                       ->orWhere(function ($subQ) use ($operator) {
-                          // رسائل موجهة للمشغل (من أدمن)
                           $subQ->where('type', 'admin_to_operator')
                                ->where('operator_id', $operator->id);
                       })
-                      ->orWhere(function ($subQ) use ($operator) {
-                          // رسائل موجهة لجميع المشغلين
+                      // Messages broadcast to all operators
+                      ->orWhere(function ($subQ) {
                           $subQ->where('type', 'admin_to_all')
                                ->whereNull('operator_id');
                       })
+                      // Messages broadcast to all staff of this operator
                       ->orWhere(function ($subQ) use ($operator) {
-                          // رسائل موجهة لموظفي المشغل
                           $subQ->where('type', 'operator_to_staff')
                                ->where('operator_id', $operator->id);
-                      })
-                      ->orWhere('receiver_id', $user->id);
+                      });
                 });
             } else {
                 $query->where(function ($q) use ($user) {
@@ -57,20 +115,26 @@ class MessageController extends Controller
                       ->orWhere('receiver_id', $user->id);
                 });
             }
-        } elseif ($user->isEmployee() || $user->isTechnician()) {
-            // الموظف/الفني يشوف الرسائل الموجهة له أو المرسلة منه
-            $query->where(function ($q) use ($user) {
+        } elseif ($user->hasOperatorLinkedCustomRole()) {
+            // Users with custom roles linked to operator
+            $operatorId = $user->roleModel->operator_id;
+            $query->where(function ($q) use ($user, $operatorId) {
                 $q->where('sender_id', $user->id)
                   ->orWhere('receiver_id', $user->id)
-                  ->orWhere(function ($subQ) use ($user) {
-                      // رسائل موجهة لجميع موظفي المشغل
-                      $operatorIds = $user->operators->pluck('id');
+                  ->orWhere(function ($subQ) use ($operatorId) {
+                      // Messages broadcast to all staff of this operator
                       $subQ->where('type', 'operator_to_staff')
-                           ->whereIn('operator_id', $operatorIds);
+                           ->where('operator_id', $operatorId);
                   });
             });
+        } else {
+            // Regular users (or users with general custom roles): only sent/received messages
+            $query->where(function ($q) use ($user) {
+                $q->where('sender_id', $user->id)
+                  ->orWhere('receiver_id', $user->id);
+            });
         }
-        // السوبر أدمن والأدمن يشوفون كل الرسائل
+        // Note: SuperAdmin and EnergyAuthority can only see their own messages (sent/received)
 
         // فلترة بالبحث
         if ($request->filled('search')) {
@@ -119,29 +183,40 @@ class MessageController extends Controller
 
         $messages = $query->orderBy('created_at', 'desc')->paginate(20);
 
-        // جلب المستخدمين والمشغلين للإنشاء
+        // Get users and operators for creating messages
         $users = collect();
         $operators = collect();
 
-        if ($user->isSuperAdmin() || $user->isAdmin()) {
-            $users = User::whereIn('role', [Role::CompanyOwner, Role::Employee, Role::Technician])
-                ->orderBy('name')
-                ->get(['id', 'name', 'username', 'role']);
+        if ($user->isSuperAdmin() || $user->isEnergyAuthority()) {
+            // Get all users with custom roles (excluding system roles)
+            $users = User::whereHas('roleModel', function ($q) {
+                $q->where('is_system', false);
+            })->orWhere('role', Role::CompanyOwner)
+              ->orderBy('name')
+              ->get(['id', 'name', 'username', 'role', 'role_id']);
             $operators = Operator::orderBy('name')->get(['id', 'name', 'unit_number']);
         } elseif ($user->isCompanyOwner()) {
             $operator = $user->ownedOperators()->first();
             if ($operator) {
-                // موظفوه وفنيوه
-                $users = User::whereHas('operators', function ($q) use ($operator) {
-                    $q->where('operators.id', $operator->id);
-                })->whereIn('role', [Role::Employee, Role::Technician])
-                  ->orderBy('name')
-                  ->get(['id', 'name', 'username', 'role']);
+                // Get staff users (custom roles linked to this operator)
+                $users = User::whereHas('roleModel', function ($q) use ($operator) {
+                    $q->where('is_system', false)
+                      ->where('operator_id', $operator->id);
+                })->orderBy('name')
+                  ->get(['id', 'name', 'username', 'role', 'role_id']);
                 
-                // المشغلين الآخرين
+                // Other operators
                 $operators = Operator::where('id', '!=', $operator->id)
                     ->orderBy('name')
                     ->get(['id', 'name', 'unit_number']);
+            }
+        } else {
+            // Regular users with custom roles can only message their operator owner
+            if ($user->hasOperatorLinkedCustomRole()) {
+                $operator = $user->roleModel->operator;
+                if ($operator && $operator->owner_id) {
+                    $users = User::where('id', $operator->owner_id)->get(['id', 'name', 'username', 'role', 'role_id']);
+                }
             }
         }
 
@@ -159,23 +234,35 @@ class MessageController extends Controller
         $users = collect();
         $operators = collect();
 
-        if ($user->isSuperAdmin() || $user->isAdmin()) {
-            $users = User::whereIn('role', [Role::CompanyOwner, Role::Employee, Role::Technician])
-                ->orderBy('name')
-                ->get(['id', 'name', 'username', 'role']);
+        if ($user->isSuperAdmin() || $user->isEnergyAuthority()) {
+            // Get all users with custom roles (excluding system roles)
+            $users = User::whereHas('roleModel', function ($q) {
+                $q->where('is_system', false);
+            })->orWhere('role', Role::CompanyOwner)
+              ->orderBy('name')
+              ->get(['id', 'name', 'username', 'role', 'role_id']);
             $operators = Operator::orderBy('name')->get(['id', 'name', 'unit_number']);
         } elseif ($user->isCompanyOwner()) {
             $operator = $user->ownedOperators()->first();
             if ($operator) {
-                $users = User::whereHas('operators', function ($q) use ($operator) {
-                    $q->where('operators.id', $operator->id);
-                })->whereIn('role', [Role::Employee, Role::Technician])
-                  ->orderBy('name')
-                  ->get(['id', 'name', 'username', 'role']);
+                // Get staff users (custom roles linked to this operator)
+                $users = User::whereHas('roleModel', function ($q) use ($operator) {
+                    $q->where('is_system', false)
+                      ->where('operator_id', $operator->id);
+                })->orderBy('name')
+                  ->get(['id', 'name', 'username', 'role', 'role_id']);
                 
                 $operators = Operator::where('id', '!=', $operator->id)
                     ->orderBy('name')
                     ->get(['id', 'name', 'unit_number']);
+            }
+        } else {
+            // Regular users with custom roles can only message their operator owner
+            if ($user->hasOperatorLinkedCustomRole()) {
+                $operator = $user->roleModel->operator;
+                if ($operator && $operator->owner_id) {
+                    $users = User::where('id', $operator->owner_id)->get(['id', 'name', 'username', 'role', 'role_id']);
+                }
             }
         }
 
@@ -183,7 +270,19 @@ class MessageController extends Controller
     }
 
     /**
-     * Store a newly created message.
+     * إنشاء رسالة جديدة
+     * 
+     * ============================================
+     * أنواع الرسائل:
+     * ============================================
+     * 
+     * 1. admin_to_all: رسالة من أدمن/سوبر أدمن لجميع المشغلين
+     * 2. admin_to_operator: رسالة من أدمن/سوبر أدمن لمشغل معين
+     * 3. operator_to_operator: رسالة من مشغل لمشغل آخر
+     * 4. operator_to_staff: رسالة من مشغل لموظفيه
+     * 5. user_to_user: رسالة من مستخدم لمستخدم آخر
+     * 
+     * ============================================
      */
     public function store(StoreMessageRequest $request): RedirectResponse|JsonResponse
     {
@@ -192,9 +291,11 @@ class MessageController extends Controller
         $user = auth()->user();
         $data = $request->validated();
 
-        // تحديد نوع الرسالة
+        // تحديد نوع الرسالة حسب المرسل والمستقبل
         $type = 'operator_to_operator';
-        if ($user->isSuperAdmin() || $user->isAdmin()) {
+        
+        // السوبر أدمن وسلطة الطاقة (EnergyAuthority): يمكنهما إرسال رسائل لجميع المشغلين أو لمشغل معين
+        if ($user->isSuperAdmin() || $user->isEnergyAuthority()) {
             if ($data['send_to'] === 'all_operators') {
                 $type = 'admin_to_all';
                 $data['operator_id'] = null;
@@ -221,12 +322,20 @@ class MessageController extends Controller
             }
         }
 
+        // Handle attachment upload
+        $attachmentPath = null;
+        if ($request->hasFile('attachment')) {
+            $file = $request->file('attachment');
+            $attachmentPath = $file->store('messages/attachments', 'public');
+        }
+
         $message = Message::create([
             'sender_id' => $user->id,
             'receiver_id' => $data['receiver_id'] ?? null,
             'operator_id' => $data['operator_id'] ?? null,
             'subject' => $data['subject'],
             'body' => $data['body'],
+            'attachment' => $attachmentPath,
             'type' => $type,
         ]);
 
@@ -286,6 +395,11 @@ class MessageController extends Controller
     {
         $this->authorize('delete', $message);
 
+        // Delete attachment file if exists
+        if ($message->attachment && Storage::disk('public')->exists($message->attachment)) {
+            Storage::disk('public')->delete($message->attachment);
+        }
+
         $message->delete();
 
         if (request()->ajax() || request()->wantsJson()) {
@@ -331,13 +445,13 @@ class MessageController extends Controller
                 } else {
                     $q->where('receiver_id', $user->id);
                 }
-            } elseif ($user->isEmployee() || $user->isTechnician()) {
-                $operatorIds = $user->operators->pluck('id');
-                $q->where(function ($subQ) use ($user, $operatorIds) {
+            } elseif ($user->hasOperatorLinkedCustomRole()) {
+                $operatorId = $user->roleModel->operator_id;
+                $q->where(function ($subQ) use ($user, $operatorId) {
                     $subQ->where('receiver_id', $user->id)
-                         ->orWhere(function ($q2) use ($operatorIds) {
+                         ->orWhere(function ($q2) use ($operatorId) {
                              $q2->where('type', 'operator_to_staff')
-                                ->whereIn('operator_id', $operatorIds)
+                                ->where('operator_id', $operatorId)
                                 ->where('is_read', false);
                          });
                 });
@@ -381,13 +495,13 @@ class MessageController extends Controller
                     } else {
                         $q->where('receiver_id', $user->id);
                     }
-                } elseif ($user->isEmployee() || $user->isTechnician()) {
-                    $operatorIds = $user->operators->pluck('id');
-                    $q->where(function ($subQ) use ($user, $operatorIds) {
+                } elseif ($user->hasOperatorLinkedCustomRole()) {
+                    $operatorId = $user->roleModel->operator_id;
+                    $q->where(function ($subQ) use ($user, $operatorId) {
                         $subQ->where('receiver_id', $user->id)
-                             ->orWhere(function ($q2) use ($operatorIds) {
+                             ->orWhere(function ($q2) use ($operatorId) {
                                  $q2->where('type', 'operator_to_staff')
-                                    ->whereIn('operator_id', $operatorIds);
+                                    ->where('operator_id', $operatorId);
                              });
                     });
                 } else {

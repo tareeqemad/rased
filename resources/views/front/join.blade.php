@@ -363,7 +363,7 @@
                             @foreach($errors->all() as $error)
                                 <li style="margin-bottom: 0.5rem; padding-right: 0.5rem; position: relative;">
                                     <span style="position: absolute; right: 0; top: 0.5rem; width: 6px; height: 6px; background: currentColor; border-radius: 50%;"></span>
-                                    <span style="display: block; padding-right: 1rem;">{{ $error }}</span>
+                                    <span style="display: block; padding-right: 1rem;">{!! e($error) !!}</span>
                                 </li>
                             @endforeach
                         </ul>
@@ -388,7 +388,7 @@
                         name="name_ar" 
                         class="form-input" 
                         placeholder="أدخل الاسم رباعي بالعربية"
-                        value="{{ old('name_ar') }}"
+                        value="{{ e(old('name_ar', '')) }}"
                         required
                     >
                 </div>
@@ -404,7 +404,7 @@
                         name="name_en" 
                         class="form-input" 
                         placeholder="Enter full name in English"
-                        value="{{ old('name_en') }}"
+                        value="{{ e(old('name_en', '')) }}"
                         required
                     >
                 </div>
@@ -421,7 +421,7 @@
                             name="id_number" 
                             class="form-input" 
                             placeholder="أدخل رقم الهوية"
-                            value="{{ old('id_number') }}"
+                            value="{{ e(old('id_number', '')) }}"
                             required
                         >
                     </div>
@@ -436,7 +436,7 @@
                             name="phone" 
                             class="form-input" 
                             placeholder="0591234567 أو 0561234567"
-                            value="{{ old('phone') }}"
+                            value="{{ e(old('phone', '')) }}"
                             required
                         >
                     </div>
@@ -453,7 +453,7 @@
                         name="email" 
                         class="form-input" 
                         placeholder="example@email.com"
-                        value="{{ old('email') }}"
+                        value="{{ e(old('email', '')) }}"
                     >
                 </div>
 
@@ -493,7 +493,28 @@
     document.addEventListener('DOMContentLoaded', function() {
         // عرض إشعار النجاح إذا كان موجوداً
         @if(session('success'))
-            showToastNotification('{{ session('success') }}');
+            @php
+                try {
+                    $successMsg = session('success');
+                    // Message is already cleaned by AppServiceProvider View Composer
+                    // Just ensure it's safe for JSON encoding
+                    if (!is_string($successMsg)) {
+                        $successMsg = 'تم الإرسال بنجاح';
+                    }
+                    // Encode to JSON with UTF-8 support
+                    $jsonMsg = json_encode($successMsg, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_IGNORE | JSON_HEX_APOS | JSON_HEX_QUOT);
+                    if ($jsonMsg === false || $jsonMsg === 'null') {
+                        $jsonMsg = json_encode('تم الإرسال بنجاح', JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_IGNORE);
+                    }
+                } catch (\Exception $e) {
+                    $jsonMsg = json_encode('تم الإرسال بنجاح', JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_IGNORE);
+                }
+            @endphp
+            try {
+                showToastNotification({!! $jsonMsg !!});
+            } catch (e) {
+                console.error('Error showing notification:', e);
+            }
         @endif
 
         const form = document.getElementById('joinForm');
@@ -503,6 +524,15 @@
 
         // دالة لعرض إشعار منبثق
         function showToastNotification(message) {
+            // Clean message to ensure valid UTF-8
+            if (typeof message !== 'string') {
+                message = String(message || '');
+            }
+            // Remove any invalid UTF-8 characters
+            message = message.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
+            // Escape HTML to prevent XSS
+            const messageText = document.createTextNode(message).textContent || message;
+            
             // إزالة أي إشعار موجود مسبقاً
             const existingToast = document.querySelector('.toast-notification');
             if (existingToast) {
@@ -512,16 +542,32 @@
             // إنشاء الإشعار
             const toast = document.createElement('div');
             toast.className = 'toast-notification';
-            toast.innerHTML = `
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
-                </svg>
-                <div class="toast-notification-content">
-                    <div class="toast-notification-title">تم بنجاح!</div>
-                    <div class="toast-notification-message">${message}</div>
-                </div>
-            `;
+            const titleElement = document.createElement('div');
+            titleElement.className = 'toast-notification-title';
+            titleElement.textContent = 'تم بنجاح!';
+            const messageElement = document.createElement('div');
+            messageElement.className = 'toast-notification-message';
+            messageElement.textContent = messageText;
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'toast-notification-content';
+            contentDiv.appendChild(titleElement);
+            contentDiv.appendChild(messageElement);
+            
+            const svgElement = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svgElement.setAttribute('viewBox', '0 0 24 24');
+            svgElement.setAttribute('fill', 'none');
+            svgElement.setAttribute('stroke', 'currentColor');
+            svgElement.setAttribute('stroke-width', '2.5');
+            const path1 = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path1.setAttribute('d', 'M22 11.08V12a10 10 0 1 1-5.93-9.14');
+            const path2 = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+            path2.setAttribute('points', '22 4 12 14.01 9 11.01');
+            svgElement.appendChild(path1);
+            svgElement.appendChild(path2);
+            
+            toast.appendChild(svgElement);
+            toast.appendChild(contentDiv);
 
             // إضافة الإشعار للصفحة
             document.body.appendChild(toast);

@@ -13,12 +13,16 @@ class UserPolicy
             return true;
         }
 
+        // EnergyAuthority (سلطة الطاقة): يمكنه إدارة المستخدمين تحت سلطته
+        if ($user->isEnergyAuthority()) {
+            return true;
+        }
+
         // CompanyOwner: يشوف فقط موظفينه/فنييه عبر Users module
         if ($user->isCompanyOwner()) {
             return true;
         }
 
-        // Admin (سلطة الطاقة): ممنوع إدارة المستخدمين
         return false;
     }
 
@@ -30,6 +34,11 @@ class UserPolicy
 
         // (اختياري) المستخدم يشوف نفسه
         if ($user->id === $model->id) {
+            return true;
+        }
+
+        // EnergyAuthority (سلطة الطاقة): يمكنه رؤية جميع المستخدمين
+        if ($user->isEnergyAuthority()) {
             return true;
         }
 
@@ -54,6 +63,11 @@ class UserPolicy
     public function create(User $user): bool
     {
         if ($user->isSuperAdmin()) {
+            return true;
+        }
+
+        // EnergyAuthority (سلطة الطاقة): يمكنه إضافة مستخدمين (admin, energy_authority, company_owner, employee, technician)
+        if ($user->isEnergyAuthority()) {
             return true;
         }
 

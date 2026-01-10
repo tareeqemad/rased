@@ -1,6 +1,6 @@
 @foreach($maintenanceRecords as $record)
     <tr>
-        <td>{{ $record->id }}</td>
+        <td>{{ $maintenanceRecords->firstItem() + $loop->index }}</td>
         <td>
             @if($record->generator)
                 <span class="badge bg-secondary">{{ $record->generator->generator_number }}</span>

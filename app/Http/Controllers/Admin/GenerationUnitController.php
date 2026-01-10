@@ -88,18 +88,28 @@ class GenerationUnitController extends Controller
     /**
      * Show the form for creating a new generation unit.
      */
-    public function create(): View|RedirectResponse
+    public function create(Request $request): View|RedirectResponse
     {
         $this->authorize('create', GenerationUnit::class);
 
         $user = auth()->user();
         $operator = null;
 
+        // Check if operator_id is provided in query parameter (for Super Admin)
+        $operatorId = $request->query('operator_id');
+        
         if ($user->isCompanyOwner()) {
             $operator = $user->ownedOperators()->first();
             if (!$operator) {
                 return redirect()->route('admin.dashboard')
                     ->with('error', 'لا يوجد مشغل مرتبط بحسابك.');
+            }
+        } elseif ($user->isSuperAdmin() && $operatorId) {
+            // Super Admin can specify operator_id via query parameter
+            $operator = Operator::find($operatorId);
+            if (!$operator) {
+                return redirect()->back()
+                    ->with('error', 'المشغل المحدد غير موجود.');
             }
         }
 
@@ -132,6 +142,14 @@ class GenerationUnitController extends Controller
         $allOperators = collect();
         if ($user->isSuperAdmin()) {
             $allOperators = Operator::select('id', 'name')->orderBy('name')->get();
+            
+            // If operator is selected via query parameter, set it as selected in the dropdown
+            if ($operator && $operatorId) {
+                $allOperators = $allOperators->map(function($op) use ($operatorId) {
+                    $op->is_selected = ($op->id == $operatorId);
+                    return $op;
+                });
+            }
         }
 
         return view('admin.generation-units.create', compact('operator', 'governorates', 'cities', 'selectedGovernorateId', 'constants', 'allOperators'));
@@ -157,8 +175,19 @@ class GenerationUnitController extends Controller
                     ->with('error', 'لا يوجد مشغل مرتبط بحسابك.');
             }
             $data['operator_id'] = $operator->id;
-        } elseif ($user->isSuperAdmin() && isset($data['operator_id'])) {
+        } elseif ($user->isSuperAdmin()) {
+            // Super Admin يجب أن يختار مشغل
+            if (!isset($data['operator_id']) || empty($data['operator_id'])) {
+                return redirect()->back()
+                    ->withInput()
+                    ->with('error', 'يجب اختيار المشغل.');
+            }
             $operator = Operator::find($data['operator_id']);
+            if (!$operator) {
+                return redirect()->back()
+                    ->withInput()
+                    ->with('error', 'المشغل المحدد غير موجود.');
+            }
         }
 
         // إذا كان "نفس المالك"، جلب البيانات من المشغل
@@ -172,20 +201,49 @@ class GenerationUnitController extends Controller
             }
         }
 
-        // الحصول على governorate code و city code لتوليد unit_code
+        // Get governorate code and city code to generate unit_code
         $governorateCode = null;
         $cityCode = null;
-        if (isset($data['governorate_id'])) {
+        
+        if (isset($data['governorate_id']) && !empty($data['governorate_id'])) {
             $governorateDetail = \App\Models\ConstantDetail::find($data['governorate_id']);
             if ($governorateDetail && $governorateDetail->value) {
-                $governorateEnum = Governorate::fromValue((int) $governorateDetail->value);
-                $governorateCode = $governorateEnum->code();
+                try {
+                    $governorateEnum = Governorate::fromValue((int) $governorateDetail->value);
+                    $governorateCode = $governorateEnum->code();
+                } catch (\Exception $e) {
+                    \Log::error('Failed to get governorate code', [
+                        'governorate_id' => $data['governorate_id'],
+                        'value' => $governorateDetail->value,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
+        }
+        
+        // If governorate code not found and operator exists, try to get from operator
+        if (!$governorateCode && $operator && $operator->governorate) {
+            try {
+                $governorateCode = $operator->governorate->code();
+            } catch (\Exception $e) {
+                \Log::error('Failed to get governorate code from operator', [
+                    'operator_id' => $operator->id,
+                    'error' => $e->getMessage(),
+                ]);
             }
         }
 
-        // الحصول على city code
-        if (isset($data['city_id'])) {
+        // Get city code
+        if (isset($data['city_id']) && !empty($data['city_id'])) {
             $cityDetail = \App\Models\ConstantDetail::find($data['city_id']);
+            if ($cityDetail && $cityDetail->code) {
+                $cityCode = $cityDetail->code;
+            }
+        }
+        
+        // If city code not found and operator exists, try to get from operator
+        if (!$cityCode && $operator && $operator->city_id) {
+            $cityDetail = $operator->cityDetail;
             if ($cityDetail && $cityDetail->code) {
                 $cityCode = $cityDetail->code;
             }
@@ -219,14 +277,34 @@ class GenerationUnitController extends Controller
         }
 
         if (!isset($data['unit_code']) || empty($data['unit_code'])) {
-            // استخدام governorateCode و cityCode من الـ form إذا كانا موجودين
+            // Use governorateCode and cityCode from form if available
             if ($governorateCode && $cityCode) {
-                $data['unit_code'] = GenerationUnit::generateUnitCodeByLocation($governorateCode, $cityCode, $data['unit_number'] ?? null);
+                try {
+                    $data['unit_code'] = GenerationUnit::generateUnitCodeByLocation($governorateCode, $cityCode, $data['unit_number'] ?? null);
+                } catch (\Exception $e) {
+                    \Log::error('Failed to generate unit code', [
+                        'governorate_code' => $governorateCode,
+                        'city_code' => $cityCode,
+                        'unit_number' => $data['unit_number'] ?? null,
+                        'error' => $e->getMessage(),
+                    ]);
+                    return redirect()->back()
+                        ->withInput()
+                        ->with('error', 'فشل في توليد كود الوحدة. يرجى التأكد من إدخال المحافظة والمدينة بشكل صحيح.');
+                }
             } else {
-                // في هذه الحالة، يجب أن يكون governorateCode و cityCode موجودين
+                // Cannot generate unit code without governorate and city
+                $missingFields = [];
+                if (!$governorateCode) {
+                    $missingFields[] = 'المحافظة';
+                }
+                if (!$cityCode) {
+                    $missingFields[] = 'المدينة';
+                }
+                
                 return redirect()->back()
                     ->withInput()
-                    ->with('error', 'فشل في توليد كود الوحدة. يرجى التأكد من إدخال المحافظة والمدينة بشكل صحيح.');
+                    ->with('error', 'فشل في توليد كود الوحدة. يرجى التأكد من إدخال: ' . implode(' و ', $missingFields) . '.');
             }
         }
 
@@ -237,7 +315,18 @@ class GenerationUnitController extends Controller
                 ->with('error', 'فشل في توليد كود الوحدة. يرجى التأكد من إدخال المحافظة والمدينة بشكل صحيح.');
         }
 
-        // تتبع المستخدمين
+        // Ensure operator_id is set
+        if (!isset($data['operator_id']) || empty($data['operator_id'])) {
+            if ($operator) {
+                $data['operator_id'] = $operator->id;
+            } else {
+                return redirect()->back()
+                    ->withInput()
+                    ->with('error', 'يجب تحديد المشغل.');
+            }
+        }
+        
+        // Track users
         $data['created_by'] = $user->id;
         $data['last_updated_by'] = $user->id;
 
@@ -291,6 +380,61 @@ class GenerationUnitController extends Controller
         $generationUnit->load(['operator', 'generators', 'fuelTanks', 'statusDetail', 'operationEntityDetail', 'synchronizationAvailableDetail', 'environmentalComplianceStatusDetail', 'city']);
 
         return view('admin.generation-units.show', compact('generationUnit'));
+    }
+
+    /**
+     * Display QR Code for generation unit.
+     */
+    public function qrCode(GenerationUnit $generationUnit): View
+    {
+        $this->authorize('view', $generationUnit);
+
+        $generationUnit->load(['operator']);
+
+        // إنشاء بيانات QR Code - استخدام URL يفتح معلومات الوحدة
+        $qrData = route('qr.generation-unit', ['code' => $generationUnit->unit_code ?? 'GU-' . $generationUnit->id]);
+        
+        // مسار حفظ QR Code
+        $qrCodePath = 'qr-codes/generation-units/' . $generationUnit->id . '.svg';
+        $fullPath = storage_path('app/public/' . $qrCodePath);
+
+        // التحقق من وجود QR Code محفوظ
+        if (!file_exists($fullPath) || !$generationUnit->qr_code_generated_at) {
+            // إنشاء مجلد إذا لم يكن موجوداً
+            $directory = dirname($fullPath);
+            if (!file_exists($directory)) {
+                mkdir($directory, 0755, true);
+            }
+
+            // إنشاء QR Code
+            $renderer = new \BaconQrCode\Renderer\ImageRenderer(
+                new \BaconQrCode\Renderer\RendererStyle\RendererStyle(400),
+                new \BaconQrCode\Renderer\Image\SvgImageBackEnd()
+            );
+            $writer = new \BaconQrCode\Writer($renderer);
+            $qrCodeSvg = $writer->writeString($qrData);
+
+            // حفظ QR Code
+            file_put_contents($fullPath, $qrCodeSvg);
+
+            // تسجيل تاريخ توليد QR Code
+            $generationUnit->update(['qr_code_generated_at' => now()]);
+        } else {
+            // قراءة QR Code المحفوظ
+            $qrCodeSvg = file_get_contents($fullPath);
+        }
+
+        // بيانات إضافية للعرض في الصفحة
+        $qrInfo = [
+            'type' => 'generation_unit',
+            'id' => $generationUnit->id,
+            'unit_code' => $generationUnit->unit_code,
+            'name' => $generationUnit->name,
+            'operator_id' => $generationUnit->operator_id,
+            'operator_name' => $generationUnit->operator?->name,
+        ];
+
+        return view('admin.generation-units.qr-code', compact('generationUnit', 'qrCodeSvg', 'qrInfo'));
     }
 
     /**

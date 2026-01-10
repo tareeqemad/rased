@@ -42,7 +42,7 @@
                 </div>
 
                 <div class="card-body p-4">
-                    <form action="{{ route('admin.messages.store') }}" method="POST" id="messageForm">
+                    <form action="{{ route('admin.messages.store') }}" method="POST" id="messageForm" enctype="multipart/form-data">
                         @csrf
 
                         <div class="row g-3">
@@ -142,6 +142,33 @@
                                     <small class="form-text text-muted" id="charCount">0 / 5000</small>
                                 </div>
                             </div>
+
+                            {{-- الصورة المرفقة --}}
+                            <div class="col-md-12">
+                                <label class="form-label fw-semibold">
+                                    <i class="bi bi-image me-1"></i>
+                                    صورة مرفقة (اختياري)
+                                </label>
+                                <input type="file" name="attachment" id="attachment" 
+                                       class="form-control @error('attachment') is-invalid @enderror" 
+                                       accept="image/jpeg,image/jpg,image/png,image/gif,image/webp">
+                                @error('attachment')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                                <small class="form-text text-muted">
+                                    الصيغ المدعومة: JPEG, JPG, PNG, GIF, WEBP. الحد الأقصى: 10 ميجابايت
+                                </small>
+                                <div id="attachmentPreview" class="mt-3" style="display: none;">
+                                    <img id="attachmentPreviewImg" src="" alt="معاينة الصورة" 
+                                         class="img-thumbnail" style="max-width: 300px; max-height: 300px;">
+                                    <div class="mt-2">
+                                        <button type="button" class="btn btn-sm btn-outline-danger" id="removeAttachment">
+                                            <i class="bi bi-x-circle me-1"></i>
+                                            إزالة الصورة
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
@@ -200,6 +227,39 @@
         
         $body.on('input', updateCharCount);
         updateCharCount(); // Initial count
+
+        // Attachment preview
+        const $attachment = $('#attachment');
+        const $preview = $('#attachmentPreview');
+        const $previewImg = $('#attachmentPreviewImg');
+        const $removeBtn = $('#removeAttachment');
+
+        $attachment.on('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                if (file.size > 10 * 1024 * 1024) { // 10MB
+                    AdminCRUD.notify('error', 'حجم الصورة يجب ألا يتجاوز 10 ميجابايت');
+                    $(this).val('');
+                    $preview.hide();
+                    return;
+                }
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    $previewImg.attr('src', e.target.result);
+                    $preview.show();
+                };
+                reader.readAsDataURL(file);
+            } else {
+                $preview.hide();
+            }
+        });
+
+        $removeBtn.on('click', function() {
+            $attachment.val('');
+            $preview.hide();
+            $previewImg.attr('src', '');
+        });
 
         // Show/hide fields based on send_to selection
         $('#sendTo').on('change', function() {

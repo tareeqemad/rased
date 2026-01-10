@@ -56,8 +56,10 @@
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">المرسل:</label>
                                 <div>
-                                    <span class="badge bg-primary">{{ $message->sender->name }}</span>
-                                    <small class="text-muted ms-2">{{ $message->sender->roleName }}</small>
+                                    <span class="badge bg-primary">{{ $message->sender_display_name }}</span>
+                                    @if(!$message->isSystemMessage() && $message->sender)
+                                        <small class="text-muted ms-2">{{ $message->sender->role_name }}</small>
+                                    @endif
                                 </div>
                             </div>
                             <div class="col-md-6">
@@ -65,7 +67,7 @@
                                 <div>
                                     @if($message->receiver)
                                         <span class="badge bg-info">{{ $message->receiver->name }}</span>
-                                        <small class="text-muted ms-2">{{ $message->receiver->roleName }}</small>
+                                        <small class="text-muted ms-2">{{ $message->receiver->role_name }}</small>
                                     @elseif($message->operator)
                                         <span class="badge bg-info">{{ $message->operator->name }}</span>
                                         <small class="text-muted ms-2">مشغل</small>
@@ -141,6 +143,33 @@
                             {{ $message->body }}
                         </div>
                     </div>
+
+                    {{-- الصورة المرفقة --}}
+                    @if($message->hasAttachment())
+                        <hr class="my-4">
+                        <div class="mb-4">
+                            <h6 class="fw-bold mb-3">
+                                <i class="bi bi-image text-primary me-2"></i>
+                                الصورة المرفقة
+                            </h6>
+                            <div class="p-3 bg-light rounded border">
+                                <a href="{{ $message->attachment_url }}" target="_blank" class="d-inline-block">
+                                    <img src="{{ $message->attachment_url }}" alt="الصورة المرفقة" 
+                                         class="img-fluid rounded shadow-sm" style="max-width: 600px; max-height: 600px; cursor: pointer;">
+                                </a>
+                                <div class="mt-3">
+                                    <a href="{{ $message->attachment_url }}" target="_blank" class="btn btn-sm btn-primary">
+                                        <i class="bi bi-box-arrow-up-right me-1"></i>
+                                        فتح الصورة في نافذة جديدة
+                                    </a>
+                                    <a href="{{ $message->attachment_url }}" download class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-download me-1"></i>
+                                        تحميل الصورة
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>

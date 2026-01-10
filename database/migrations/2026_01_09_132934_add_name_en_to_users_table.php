@@ -11,8 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('operators', function (Blueprint $table) {
-            $table->boolean('is_approved')->default(false)->after('status')->comment('حالة الاعتماد - المشغل يحتاج موافقة Admin/Super Admin');
+        Schema::table('users', function (Blueprint $table) {
+            $table->string('name_en')->nullable()->after('name');
         });
     }
 
@@ -21,8 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('operators', function (Blueprint $table) {
-            $table->dropColumn('is_approved');
+        Schema::table('users', function (Blueprint $table) {
+            $table->dropColumn('name_en');
         });
     }
 };

@@ -1,6 +1,6 @@
 @foreach($fuelEfficiencies as $efficiency)
     <tr>
-        <td>{{ $efficiency->id }}</td>
+        <td>{{ $fuelEfficiencies->firstItem() + $loop->index }}</td>
         <td>
             @if($efficiency->generator)
                 <span class="badge bg-secondary">{{ $efficiency->generator->generator_number }}</span>

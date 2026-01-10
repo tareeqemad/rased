@@ -9,6 +9,15 @@
                                 <i class="bi bi-lightning-charge me-2 text-warning"></i>
                                 <span class="fw-bold">{{ $generator->name }}</span>
                                 <span class="badge bg-secondary ms-2">{{ $generator->generator_number }}</span>
+                                @if($generator->qr_code_generated_at)
+                                    <span class="badge bg-success ms-2" title="تم توليد QR Code في {{ $generator->qr_code_generated_at->format('Y-m-d H:i') }}">
+                                        <i class="bi bi-check-circle"></i> QR
+                                    </span>
+                                @else
+                                    <span class="badge bg-secondary ms-2" title="لم يتم توليد QR Code بعد">
+                                        <i class="bi bi-x-circle"></i> بدون QR
+                                    </span>
+                                @endif
                             </div>
                             <div class="gen-row-meta">
                                 @if($generator->statusDetail && $generator->statusDetail->code === 'ACTIVE')
@@ -64,6 +73,9 @@
 
                     <div class="gen-row-actions">
                         @can('view', $generator)
+                            <a href="{{ route('admin.generators.qr-code', $generator) }}" target="_blank" class="btn btn-sm btn-success" title="طباعة QR Code">
+                                <i class="bi bi-qr-code"></i>
+                            </a>
                             <a href="{{ route('admin.generators.show', $generator) }}" class="btn btn-sm btn-outline-info" title="عرض">
                                 <i class="bi bi-eye"></i>
                             </a>
