@@ -219,6 +219,9 @@ class UserController extends Controller
         $list = (clone $base)->with([
             'operators:id,name',
             'roleModel:id,name,label',
+            'permissions:id,name,label',
+            'revokedPermissions:id,name',
+            'roleModel.permissions:id,name',
             'ownedOperators' => function ($q) {
                 $q->select('id', 'owner_id', 'name')
                     ->withCount([
@@ -273,6 +276,38 @@ class UserController extends Controller
                 }
             }
 
+            // حساب عدد الصلاحيات
+            $permissionsCount = 0;
+            $permissionsInfo = [];
+            
+            if ($u->isSuperAdmin()) {
+                // السوبر أدمن لديه جميع الصلاحيات
+                $permissionsCount = 'الكل';
+                $permissionsInfo = ['type' => 'all', 'count' => 'الكل'];
+            } else {
+                // حساب الصلاحيات من الدور + الصلاحيات المباشرة - الصلاحيات الملغاة
+                $rolePermissions = $u->roleModel?->permissions ?? collect();
+                $directPermissions = $u->permissions ?? collect();
+                $revokedPermissions = $u->revokedPermissions ?? collect();
+                
+                // دمج صلاحيات الدور والصلاحيات المباشرة
+                $allPermissions = $rolePermissions->merge($directPermissions)->unique('id');
+                
+                // إزالة الصلاحيات الملغاة
+                $finalPermissions = $allPermissions->reject(function ($perm) use ($revokedPermissions) {
+                    return $revokedPermissions->contains('id', $perm->id);
+                });
+                
+                $permissionsCount = $finalPermissions->count();
+                $permissionsInfo = [
+                    'type' => 'custom',
+                    'count' => $permissionsCount,
+                    'role_count' => $rolePermissions->count(),
+                    'direct_count' => $directPermissions->count(),
+                    'revoked_count' => $revokedPermissions->count(),
+                ];
+            }
+
             return [
                 'id' => $u->id,
                 'name' => $u->name,
@@ -284,6 +319,8 @@ class UserController extends Controller
                 'operator' => $operatorName,
                 'operator_id' => $operatorId,
                 'employees_count' => $employeesCount,
+                'permissions_count' => $permissionsCount,
+                'permissions_info' => $permissionsInfo,
                 'created_at' => optional($u->created_at)->format('Y-m-d'),
                 'can_edit' => $actor->can('update', $u),
                 'can_delete' => $actor->can('delete', $u),
@@ -309,53 +346,10 @@ class UserController extends Controller
         ]);
     }
 
-    public function create(Request $request): View
+    public function create(Request $request)
     {
-        $this->authorize('create', User::class);
-
-        $authUser = auth()->user();
-        $defaultRole = trim((string) $request->query('role', ''));
-
-        // Get available roles based on user authority
-        // Company Owner can ONLY see and use custom roles they created (no system roles at all)
-        // SuperAdmin and Energy Authority can see system roles and all custom roles
-        $roles = collect(Role::cases());
-        $customRoles = collect();
-
-        if ($authUser->isCompanyOwner()) {
-            // Company Owner can ONLY use custom roles they created (no system roles, no general roles, no roles from others)
-            $customRoles = \App\Models\Role::getAvailableCustomRoles($authUser);
-            // Remove all system roles - Company Owner should not see any system roles
-            $roles = collect(); // Empty - Company Owner only uses custom roles
-        } elseif ($authUser->isSuperAdmin() || $authUser->isEnergyAuthority()) {
-            // SuperAdmin and Energy Authority can see all system roles and custom roles
-            $customRoles = \App\Models\Role::getAvailableCustomRoles($authUser);
-        }
-
-        // operators
-        $operatorLocked = null;
-        $operators = collect();
-
-        if ($authUser->isCompanyOwner()) {
-            $operatorLocked = $authUser->ownedOperators()->first();
-        } elseif ($authUser->isSuperAdmin() || $authUser->isEnergyAuthority()) {
-            $operators = Operator::select('id', 'name')->orderBy('name')->get();
-        }
-
-        // ✅ Ajax Modal
-        if ($request->ajax() || $request->boolean('modal')) {
-            return view('admin.users.partials.modal-form', [
-                'mode' => 'create',
-                'user' => null,
-                'roles' => $roles,
-                'customRoles' => $customRoles,
-                'defaultRole' => $defaultRole,
-                'operatorLocked' => $operatorLocked,
-                'operators' => $operators,
-            ]);
-        }
-
-        return view('admin.users.create', compact('roles', 'customRoles', 'operators', 'operatorLocked', 'defaultRole'));
+        // تم إلغاء هذه الصفحة - إرجاع 404
+        abort(404, 'الصفحة غير موجودة');
     }
 
     public function edit(Request $request, User $user): View
@@ -817,7 +811,9 @@ class UserController extends Controller
      */
     private function sendUserCredentialsSMS(string $phone, string $name, string $username, string $password, Role $role, ?\App\Models\Role $roleModel = null): void
     {
-        $loginUrl = route('login');
+        // استخدام رابط كامل (full URL) لرسائل SMS
+        // url() helper يولد رابط كامل بناءً على APP_URL
+        $loginUrl = url('/login');
 
         // Use role label from database if available (for custom roles defined by Energy Authority or Company Owner)
         // Otherwise, use default labels for system roles

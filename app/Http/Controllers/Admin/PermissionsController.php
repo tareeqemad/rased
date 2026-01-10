@@ -297,11 +297,25 @@ class PermissionsController extends Controller
             $revoked = array_values(array_intersect($revoked, $ceiling));
         }
 
+        // جلب operator_id للمستخدم (للسوبر أدمن)
+        $operatorId = null;
+        if ($authUser->isSuperAdmin()) {
+            // جلب أول مشغل مرتبط بالمستخدم
+            $operator = $user->operators()->first();
+            if (!$operator && $user->isCompanyOwner()) {
+                // إذا كان المستخدم هو owner، جلب المشغل من ownedOperators
+                $operator = $user->ownedOperators()->first();
+            }
+            $operatorId = $operator?->id;
+        }
+
         return response()->json([
             'success' => true,
             'user' => [
                 'id' => $user->id,
                 'name' => $user->name,
+                'role' => $user->role?->value ?? null,
+                'operator_id' => $operatorId,
                 'direct_permissions' => $direct,
                 'role_permissions' => $role,
                 'revoked_permissions' => $revoked,

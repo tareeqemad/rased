@@ -71,13 +71,6 @@
                                     قائمة المستخدمين
                                 </a>
                             </li>
-                            @can('create', App\Models\User::class)
-                                <li class="slide">
-                                    <a href="{{ route('admin.users.create') }}" class="side-menu__item {{ $isActive('admin.users.create') }}">
-                                        إضافة مستخدم جديد
-                                    </a>
-                                </li>
-                            @endcan
                         </ul>
                     </li>
 
@@ -352,13 +345,6 @@
                                     الموظفون والفنيون
                                 </a>
                             </li>
-                            @can('create', App\Models\User::class)
-                                <li class="slide">
-                                    <a href="{{ route('admin.users.create') }}" class="side-menu__item {{ $isActive('admin.users.create') }}">
-                                        إضافة موظف/فني
-                                    </a>
-                                </li>
-                            @endcan
                             @can('viewAny', App\Models\ElectricityTariffPrice::class)
                                 <li class="slide">
                                     <a href="{{ route('admin.operators.tariff-prices.index', $u->ownedOperators()->first()) }}" class="side-menu__item {{ $isActive('admin.operators.tariff-prices.*') }}">

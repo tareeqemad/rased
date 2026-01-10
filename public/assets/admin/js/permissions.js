@@ -759,13 +759,137 @@
         // أول render (بدون مستخدم)
         resetUserContextUI();
 
+        // التحقق من وجود user_id في الـ URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const userIdFromUrl = urlParams.get('user_id');
+
         if (ctx.isSuperAdmin) {
             initOperatorSelect();
-            // userSelect رح يتفعّل بعد اختيار مشغل
+            
+            // إذا كان هناك user_id في الـ URL، نحتاج لتحميل المستخدم والمشغل أولاً
+            if (userIdFromUrl) {
+                loadUserFromUrl(userIdFromUrl);
+            }
         } else if (ctx.isCompanyOwner) {
             // company owner: init directly
             initUserSelect(ctx.operatorId || null);
+            
+            // إذا كان هناك user_id في الـ URL، حمّل المستخدم مباشرة
+            if (userIdFromUrl) {
+                loadUserFromUrl(userIdFromUrl, ctx.operatorId);
+            }
         }
     });
+
+    // ===== Load user from URL =====
+    function loadUserFromUrl(userId, operatorIdForSuperAdmin = null) {
+        const userIdNum = parseInt(userId, 10);
+        if (!userIdNum || userIdNum <= 0) {
+            flash('warning', 'معرف المستخدم غير صحيح');
+            return;
+        }
+
+        setLoading(true);
+
+        // جلب معلومات المستخدم مباشرة من API الصلاحيات
+        $.ajax({
+            url: routes.userPermissions.replace('__USER__', userIdNum),
+            method: 'GET',
+            dataType: 'json'
+        })
+        .done(function(res) {
+            if (!res.success || !res.user) {
+                flash('danger', 'المستخدم غير موجود أو ليس لديك صلاحية لعرضه');
+                setLoading(false);
+                return;
+            }
+
+            const user = res.user;
+            
+            // إذا كان السوبر أدمن وكان هناك operator_id، حمّل المشغل أولاً
+            if (ctx.isSuperAdmin && user.operator_id) {
+                // تحميل المشغل أولاً
+                $operatorSelect.val(user.operator_id).trigger('change');
+                
+                // انتظر حتى يتم تهيئة select المستخدمين
+                setTimeout(function() {
+                    addUserToSelectAndLoad(userIdNum, user.name, user.role || '', user.operator_id);
+                }, 800);
+            } else {
+                // Company Owner أو بدون مشغل - حمّل مباشرة
+                addUserToSelectAndLoad(userIdNum, user.name, user.role || '', operatorIdForSuperAdmin || user.operator_id);
+            }
+        })
+        .fail(function(xhr) {
+            let errorMsg = 'فشل تحميل معلومات المستخدم';
+            if (xhr.status === 404) {
+                errorMsg = 'المستخدم غير موجود';
+            } else if (xhr.status === 403) {
+                errorMsg = 'ليس لديك صلاحية لعرض هذا المستخدم';
+            }
+            flash('danger', errorMsg);
+            setLoading(false);
+        });
+    }
+
+    // ===== Add user to select and load permissions =====
+    function addUserToSelectAndLoad(userId, userName, userRole, operatorIdForSuperAdmin = null) {
+        const userIdNum = parseInt(userId, 10);
+        
+        // التأكد من تهيئة select2
+        if (!$userSelect.hasClass('select2-hidden-accessible')) {
+            if (ctx.isSuperAdmin) {
+                const operatorId = operatorIdForSuperAdmin || $operatorSelect.val();
+                if (operatorId) {
+                    initUserSelect(operatorId);
+                } else {
+                    flash('warning', 'يرجى اختيار المشغل أولاً');
+                    setLoading(false);
+                    return;
+                }
+            } else {
+                initUserSelect(ctx.operatorId || null);
+            }
+        }
+
+        // انتظر قليلاً للتأكد من تهيئة select2
+        setTimeout(function() {
+            // إنشاء option جديد للمستخدم
+            const option = new Option(userName || `مستخدم #${userIdNum}`, userIdNum, true, true);
+            
+            // إضافة المستخدم للـ select
+            if ($userSelect.length) {
+                // إزالة أي option موجود بنفس الـ ID
+                $userSelect.find('option[value="' + userIdNum + '"]').remove();
+                
+                // إضافة الـ option الجديد
+                $userSelect.append(option);
+                
+                // تحديث select2
+                $userSelect.val(userIdNum).trigger('change');
+                
+                // تحميل الصلاحيات (سيتم تلقائياً عند change event)
+                // لكن للتأكد، نحمّل الصلاحيات مباشرة بعد ثانية
+                setTimeout(function() {
+                    if (currentUserId !== userIdNum) {
+                        // إذا لم يتم تحميل الصلاحيات تلقائياً، حمّلها يدوياً
+                        currentUserId = userIdNum;
+                        currentUserRole = userRole || null;
+                        $selectedUserName.text(userName || '—');
+                        setRoleBadge(currentUserRole);
+                        loadUserPermissions(userIdNum);
+                    }
+                    setLoading(false);
+                }, 1000);
+            } else {
+                // إذا لم يكن select موجود، حمّل الصلاحيات مباشرة
+                currentUserId = userIdNum;
+                currentUserRole = userRole || null;
+                $selectedUserName.text(userName || '—');
+                setRoleBadge(currentUserRole);
+                loadUserPermissions(userIdNum);
+            }
+        }, 500);
+    }
 
 })(jQuery);

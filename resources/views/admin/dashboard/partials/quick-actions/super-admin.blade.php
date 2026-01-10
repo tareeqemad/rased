@@ -22,15 +22,6 @@
                             <div class="dashboard-quick-action-desc">تسجيل مشغل جديد</div>
                         </div>
                     </a>
-                    <a href="{{ route('admin.users.create') }}" class="dashboard-quick-action">
-                        <div class="dashboard-quick-action-icon bg-primary">
-                            <i class="bi bi-person-plus"></i>
-                        </div>
-                        <div class="dashboard-quick-action-text">
-                            <div class="dashboard-quick-action-title">إضافة مستخدم</div>
-                            <div class="dashboard-quick-action-desc">إنشاء حساب جديد</div>
-                        </div>
-                    </a>
                     <a href="{{ route('admin.generators.create') }}" class="dashboard-quick-action">
                         <div class="dashboard-quick-action-icon bg-success">
                             <i class="bi bi-lightning-charge-fill"></i>

@@ -390,7 +390,9 @@ class AuthorizedPhoneController extends Controller
     private function sendWelcomeSMS(string $phone, ?string $name = null): void
     {
         $name = $name ?: 'عزيزي/عزيزتي';
-        $joinUrl = route('front.join');
+        // استخدام رابط كامل (full URL) لرسائل SMS
+        // url() helper يولد رابط كامل بناءً على APP_URL
+        $joinUrl = url('/join');
         
         $message = "مرحباً {$name}،\n\n";
         $message .= "تم إضافة رقمك ({$phone}) إلى قائمة الأرقام المصرح بها في منصة راصد.\n\n";
@@ -424,7 +426,9 @@ class AuthorizedPhoneController extends Controller
     private function sendRegistrationReminderSMS(string $phone, ?string $name = null): void
     {
         $name = $name ?: 'عزيزي/عزيزتي';
-        $joinUrl = route('front.join');
+        // استخدام رابط كامل (full URL) لرسائل SMS
+        // url() helper يولد رابط كامل بناءً على APP_URL
+        $joinUrl = url('/join');
         
         $message = "مرحباً {$name}،\n\n";
         $message .= "نود تذكيرك بأن رقمك ({$phone}) مصرح به في منصة راصد ولكن لم يتم التسجيل بعد.\n\n";

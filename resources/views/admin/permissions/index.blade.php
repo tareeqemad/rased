@@ -51,14 +51,6 @@
                                 </label>
                                 <select id="userSelect" class="form-select" style="width:100%" disabled></select>
                                 <div class="form-text">بعد اختيار المشغل، رح تظهر القائمة الثانية.</div>
-                                @can('create', \App\Models\User::class)
-                                    <div class="d-grid mt-2">
-                                        <a href="{{ route('admin.users.create') }}" class="btn btn-outline-primary btn-sm">
-                                            <i class="bi bi-person-plus me-1"></i>
-                                            إضافة موظف/فني
-                                        </a>
-                                    </div>
-                                @endcan
                             </div>
                         @elseif(auth()->user()->isCompanyOwner())
                             <div class="mb-3">

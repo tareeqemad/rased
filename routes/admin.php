@@ -98,7 +98,7 @@ Route::middleware(['auth', 'admin', 'operator.approved'])->group(function () {
     Route::post('users/{user}/toggle-status', [UserController::class, 'toggleStatus'])->name('users.toggle-status');
     Route::post('users/{user}/suspend', [UserController::class, 'suspend'])->name('users.suspend');
     Route::post('users/{user}/unsuspend', [UserController::class, 'unsuspend'])->name('users.unsuspend');
-    Route::resource('users', UserController::class);
+    Route::resource('users', UserController::class)->except(['create']);
 
     // Operator employees (lock it via policy at route-level too)
     Route::get('operators/{operator}/employees', [UserController::class, 'operatorEmployees'])

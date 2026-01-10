@@ -586,7 +586,6 @@
                                             <li><a href="{{ route('admin.operators.profile') }}"><i class="bi bi-arrow-left"></i> ملف المشغل</a></li>
                                             <li><a href="{{ route('admin.generation-units.index') }}"><i class="bi bi-arrow-left"></i> وحدات التوليد</a></li>
                                             <li><a href="{{ route('admin.generators.index') }}"><i class="bi bi-arrow-left"></i> المولدات</a></li>
-                                            <li><a href="{{ route('admin.users.create') }}"><i class="bi bi-arrow-left"></i> إضافة موظف/فني</a></li>
                                         </ul>
                                     </div>
                                     <div class="col-md-6 links-section">

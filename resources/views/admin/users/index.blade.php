@@ -56,12 +56,6 @@
                     </div>
 
                     <div class="d-flex gap-2">
-                        @can('create', App\Models\User::class)
-                            <button type="button" class="btn btn-primary" id="btnOpenCreate">
-                                <i class="bi bi-plus-lg me-1"></i>
-                                إضافة مستخدم
-                            </button>
-                        @endcan
                     </div>
                 </div>
 
@@ -174,8 +168,9 @@
                                     <th class="text-center">الدور</th>
                                     <th class="text-center">المشغل</th>
                                     <th class="text-center">عدد الموظفين</th>
+                                    <th class="text-center">الصلاحيات</th>
                                     <th class="text-center">الحالة</th>
-                                    <th style="min-width:180px;" class="text-center">الإجراءات</th>
+                                    <th style="min-width:120px;" class="text-center">الإجراءات</th>
                                 </tr>
                                 </thead>
                                 <tbody id="usersTbody">
@@ -202,95 +197,6 @@
             </div>
         </div>
     </div>
-
-    {{-- Create Modal (AJAX) --}}
-    @can('create', App\Models\User::class)
-    <div class="modal fade" id="userCreateModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content">
-                <div class="modal-header border-0 pb-0">
-                    <h5 class="modal-title fw-bold">
-                        <i class="bi bi-person-plus me-1"></i>
-                        إضافة مستخدم
-                    </h5>
-                    <button type="button" class="btn-close ms-0" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-
-                <div class="modal-body pt-2">
-                    <form id="userCreateForm">
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold">الاسم <span class="text-danger">*</span></label>
-                                <input type="text" name="name" class="form-control" required>
-                                <div class="invalid-feedback"></div>
-                            </div>
-
-                            {{-- الاسم بالإنجليزي (للسوبر أدمن عند إنشاء أدوار رئيسية) --}}
-                            <div class="col-md-6 d-none" id="createNameEnField">
-                                <label class="form-label fw-semibold">
-                                    الاسم بالإنجليزي 
-                                    <span class="text-danger" id="createNameEnRequired">*</span>
-                                </label>
-                                <input type="text" name="name_en" class="form-control" placeholder="English Name">
-                                <div class="invalid-feedback"></div>
-                                <small class="form-text text-muted">سيتم استخدامه لتوليد username تلقائياً</small>
-                            </div>
-
-                            {{-- رقم الجوال (للسوبر أدمن عند إنشاء أدوار رئيسية) --}}
-                            <div class="col-md-6 d-none" id="createPhoneField">
-                                <label class="form-label fw-semibold">
-                                    رقم الجوال 
-                                    <span class="text-danger" id="createPhoneRequired">*</span>
-                                </label>
-                                <input type="text" name="phone" class="form-control" placeholder="059xxxxxxx أو 056xxxxxxx" maxlength="10">
-                                <div class="invalid-feedback"></div>
-                                <small class="form-text text-muted">سيتم إرسال بيانات الدخول عبر SMS</small>
-                            </div>
-
-                            {{-- البريد الإلكتروني (للسوبر أدمن عند إنشاء أدوار رئيسية) --}}
-                            <div class="col-md-6 d-none" id="createEmailField">
-                                <label class="form-label fw-semibold">
-                                    البريد الإلكتروني
-                                </label>
-                                <input type="email" name="email" class="form-control">
-                                <div class="invalid-feedback"></div>
-                            </div>
-
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold">الدور <span class="text-danger">*</span></label>
-                                <select name="role" class="form-select" id="createRole" required>
-                                    <option value="">اختر الدور</option>
-                                    @foreach($createRoleKeys as $rk)
-                                        <option value="{{ $rk }}">{{ $roleMeta[$rk]['label'] ?? $rk }}</option>
-                                    @endforeach
-                                </select>
-                                <div class="invalid-feedback"></div>
-                            </div>
-
-                            @if($isSuperAdmin)
-                                <div class="col-md-12 d-none" id="createOperatorWrap">
-                                    <label class="form-label fw-semibold">المشغل <span class="text-danger">*</span></label>
-                                    <select name="operator_id" class="form-select" id="createOperatorSelect"></select>
-                                    <div class="form-text">مطلوب عند إنشاء موظف/فني أو مشغل جديد.</div>
-                                    <div class="invalid-feedback"></div>
-                                </div>
-                            @endif
-
-                        </div>
-                    </form>
-                </div>
-
-                <div class="modal-footer border-0 pt-0">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">إلغاء</button>
-                    <button type="button" class="btn btn-primary" id="btnSubmitCreate">
-                        <span class="spinner-border spinner-border-sm me-2 d-none" id="createSpinner"></span>
-                        حفظ
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-    @endcan
 
     {{-- Delete confirm --}}
     <div class="modal fade" id="deleteUserModal" tabindex="-1" aria-hidden="true">
@@ -515,32 +421,46 @@
                         ? `<span class="fw-bold">${escapeHtml(employeesCount)}</span>`
                         : `<span class="text-muted">-</span>`;
 
-                    // زر الدخول بحساب (للسوبر أدمن فقط وليس لنفسه)
-                    const impersonateBtn = (isSuperAdmin && targetUserId !== currentUserId) ? `
-                        <form action="${escapeHtml(USERS_BASE_URL)}/${escapeHtml(u.id)}/impersonate" method="POST" class="d-inline" onsubmit="return confirm('هل أنت متأكد من الدخول بحساب ${escapeHtml(name)}؟');">
-                            <input type="hidden" name="_token" value="{{ csrf_token() }}">
-                            <button type="submit" class="btn btn-sm btn-outline-info" title="الدخول بحساب هذا المستخدم">
-                                <i class="bi bi-person-check"></i>
-                            </button>
-                        </form>
-                    ` : '';
-
-                    // زر toggle status (للسوبر أدمن والمشغل - وليس لنفسه)
-                    const isCompanyOwner = {{ $isCompanyOwner ? 'true' : 'false' }};
-                    const canToggleStatus = (isSuperAdmin || isCompanyOwner) && targetUserId !== currentUserId;
-                    const toggleStatusBtn = canToggleStatus ? `
-                        <button type="button" class="btn btn-light btn-icon text-${userStatus === 'active' ? 'warning' : 'success'} btn-toggle-status"
-                                data-id="${escapeHtml(u.id)}"
-                                data-status="${escapeHtml(userStatus)}"
-                                data-name="${escapeHtml(name)}"
-                                title="${userStatus === 'active' ? 'إيقاف' : 'تفعيل'}">
-                            <i class="bi bi-${userStatus === 'active' ? 'pause' : 'play'}-fill"></i>
-                        </button>
-                    ` : '';
-
                     const phoneCell = phone 
                         ? `<a href="tel:${escapeHtml(phone)}" class="text-decoration-none">${escapeHtml(phone)}</a>`
                         : `<span class="text-muted">-</span>`;
+
+                    // Permissions cell - عرض عدد الصلاحيات
+                    const permsCount = u.permissions_count ?? 0;
+                    const permsInfo = u.permissions_info || {};
+                    let permissionsCell = '';
+                    
+                    if (permsCount === 'الكل' || permsInfo.type === 'all') {
+                        permissionsCell = `<span class="badge bg-success" title="لديه جميع الصلاحيات">
+                            <i class="bi bi-shield-check me-1"></i>
+                            الكل
+                        </span>`;
+                    } else {
+                        const count = typeof permsCount === 'number' ? permsCount : 0;
+                        const roleCount = permsInfo.role_count || 0;
+                        const directCount = permsInfo.direct_count || 0;
+                        const revokedCount = permsInfo.revoked_count || 0;
+                        
+                        let tooltipText = `عدد الصلاحيات: ${count}`;
+                        if (roleCount > 0) {
+                            tooltipText += `\nمن الدور: ${roleCount}`;
+                        }
+                        if (directCount > 0) {
+                            tooltipText += `\nمباشرة: ${directCount}`;
+                        }
+                        if (revokedCount > 0) {
+                            tooltipText += `\nملغاة: ${revokedCount}`;
+                        }
+                        
+                        permissionsCell = `<a href="${escapeHtml(permsUrl)}" 
+                                class="badge bg-info text-decoration-none" 
+                                title="${escapeHtml(tooltipText)}"
+                                data-bs-toggle="tooltip"
+                                data-bs-placement="top">
+                            <i class="bi bi-shield-check me-1"></i>
+                            ${count}
+                        </a>`;
+                    }
 
                     // Status cell with suspended support
                     let statusCell = '';
@@ -555,29 +475,108 @@
                         statusCell = `<span class="badge bg-danger">غير فعال</span>`;
                     }
 
-                    // Suspend/Unsuspend buttons (requires users.suspend permission)
-                    // Note: Check permission server-side, but show button if user has permission
-                    // For now, show for Super Admin and Energy Authority (can check in controller)
+                    // بناء قائمة الإجراءات بشكل بسيط وواضح
+                    const isCompanyOwner = {{ $isCompanyOwner ? 'true' : 'false' }};
+                    const canToggleStatus = (isSuperAdmin || isCompanyOwner) && targetUserId !== currentUserId;
                     const canSuspend = isSuperAdmin && targetUserId !== currentUserId && userStatus !== 'suspended';
                     const canUnsuspend = isSuperAdmin && targetUserId !== currentUserId && userStatus === 'suspended';
                     
-                    const suspendBtn = canSuspend ? `
-                        <button type="button" class="btn btn-sm btn-outline-danger btn-suspend-user"
-                                data-id="${escapeHtml(u.id)}"
-                                data-name="${escapeHtml(name)}"
-                                title="تعطيل/حظر">
-                            <i class="bi bi-x-circle-fill"></i>
-                        </button>
-                    ` : '';
+                    // بناء HTML للقائمة مباشرة - أبسط وأوضح
+                    let menuHtml = '';
                     
-                    const unsuspendBtn = canUnsuspend ? `
-                        <button type="button" class="btn btn-sm btn-outline-success btn-unsuspend-user"
+                    // الإجراءات الأساسية
+                    if (canEdit) {
+                        menuHtml += `<a class="dropdown-item" href="${escapeHtml(editUrl)}">
+                            <i class="bi bi-pencil me-2 text-primary"></i> تعديل المستخدم
+                        </a>`;
+                    }
+                    if (canView) {
+                        menuHtml += `<a class="dropdown-item" href="${escapeHtml(showUrl)}">
+                            <i class="bi bi-eye me-2 text-info"></i> عرض التفاصيل
+                        </a>`;
+                    }
+                    // عرض عدد الصلاحيات في القائمة (استخدام permsCount الموجود مسبقاً)
+                    const permsText = permsCount === 'الكل' || permsCount === 'all' 
+                        ? 'إدارة الصلاحيات (الكل)' 
+                        : `إدارة الصلاحيات (${permsCount})`;
+                    
+                    menuHtml += `<a class="dropdown-item" href="${escapeHtml(permsUrl)}">
+                        <i class="bi bi-shield-check me-2 text-warning"></i> ${escapeHtml(permsText)}
+                    </a>`;
+                    
+                    // فاصل للإجراءات الإضافية
+                    let hasMoreActions = operatorProfileUrl || canToggleStatus || canSuspend || canUnsuspend || 
+                                       (isSuperAdmin && targetUserId !== currentUserId) || 
+                                       (canDelete && targetUserId !== currentUserId);
+                    if (hasMoreActions) {
+                        menuHtml += '<hr class="dropdown-divider">';
+                    }
+                    
+                    // ملف المشغل (إن وجد)
+                    if (operatorProfileUrl) {
+                        menuHtml += `<a class="dropdown-item" href="${escapeHtml(operatorProfileUrl)}">
+                            <i class="bi bi-building me-2"></i> ملف المشغل
+                        </a>`;
+                    }
+                    
+                    // إجراءات الحالة
+                    if (canToggleStatus) {
+                        menuHtml += `<button type="button" class="dropdown-item btn-toggle-status"
                                 data-id="${escapeHtml(u.id)}"
-                                data-name="${escapeHtml(name)}"
-                                title="رفع الحظر">
-                            <i class="bi bi-check-circle-fill"></i>
-                        </button>
-                    ` : '';
+                                data-status="${escapeHtml(userStatus)}"
+                                data-name="${escapeHtml(name)}">
+                            <i class="bi bi-${userStatus === 'active' ? 'pause' : 'play'}-fill me-2 text-${userStatus === 'active' ? 'warning' : 'success'}"></i>
+                            ${userStatus === 'active' ? 'إيقاف المستخدم' : 'تفعيل المستخدم'}
+                        </button>`;
+                    }
+                    if (canSuspend) {
+                        menuHtml += `<button type="button" class="dropdown-item text-danger btn-suspend-user"
+                                data-id="${escapeHtml(u.id)}"
+                                data-name="${escapeHtml(name)}">
+                            <i class="bi bi-x-circle-fill me-2"></i> تعطيل/حظر المستخدم
+                        </button>`;
+                    }
+                    if (canUnsuspend) {
+                        menuHtml += `<button type="button" class="dropdown-item text-success btn-unsuspend-user"
+                                data-id="${escapeHtml(u.id)}"
+                                data-name="${escapeHtml(name)}">
+                            <i class="bi bi-check-circle-fill me-2"></i> رفع الحظر
+                        </button>`;
+                    }
+                    
+                    // الدخول بحسابه (للسوبر أدمن فقط)
+                    if (isSuperAdmin && targetUserId !== currentUserId) {
+                        if (canSuspend || canUnsuspend || canToggleStatus) {
+                            menuHtml += '<hr class="dropdown-divider">';
+                        }
+                        menuHtml += `<button type="button" class="dropdown-item text-info btn-impersonate-user"
+                                data-id="${escapeHtml(u.id)}"
+                                data-name="${escapeHtml(name)}">
+                            <i class="bi bi-person-check me-2"></i> الدخول بحسابه
+                        </button>`;
+                    }
+                    
+                    // حذف المستخدم (إجراء خطير)
+                    if (canDelete && targetUserId !== currentUserId) {
+                        menuHtml += '<hr class="dropdown-divider">';
+                        menuHtml += `<button type="button" class="dropdown-item text-danger btn-delete-user"
+                                data-id="${escapeHtml(u.id)}"
+                                data-name="${escapeHtml(name)}">
+                            <i class="bi bi-trash me-2"></i> حذف المستخدم
+                        </button>`;
+                    }
+                    
+                    // بناء Dropdown Menu مع زر بسيط وواضح
+                    const actionsMenu = `
+                        <div class="btn-group dropstart">
+                            <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" title="إجراءات">
+                                <i class="bi bi-three-dots-vertical"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                ${menuHtml}
+                            </ul>
+                        </div>
+                    `;
 
                     return `
                         <tr>
@@ -600,25 +599,11 @@
                             <td class="text-center">${roleBadge(roleKey, roleLabel)}</td>
                             <td class="text-center">${operatorCell}</td>
                             <td class="text-center">${employeesCell}</td>
+                            <td class="text-center">${permissionsCell}</td>
                             <td class="text-center">${statusCell}</td>
                             <td>
-                                <div class="d-flex gap-1 justify-content-center">
-                                    ${canView ? `<a class="btn btn-sm btn-outline-info" href="${escapeHtml(showUrl)}" title="عرض"><i class="bi bi-eye"></i></a>` : ``}
-                                    ${canEdit ? `<a class="btn btn-sm btn-outline-primary" href="${escapeHtml(editUrl)}" title="تعديل"><i class="bi bi-pencil"></i></a>` : ``}
-                                    <a class="btn btn-sm btn-outline-warning" href="${escapeHtml(permsUrl)}" title="الصلاحيات"><i class="bi bi-shield-check"></i></a>
-                                    ${operatorProfileUrl ? `<a class="btn btn-sm btn-outline-info" href="${escapeHtml(operatorProfileUrl)}" title="ملف المشغل"><i class="bi bi-building"></i></a>` : ``}
-                                    ${impersonateBtn}
-                                    ${toggleStatusBtn}
-                                    ${suspendBtn}
-                                    ${unsuspendBtn}
-                                    ${canDelete && (targetUserId !== currentUserId) ? `
-                                        <button type="button" class="btn btn-sm btn-outline-danger btn-delete-user"
-                                                data-id="${escapeHtml(u.id)}"
-                                                data-name="${escapeHtml(name)}"
-                                                title="حذف">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
-                                    ` : ``}
+                                <div class="d-flex justify-content-center">
+                                    ${actionsMenu}
                                 </div>
                             </td>
                         </tr>
@@ -626,6 +611,13 @@
                 }).join('');
 
                 $tbody.html(html);
+                
+                // تهيئة tooltips للصلاحيات
+                if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
+                    $tbody.find('[data-bs-toggle="tooltip"]').each(function() {
+                        new bootstrap.Tooltip(this);
+                    });
+                }
             }
 
             function renderMeta(meta){
@@ -1165,6 +1157,32 @@
                         setSuspendLoading(false);
                     }
                 });
+            });
+
+            // ===== Impersonate User (Form Submit)
+            $tbody.on('click', '.btn-impersonate-user', function(){
+                const $btn = $(this);
+                const id = $btn.data('id');
+                const name = $btn.data('name');
+
+                if (!confirm(`هل أنت متأكد من الدخول بحساب "${name}"؟`)) {
+                    return;
+                }
+
+                // إنشاء form وإرساله
+                const form = $('<form>', {
+                    method: 'POST',
+                    action: `${USERS_BASE_URL}/${id}/impersonate`
+                });
+                
+                form.append($('<input>', {
+                    type: 'hidden',
+                    name: '_token',
+                    value: $('meta[name="csrf-token"]').attr('content')
+                }));
+
+                $('body').append(form);
+                form.submit();
             });
 
             // ===== Unsuspend User (AJAX)

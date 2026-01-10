@@ -483,8 +483,9 @@ class PublicHomeController extends Controller
             'password_chars' => str_split($password), // للتأكد من الأحرف
         ]);
 
-        // رسالة واضحة مع الرابط
-        $loginUrl = route('login');
+        // رسالة واضحة مع الرابط الكامل (full URL) لرسائل SMS
+        // url() helper يولد رابط كامل بناءً على APP_URL
+        $loginUrl = url('/login');
         
         // بناء رسالة مختصرة مع الرابط
         // استخدام صيغة مختصرة لتوفير المساحة للرابط
