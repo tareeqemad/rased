@@ -9,19 +9,28 @@
     $isSuperAdmin   = auth()->user()->isSuperAdmin();
     $isCompanyOwner = auth()->user()->isCompanyOwner();
 
-    // Meta for roles (JS uses it to render badges + labels)
-    $roleMeta = [
-        'company_owner' => ['label' => 'مشغل',        'badge' => 'badge-role-owner'],
-        'employee'      => ['label' => 'موظف',        'badge' => 'badge-role-employee'],
-        'technician'    => ['label' => 'فني',         'badge' => 'badge-role-tech'],
-        'admin'         => ['label' => 'سلطة الطاقة',  'badge' => 'badge-role-admin'],
-        'super_admin'   => ['label' => 'مدير النظام',  'badge' => 'badge-role-sa'],
-    ];
+    // Get available roles for filter (system roles + custom roles)
+    $availableRoles = $availableRoles ?? [];
 
-    // Roles visible in filters
-    $filterRoleKeys = $isSuperAdmin ? array_keys($roleMeta) : ['employee','technician'];
+    // Separate system roles and custom roles for display
+    $systemRoles = [];
+    $customRoles = [];
 
-    // Roles allowed in create modal
+    foreach ($availableRoles as $roleName => $roleData) {
+        if (isset($roleData['is_custom']) && $roleData['is_custom']) {
+            $customRoles[$roleName] = $roleData;
+        } else {
+            $systemRoles[$roleName] = $roleData;
+        }
+    }
+
+    // System roles are already sorted by order from database
+    $sortedSystemRoles = $systemRoles;
+
+    // Meta for roles (JS uses it to render badges + labels) - includes all roles
+    $roleMeta = array_merge($sortedSystemRoles, $customRoles);
+
+    // Roles allowed in create modal (for backward compatibility)
     $createRoleKeys = $isSuperAdmin ? ['company_owner','admin','employee','technician'] : ['employee','technician'];
 @endphp
 
@@ -109,9 +118,20 @@
                                     </label>
                                     <select class="form-select" id="roleFilter">
                                         <option value="">الكل</option>
-                                        @foreach($filterRoleKeys as $rk)
-                                            <option value="{{ $rk }}">{{ $roleMeta[$rk]['label'] ?? $rk }}</option>
-                                        @endforeach
+                                        @if(!empty($sortedSystemRoles))
+                                            <optgroup label="الأدوار النظامية">
+                                                @foreach($sortedSystemRoles as $roleName => $roleData)
+                                                    <option value="{{ $roleName }}">{{ $roleData['label'] ?? $roleName }}</option>
+                                                @endforeach
+                                            </optgroup>
+                                        @endif
+                                        @if(!empty($customRoles))
+                                            <optgroup label="الأدوار المخصصة">
+                                                @foreach($customRoles as $roleName => $roleData)
+                                                    <option value="{{ $roleName }}">{{ $roleData['label'] ?? $roleName }}</option>
+                                                @endforeach
+                                            </optgroup>
+                                        @endif
                                     </select>
                                 </div>
 

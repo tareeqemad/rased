@@ -72,8 +72,64 @@ class UserController extends Controller
             return $this->ajaxIndex($request, $actor);
         }
 
-        // ✅ Normal page load
-        return view('admin.users.index');
+        // ✅ Normal page load - Get available roles for filter
+        $availableRoles = $this->getAvailableRolesForFilter($actor);
+
+        return view('admin.users.index', compact('availableRoles'));
+    }
+
+    /**
+     * Get available roles for filter (system roles + custom roles based on user permissions)
+     */
+    private function getAvailableRolesForFilter(User $user): array
+    {
+        $roles = [];
+
+        // Get system roles dynamically from database (is_system = true)
+        $systemRoles = \App\Models\Role::where('is_system', true)
+            ->orderBy('order')
+            ->orderBy('name')
+            ->get();
+
+        // Add system roles based on user permissions
+        if ($user->isSuperAdmin() || $user->isEnergyAuthority() || $user->isAdmin()) {
+            // Super Admin, Energy Authority, and Admin can see all system roles
+            foreach ($systemRoles as $systemRole) {
+                $roles[$systemRole->name] = [
+                    'label' => $systemRole->label,
+                    'badge' => $this->getRoleBadge($systemRole->name),
+                    'is_custom' => false,
+                ];
+            }
+        }
+        // Company Owner doesn't see system roles in filter (only custom roles)
+
+        // Add custom roles based on user permissions
+        $customRoles = \App\Models\Role::getAvailableCustomRoles($user);
+
+        foreach ($customRoles as $customRole) {
+            $roles[$customRole->name] = [
+                'label' => $customRole->label,
+                'badge' => 'badge-role-custom',
+                'is_custom' => true,
+            ];
+        }
+
+        return $roles;
+    }
+
+    /**
+     * Get badge class for role
+     */
+    private function getRoleBadge(string $roleName): string
+    {
+        return match ($roleName) {
+            'super_admin' => 'badge-role-sa',
+            'admin' => 'badge-role-admin',
+            'energy_authority' => 'badge-role-admin',
+            'company_owner' => 'badge-role-owner',
+            default => 'badge-role-custom',
+        };
     }
 
     private function ajaxIndex(Request $request, User $actor): JsonResponse
@@ -87,9 +143,18 @@ class UserController extends Controller
         $perPage = (int) $request->query('per_page', 15);
         $perPage = max(5, min(50, $perPage));
 
-        $allowedRoles = array_map(fn (\App\Role $r) => $r->value, \App\Role::cases());
-        if ($role !== '' && ! in_array($role, $allowedRoles, true)) {
-            $role = '';
+        // Validate role: allow system roles (enum) and custom roles (from roles table)
+        // We'll validate custom roles later in the query if needed
+        $allowedSystemRoles = array_map(fn (\App\Role $r) => $r->value, \App\Role::cases());
+        if ($role !== '' && ! in_array($role, $allowedSystemRoles, true)) {
+            // Check if it's a valid custom role name (from roles table)
+            $customRoleExists = \App\Models\Role::where('name', $role)
+                ->where('is_system', false)
+                ->exists();
+
+            if (! $customRoleExists) {
+                $role = ''; // Invalid role, reset to empty
+            }
         }
 
         // -----------------------------
@@ -134,8 +199,11 @@ class UserController extends Controller
             $operatorId = 0;
 
             // Company Owner can only filter by custom roles (not system roles)
-            $systemRoles = [\App\Role::SuperAdmin->value, \App\Role::Admin->value, \App\Role::EnergyAuthority->value, \App\Role::CompanyOwner->value];
-            if (in_array($role, $systemRoles, true)) {
+            // Check if role is a system role from database
+            $isSystemRole = \App\Models\Role::where('name', $role)
+                ->where('is_system', true)
+                ->exists();
+            if ($isSystemRole) {
                 $role = '';
             }
         } elseif (! ($actor->isSuperAdmin() || $actor->isEnergyAuthority())) {
@@ -238,7 +306,21 @@ class UserController extends Controller
         // Apply role filter only if operator is not selected
         // (because selecting operator means showing operator + all their users regardless of role)
         if ($role !== '' && $operatorId === 0) {
-            $list->where('role', $role);
+            // Support both enum roles and custom roles (role_id)
+            // Check if it's a system role (from database)
+            $isSystemRole = \App\Models\Role::where('name', $role)
+                ->where('is_system', true)
+                ->exists();
+
+            if ($isSystemRole) {
+                // System role: search in enum field
+                $list->where('role', $role);
+            } else {
+                // Custom role: search in roleModel.name
+                $list->whereHas('roleModel', function (Builder $q) use ($role) {
+                    $q->where('name', $role);
+                });
+            }
         }
 
         $p = $list->orderByDesc('created_at')->paginate($perPage);
@@ -279,7 +361,7 @@ class UserController extends Controller
             // حساب عدد الصلاحيات
             $permissionsCount = 0;
             $permissionsInfo = [];
-            
+
             if ($u->isSuperAdmin()) {
                 // السوبر أدمن لديه جميع الصلاحيات
                 $permissionsCount = 'الكل';
@@ -289,15 +371,15 @@ class UserController extends Controller
                 $rolePermissions = $u->roleModel?->permissions ?? collect();
                 $directPermissions = $u->permissions ?? collect();
                 $revokedPermissions = $u->revokedPermissions ?? collect();
-                
+
                 // دمج صلاحيات الدور والصلاحيات المباشرة
                 $allPermissions = $rolePermissions->merge($directPermissions)->unique('id');
-                
+
                 // إزالة الصلاحيات الملغاة
                 $finalPermissions = $allPermissions->reject(function ($perm) use ($revokedPermissions) {
                     return $revokedPermissions->contains('id', $perm->id);
                 });
-                
+
                 $permissionsCount = $finalPermissions->count();
                 $permissionsInfo = [
                     'type' => 'custom',
