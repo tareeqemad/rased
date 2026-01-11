@@ -75,7 +75,18 @@ class UserController extends Controller
         // ✅ Normal page load - Get available roles for filter
         $availableRoles = $this->getAvailableRolesForFilter($actor);
 
-        return view('admin.users.index', compact('availableRoles'));
+        // Get available roles for create modal
+        $rolesForCreate = $this->getRolesForCreate($actor);
+        $operators = collect();
+        $operatorLocked = null;
+
+        if ($actor->isCompanyOwner()) {
+            $operatorLocked = $actor->ownedOperators()->first();
+        } elseif ($actor->isSuperAdmin() || $actor->isEnergyAuthority()) {
+            $operators = Operator::select('id', 'name')->orderBy('name')->get();
+        }
+
+        return view('admin.users.index', compact('availableRoles', 'rolesForCreate', 'operators', 'operatorLocked'));
     }
 
     /**
@@ -92,14 +103,25 @@ class UserController extends Controller
             ->get();
 
         // Add system roles based on user permissions
-        if ($user->isSuperAdmin() || $user->isEnergyAuthority() || $user->isAdmin()) {
-            // Super Admin, Energy Authority, and Admin can see all system roles
+        if ($user->isSuperAdmin()) {
+            // Super Admin can see all system roles
             foreach ($systemRoles as $systemRole) {
                 $roles[$systemRole->name] = [
                     'label' => $systemRole->label,
                     'badge' => $this->getRoleBadge($systemRole->name),
                     'is_custom' => false,
                 ];
+            }
+        } elseif ($user->isEnergyAuthority() || $user->isAdmin()) {
+            // Energy Authority and Admin can see system roles except super_admin
+            foreach ($systemRoles as $systemRole) {
+                if ($systemRole->name !== 'super_admin') {
+                    $roles[$systemRole->name] = [
+                        'label' => $systemRole->label,
+                        'badge' => $this->getRoleBadge($systemRole->name),
+                        'is_custom' => false,
+                    ];
+                }
             }
         }
         // Company Owner doesn't see system roles in filter (only custom roles)
@@ -111,6 +133,65 @@ class UserController extends Controller
             $roles[$customRole->name] = [
                 'label' => $customRole->label,
                 'badge' => 'badge-role-custom',
+                'is_custom' => true,
+            ];
+        }
+
+        return $roles;
+    }
+
+    /**
+     * Get available roles for create modal (system roles + custom roles based on user authority)
+     * 
+     * Rules:
+     * - SuperAdmin: can create all roles (including SuperAdmin)
+     * - Admin: can create all roles EXCEPT SuperAdmin
+     * - EnergyAuthority: can create all roles EXCEPT SuperAdmin and Admin (but can create EnergyAuthority)
+     * - CompanyOwner: can only create custom roles (no system roles)
+     */
+    private function getRolesForCreate(User $user): array
+    {
+        $roles = [];
+        $customRoles = collect();
+
+        // Get system roles from database (is_system = true)
+        $systemRoles = \App\Models\Role::where('is_system', true)
+            ->orderBy('order')
+            ->orderBy('name')
+            ->get();
+
+        if ($user->isCompanyOwner()) {
+            // Company Owner can ONLY use custom roles they created (no system roles, no general roles, no roles from others)
+            $customRoles = \App\Models\Role::getAvailableCustomRoles($user);
+            // Remove all system roles - Company Owner should not see any system roles
+            $systemRoles = collect(); // Empty - Company Owner only uses custom roles
+        } elseif ($user->isSuperAdmin()) {
+            // SuperAdmin can see all system roles (including SuperAdmin) and custom roles
+            $customRoles = \App\Models\Role::getAvailableCustomRoles($user);
+        } elseif ($user->isAdmin()) {
+            // Admin can see all system roles EXCEPT SuperAdmin and custom roles
+            $systemRoles = $systemRoles->reject(fn($role) => $role->name === 'super_admin');
+            $customRoles = \App\Models\Role::getAvailableCustomRoles($user);
+        } elseif ($user->isEnergyAuthority()) {
+            // EnergyAuthority can see all system roles EXCEPT SuperAdmin and Admin (but can create EnergyAuthority)
+            $systemRoles = $systemRoles->reject(fn($role) => in_array($role->name, ['super_admin', 'admin'], true));
+            $customRoles = \App\Models\Role::getAvailableCustomRoles($user);
+        }
+
+        // Add system roles to array
+        foreach ($systemRoles as $systemRole) {
+            $roles[] = [
+                'value' => $systemRole->name,
+                'label' => $systemRole->label,
+                'is_custom' => false,
+            ];
+        }
+
+        // Add custom roles to array
+        foreach ($customRoles as $customRole) {
+            $roles[] = [
+                'value' => $customRole->name,
+                'label' => $customRole->label,
                 'is_custom' => true,
             ];
         }

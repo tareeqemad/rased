@@ -9,22 +9,21 @@
 @endphp
 
 @push('styles')
-    <link rel="stylesheet" href="{{ asset('assets/admin/css/operators.css') }}">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 @endpush
 
 @section('content')
-<div class="operators-page operator-profile-page">
+<div class="general-page">
     <div class="row g-3">
         <div class="col-12">
-            <div class="card op-card position-relative" id="generationUnitCard">
-                <div class="op-card-header d-flex align-items-center justify-content-between gap-2 flex-wrap">
+            <div class="general-card position-relative" id="generationUnitCard">
+                <div class="general-card-header">
                     <div>
-                        <div class="op-title">
+                        <h5 class="general-title">
                             <i class="bi bi-lightning-charge me-2"></i>
                             تعديل وحدة التوليد
-                        </div>
-                        <div class="op-subtitle">{{ $generationUnit->name }}</div>
+                        </h5>
+                        <div class="general-subtitle">{{ $generationUnit->name }}</div>
                     </div>
 
                     <div class="d-flex gap-2">
@@ -33,13 +32,13 @@
                             العودة
                         </a>
                         <button class="btn btn-primary" id="saveBtn" type="button">
-                            <i class="bi bi-save me-1"></i>
+                            <i class="bi bi-check-lg me-1"></i>
                             حفظ
                         </button>
                     </div>
                 </div>
 
-                <div class="card-body">
+                <div class="card-body pb-4">
                     <form id="generationUnitForm" action="{{ route('admin.generation-units.update', $generationUnit) }}" method="POST">
                         @csrf
                         @method('PUT')
@@ -48,7 +47,7 @@
                             <input type="hidden" name="operator_id" id="operator_id" value="{{ $operator->id }}">
                         @endif
 
-                        <ul class="nav nav-pills op-tabs" id="profileTabs" role="tablist">
+                        <ul class="nav nav-pills mb-3" id="profileTabs" role="tablist">
                             <li class="nav-item" role="presentation">
                                 <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#tab-basic" type="button" role="tab">
                                     <i class="bi bi-info-circle me-1"></i> البيانات الأساسية
@@ -120,6 +119,22 @@
                             {{-- TAB: OWNER --}}
                             <div class="tab-pane fade" id="tab-owner" role="tabpanel">
                                 <div class="row g-3">
+                                    {{-- جهة التشغيل (أول حقل وإجباري) --}}
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">جهة التشغيل <span class="text-danger">*</span></label>
+                                        <select name="operation_entity_id" id="operation_entity_id" class="form-select @error('operation_entity_id') is-invalid @enderror" required>
+                                            <option value="">اختر جهة التشغيل</option>
+                                            @foreach($constants['operation_entity'] as $entity)
+                                                <option value="{{ $entity->id }}" data-code="{{ $entity->code }}" {{ old('operation_entity_id', $generationUnit->operation_entity_id) == $entity->id ? 'selected' : '' }}>
+                                                    {{ $entity->label }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                        @error('operation_entity_id')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+
                                     <div class="col-md-6">
                                         <label class="form-label fw-semibold">اسم المالك <span class="text-danger">*</span></label>
                                         <input type="text" name="owner_name" class="form-control @error('owner_name') is-invalid @enderror"
@@ -134,21 +149,6 @@
                                         <input type="text" name="owner_id_number" class="form-control @error('owner_id_number') is-invalid @enderror"
                                                value="{{ old('owner_id_number', $generationUnit->owner_id_number) }}">
                                         @error('owner_id_number')
-                                            <div class="invalid-feedback">{{ $message }}</div>
-                                        @enderror
-                                    </div>
-
-                                    <div class="col-md-6">
-                                        <label class="form-label fw-semibold">جهة التشغيل <span class="text-danger">*</span></label>
-                                        <select name="operation_entity_id" id="operation_entity_id" class="form-select @error('operation_entity_id') is-invalid @enderror" required>
-                                            <option value="">اختر</option>
-                                            @foreach($constants['operation_entity'] as $entity)
-                                                <option value="{{ $entity->id }}" data-code="{{ $entity->code }}" {{ old('operation_entity_id', $generationUnit->operation_entity_id) == $entity->id ? 'selected' : '' }}>
-                                                    {{ $entity->label }}
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                        @error('operation_entity_id')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
@@ -407,7 +407,7 @@
                     </form>
                 </div>
 
-                <div class="op-loading d-none" id="loading">
+                <div class="data-table-loading d-none" id="loading">
                     <div class="text-center">
                         <div class="spinner-border" role="status"></div>
                         <div class="mt-2 text-muted fw-semibold">جاري الحفظ...</div>

@@ -9,10 +9,12 @@ class WelcomeMessagePolicy
 {
     /**
      * Determine whether the user can view any models.
+     * فقط SuperAdmin و Admin يمكنهم رؤية الرسائل الترحيبية
+     * المشغلون لا يمكنهم منح صلاحيات عليها
      */
     public function viewAny(User $user): bool
     {
-        return $user->isSuperAdmin() || $user->isEnergyAuthority();
+        return $user->isSuperAdmin() || $user->isAdmin();
     }
 
     /**
@@ -20,7 +22,7 @@ class WelcomeMessagePolicy
      */
     public function view(User $user, WelcomeMessage $welcomeMessage): bool
     {
-        return $user->isSuperAdmin() || $user->isEnergyAuthority();
+        return $user->isSuperAdmin() || $user->isAdmin();
     }
 
     /**
@@ -28,6 +30,6 @@ class WelcomeMessagePolicy
      */
     public function update(User $user, WelcomeMessage $welcomeMessage): bool
     {
-        return $user->isSuperAdmin() || $user->isEnergyAuthority();
+        return $user->isSuperAdmin() || $user->isAdmin();
     }
 }

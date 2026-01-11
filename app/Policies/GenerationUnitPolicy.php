@@ -35,6 +35,11 @@ class GenerationUnitPolicy
             return true;
         }
 
+        // Company Owner يمكنه رؤية وحدات التوليد الخاصة به حتى لو لم يكن لديه الصلاحية الديناميكية
+        if ($user->isCompanyOwner()) {
+            return $user->ownsOperator($generationUnit->operator);
+        }
+
         // التحقق من الصلاحية الديناميكية
         if (! $user->hasPermission('generation_units.view')) {
             return false;
@@ -58,13 +63,19 @@ class GenerationUnitPolicy
             return true;
         }
 
+        // Company Owner يمكنه إضافة وحدات التوليد حتى لو لم يكن معتمد
+        if ($user->isCompanyOwner()) {
+            $operator = $user->ownedOperators()->first();
+            return $operator !== null;
+        }
+
         // التحقق من الصلاحية الديناميكية
         if ($user->hasPermission('generation_units.create')) {
             return true;
         }
 
         // Fallback للأدوار
-        return $user->isCompanyOwner() || $user->isTechnician();
+        return $user->isTechnician();
     }
 
     /**

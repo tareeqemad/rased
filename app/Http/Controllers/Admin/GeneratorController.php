@@ -118,16 +118,12 @@ class GeneratorController extends Controller
                     ->with('error', 'لا يوجد مشغل مرتبط بحسابك. يرجى التواصل مع مدير النظام.');
             }
 
-            if (! $operator->isProfileComplete()) {
-                return redirect()->route('admin.operators.profile')
-                    ->with('error', 'يجب إكمال بيانات المشغل أولاً قبل إضافة المولدات.');
-            }
-
-            // التحقق من وجود وحدات التوليد
+            // التحقق من وجود وحدات التوليد فقط (بدون فحص profile_completed)
+            // لأن المولدات يجب أن تكون متاحة حتى لو لم يكمل المشغل بياناته
             $generationUnits = $operator->generationUnits;
             if ($generationUnits->isEmpty()) {
-                return redirect()->route('admin.operators.profile')
-                    ->with('error', 'يجب إضافة وحدة توليد على الأقل قبل إضافة المولدات.');
+                return redirect()->route('admin.generation-units.create')
+                    ->with('warning', 'يجب إضافة وحدة توليد على الأقل قبل إضافة المولدات.');
             }
 
             // إذا تم تحديد generation_unit_id في الطلب، التحقق من أن الوحدة موجودة ومتاحة
@@ -328,7 +324,7 @@ class GeneratorController extends Controller
 
         $generator->load([
             'operator', 
-            'generationUnit',
+            'generationUnit.fuelTanks',
             'statusDetail',
             'engineTypeDetail',
             'injectionSystemDetail',
@@ -462,10 +458,29 @@ class GeneratorController extends Controller
 
     /**
      * Get generation units for a specific operator (AJAX).
+     * This method allows access even if operator is not approved, as generators
+     * should be accessible regardless of approval status.
      */
     public function getGenerationUnits(Operator $operator): JsonResponse
     {
-        $this->authorize('view', $operator);
+        $user = auth()->user();
+
+        // Allow SuperAdmin and Admin to access any operator
+        if ($user->isSuperAdmin() || $user->isAdmin()) {
+            // Continue to fetch generation units
+        }
+        // Allow CompanyOwner to access their own operator, even if not approved
+        elseif ($user->isCompanyOwner() && $user->ownsOperator($operator)) {
+            // Continue to fetch generation units
+        }
+        // Allow Employee and Technician to access operators they belong to
+        elseif (($user->isEmployee() || $user->isTechnician()) && $user->belongsToOperator($operator)) {
+            // Continue to fetch generation units
+        }
+        // Otherwise, check standard authorization
+        elseif (!$user->can('view', $operator)) {
+            abort(403, 'غير مصرح لك بالوصول إلى بيانات هذا المشغل.');
+        }
 
         $generationUnits = $operator->generationUnits()
             ->select('id', 'name', 'unit_code', 'generators_count')

@@ -50,10 +50,25 @@ class GenerationUnitController extends Controller
             });
         }
 
-        // فلترة حسب الحالة (استخدام status_id)
+        // فلترة حسب الحالة (يمكن استخدام status أو status_id)
+        $status = trim((string) $request->input('status', ''));
         $statusId = (int) $request->input('status_id', 0);
+        
         if ($statusId > 0) {
+            // استخدام status_id مباشرة (إذا أُرسل)
             $query->where('status_id', $statusId);
+        } elseif ($status !== '' && in_array($status, ['active', 'inactive'], true)) {
+            // استخدام status (active/inactive) - البحث عن status_id المناسب
+            // constant_number = 15 لحالة الوحدة
+            $statusConstant = \App\Models\ConstantDetail::whereHas('master', function($q) {
+                    $q->where('constant_number', 15); // حالة الوحدة
+                })
+                ->where('code', strtoupper($status) === 'ACTIVE' ? 'ACTIVE' : 'INACTIVE')
+                ->first();
+            
+            if ($statusConstant) {
+                $query->where('status_id', $statusConstant->id);
+            }
         }
 
         // فلترة حسب المشغل (للسوبر أدمن و Admin)
@@ -377,7 +392,17 @@ class GenerationUnitController extends Controller
     {
         $this->authorize('view', $generationUnit);
 
-        $generationUnit->load(['operator', 'generators', 'fuelTanks', 'statusDetail', 'operationEntityDetail', 'synchronizationAvailableDetail', 'environmentalComplianceStatusDetail', 'city']);
+        $generationUnit->load([
+            'operator',
+            'generators',
+            'fuelTanks',
+            'statusDetail',
+            'operationEntityDetail',
+            'synchronizationAvailableDetail',
+            'environmentalComplianceStatusDetail',
+            'city',
+            'governorateDetail'
+        ]);
 
         return view('admin.generation-units.show', compact('generationUnit'));
     }
@@ -605,19 +630,63 @@ class GenerationUnitController extends Controller
 
     /**
      * Get operator data for auto-filling generation unit form.
+     * This method allows access even if operator is not approved, as generation units
+     * and generators should be accessible regardless of approval status.
      */
     public function getOperatorData(Operator $operator): JsonResponse
     {
-        $this->authorize('view', $operator);
+        $user = auth()->user();
 
-        return response()->json([
-            'success' => true,
-            'operator' => [
-                'owner_name' => $operator->owner_name,
-                'owner_id_number' => $operator->owner_id_number,
-                'operator_id_number' => $operator->operator_id_number,
-            ],
-        ]);
+        // Allow Super Admin and Admin to access any operator
+        if ($user->isSuperAdmin() || $user->isAdmin()) {
+            return response()->json([
+                'success' => true,
+                'operator' => [
+                    'owner_name' => $operator->owner_name,
+                    'owner_id_number' => $operator->owner_id_number,
+                    'operator_id_number' => $operator->operator_id_number,
+                ],
+            ]);
+        }
+
+        // Allow Company Owner to access their own operator (even if not approved)
+        if ($user->isCompanyOwner() && $user->ownsOperator($operator)) {
+            return response()->json([
+                'success' => true,
+                'operator' => [
+                    'owner_name' => $operator->owner_name,
+                    'owner_id_number' => $operator->owner_id_number,
+                    'operator_id_number' => $operator->operator_id_number,
+                ],
+            ]);
+        }
+
+        // Allow Employee and Technician to access operators they belong to
+        if (($user->isEmployee() || $user->isTechnician()) && $user->belongsToOperator($operator)) {
+            return response()->json([
+                'success' => true,
+                'operator' => [
+                    'owner_name' => $operator->owner_name,
+                    'owner_id_number' => $operator->owner_id_number,
+                    'operator_id_number' => $operator->operator_id_number,
+                ],
+            ]);
+        }
+
+        // Default: check permission but don't require approval
+        if ($user->hasPermission('operators.view') && $user->belongsToOperator($operator)) {
+            return response()->json([
+                'success' => true,
+                'operator' => [
+                    'owner_name' => $operator->owner_name,
+                    'owner_id_number' => $operator->owner_id_number,
+                    'operator_id_number' => $operator->operator_id_number,
+                ],
+            ]);
+        }
+
+        // If none of the above, deny access
+        abort(403, 'غير مصرح لك بالوصول إلى بيانات هذا المشغل.');
     }
 }
 

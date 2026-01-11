@@ -192,19 +192,29 @@ class PublicHomeController extends Controller
     public function storeJoinRequest(Request $request)
     {
         $validated = $request->validate([
-            'name_ar' => 'required|string|max:255',
-            'name_en' => 'required|string|max:255',
-            'id_number' => ['required', 'string', 'max:50', 'regex:/^\d+$/'],
-            'phone' => ['required', 'string', 'max:20', 'regex:/^0(59|56)\d{7}$/'],
+            // بيانات المالك
+            'owner_name' => 'required|string|max:255',
+            'owner_name_en' => 'required|string|max:255',
+            'owner_id_number' => ['required', 'string', 'regex:/^\d{9}$/'],
+            // بيانات المشغل
+            'operator_name' => 'required|string|max:255',
+            'operator_name_en' => 'required|string|max:255',
+            'operator_id_number' => ['required', 'string', 'regex:/^\d{9}$/'],
+            // بيانات الاتصال
+            'phone' => ['required', 'string', 'regex:/^0(59|56)\d{7}$/'],
             'email' => 'nullable|email|max:255',
             'data_accuracy' => 'required|accepted',
         ], [
-            'name_ar.required' => 'الاسم بالعربية مطلوب',
-            'name_en.required' => 'الاسم بالإنجليزية مطلوب',
-            'id_number.required' => 'رقم الهوية مطلوب',
-            'id_number.regex' => 'رقم الهوية يجب أن يحتوي على أرقام فقط',
+            'owner_name.required' => 'اسم المالك بالعربية مطلوب',
+            'owner_name_en.required' => 'اسم المالك بالإنجليزية مطلوب',
+            'owner_id_number.required' => 'رقم هوية المالك مطلوب',
+            'owner_id_number.regex' => 'رقم هوية المالك يجب أن يكون 9 أرقام',
+            'operator_name.required' => 'اسم المشغل بالعربية مطلوب',
+            'operator_name_en.required' => 'اسم المشغل بالإنجليزية مطلوب',
+            'operator_id_number.required' => 'رقم هوية المشغل مطلوب',
+            'operator_id_number.regex' => 'رقم هوية المشغل يجب أن يكون 9 أرقام',
             'phone.required' => 'رقم الموبايل مطلوب',
-            'phone.regex' => 'رقم الموبايل غير صحيح. يجب أن يبدأ بـ 059 أو 056',
+            'phone.regex' => 'رقم الموبايل يجب أن يكون 10 أرقام ويبدأ بـ 059 أو 056',
             'email.email' => 'البريد الإلكتروني غير صحيح',
             'data_accuracy.required' => 'يجب الموافقة على الإقرار بصحة البيانات',
             'data_accuracy.accepted' => 'يجب الموافقة على الإقرار بصحة البيانات',
@@ -217,8 +227,9 @@ class PublicHomeController extends Controller
         // تنظيف رقم الجوال للتحقق (phone is numeric only, no UTF-8 issues)
         $cleanPhone = preg_replace('/[^0-9]/', '', $validated['phone']);
 
-        // Clean ID number for validation and username generation
-        $cleanIdNumber = $this->cleanString($validated['id_number']);
+        // Clean ID numbers for validation and username generation
+        $cleanOwnerIdNumber = $this->cleanString($validated['owner_id_number']);
+        $cleanOperatorIdNumber = $this->cleanString($validated['operator_id_number']);
 
         // التحقق من أن الرقم مصرح به في authorized_phones
         if (!\App\Models\AuthorizedPhone::isAuthorized($cleanPhone)) {
@@ -258,13 +269,22 @@ class PublicHomeController extends Controller
                 ->withErrors(['phone' => $errorMessage]);
         }
 
-        // التحقق من عدم وجود رقم هوية مسجل مسبقاً
-        $existingOperatorById = \App\Models\Operator::where('owner_id_number', $cleanIdNumber)->first();
-        if ($existingOperatorById) {
-            $errorMessage = $this->cleanString('رقم الهوية مسجل مسبقاً');
+        // التحقق من عدم وجود رقم هوية المالك مسجل مسبقاً
+        $existingOperatorByOwnerId = \App\Models\Operator::where('owner_id_number', $cleanOwnerIdNumber)->first();
+        if ($existingOperatorByOwnerId) {
+            $errorMessage = $this->cleanString('رقم هوية المالك مسجل مسبقاً');
             return redirect()->back()
                 ->withInput()
-                ->withErrors(['id_number' => $errorMessage]);
+                ->withErrors(['owner_id_number' => $errorMessage]);
+        }
+
+        // التحقق من عدم وجود رقم هوية المشغل مسجل مسبقاً
+        $existingOperatorByOperatorId = \App\Models\Operator::where('operator_id_number', $cleanOperatorIdNumber)->first();
+        if ($existingOperatorByOperatorId) {
+            $errorMessage = $this->cleanString('رقم هوية المشغل مسجل مسبقاً');
+            return redirect()->back()
+                ->withInput()
+                ->withErrors(['operator_id_number' => $errorMessage]);
         }
 
         // Check if email is provided
@@ -282,10 +302,10 @@ class PublicHomeController extends Controller
             }
         }
 
-        // توليد username تلقائياً (op_ + أول حرف من الاسم + اسم العائلة)
-        // Note: $validated['name_en'] is already cleaned by cleanInputArray
-        $nameEn = trim($validated['name_en']);
-        $nameParts = explode(' ', $nameEn);
+        // توليد username تلقائياً (op_ + أول حرف من اسم المشغل + اسم العائلة)
+        // Note: $validated['operator_name_en'] is already cleaned by cleanInputArray
+        $operatorNameEn = trim($validated['operator_name_en']);
+        $nameParts = explode(' ', $operatorNameEn);
         
         if (count($nameParts) >= 2) {
             // أول حرف من الاسم الأول + اسم العائلة الكامل
@@ -296,13 +316,13 @@ class PublicHomeController extends Controller
             $usernameBase = $firstChar . $lastName;
         } else {
             // إذا كان اسم واحد فقط، استخدم أول 8 أحرف
-            $usernameBase = strtolower(preg_replace('/[^a-z0-9]/', '', $nameEn));
+            $usernameBase = strtolower(preg_replace('/[^a-z0-9]/', '', $operatorNameEn));
             $usernameBase = substr($usernameBase, 0, 8);
         }
         
         // التأكد من أن usernameBase ليس فارغاً
         if (empty($usernameBase)) {
-            $usernameBase = 'user' . substr($cleanIdNumber, -4);
+            $usernameBase = 'user' . substr($cleanOwnerIdNumber, -4);
         }
         
         $username = 'op_' . $usernameBase;
@@ -349,14 +369,16 @@ class PublicHomeController extends Controller
             'password_preview' => substr($passwordPlain, 0, 2) . '****',
         ]);
 
-        // Ensure all data is clean before saving (note: $cleanIdNumber is already defined above)
-        $cleanNameAr = $this->cleanString($validated['name_ar']);
-        $cleanNameEn = $this->cleanString($validated['name_en']);
-        $cleanOwnerName = $this->cleanString($validated['name_ar']);
+        // Ensure all data is clean before saving
+        $cleanOwnerName = $this->cleanString($validated['owner_name']);
+        $cleanOwnerNameEn = $this->cleanString($validated['owner_name_en']);
+        $cleanOperatorName = $this->cleanString($validated['operator_name']);
+        $cleanOperatorNameEn = $this->cleanString($validated['operator_name_en']);
 
-        // إنشاء User جديد
+        // إنشاء User جديد (باستخدام اسم المالك)
         $user = \App\Models\User::create([
-            'name' => $cleanNameAr,
+            'name' => $cleanOwnerName,
+            'name_en' => $cleanOwnerNameEn,
             'email' => $email,
             'username' => $username,
             'password' => \Illuminate\Support\Facades\Hash::make($password),
@@ -375,11 +397,12 @@ class PublicHomeController extends Controller
 
         // إنشاء Operator جديد
         $operator = \App\Models\Operator::create([
-            'name' => $cleanNameAr,
-            'name_en' => $cleanNameEn,
+            'name' => $cleanOperatorName,
+            'name_en' => $cleanOperatorNameEn,
             'owner_id' => $user->id,
             'owner_name' => $cleanOwnerName,
-            'owner_id_number' => $cleanIdNumber,
+            'owner_id_number' => $cleanOwnerIdNumber,
+            'operator_id_number' => $cleanOperatorIdNumber,
             'phone' => $cleanPhone, // استخدام الرقم المنظف
             'email' => $validated['email'] ? $this->cleanString($validated['email']) : null,
             'status' => 'active', // مفعل - يمكنه تسجيل الدخول وإضافة وحدات ومولدات
@@ -427,6 +450,17 @@ class PublicHomeController extends Controller
                     'actual_count' => $messageCount,
                     'expected_count' => 3,
                 ]);
+                
+                // Try to create missing messages again
+                try {
+                    $this->createWelcomeMessages($user, $operator, $username);
+                } catch (\Exception $retryException) {
+                    \Log::error('Failed to retry creating welcome messages', [
+                        'user_id' => $user->id,
+                        'operator_id' => $operator->id,
+                        'error' => $retryException->getMessage(),
+                    ]);
+                }
             }
         } catch (\Exception $e) {
             \Log::error('Failed to create welcome messages', [
@@ -577,7 +611,7 @@ class PublicHomeController extends Controller
         }
 
         $loginUrl = route('login');
-        $changePasswordUrl = route('admin.profile') . '#change-password';
+        $changePasswordUrl = route('admin.profile.show') . '#change-password';
 
         \Log::info('Creating welcome messages for new operator', [
             'user_id' => $user->id,
@@ -588,46 +622,100 @@ class PublicHomeController extends Controller
         ]);
 
         try {
+            // Check if messages already exist to prevent duplicates
+            $existingCount = \App\Models\Message::where('receiver_id', $user->id)
+                ->where('operator_id', $operator->id)
+                ->where('type', 'admin_to_operator')
+                ->where('sender_id', $systemUser->id)
+                ->count();
+
+            if ($existingCount >= 3) {
+                \Log::info('Welcome messages already exist for this operator', [
+                    'user_id' => $user->id,
+                    'operator_id' => $operator->id,
+                    'existing_count' => $existingCount,
+                ]);
+                return;
+            }
+
             // Message 1: Request to change password
-            $message1 = \App\Models\Message::create([
-                'sender_id' => $systemUser->id,
-                'receiver_id' => $user->id,
-                'operator_id' => $operator->id,
-                'subject' => 'يرجى تغيير كلمة المرور',
-                'body' => "عزيزي/عزيزتي {$user->name}،\n\nنرحب بك في منصة راصد لإدارة وحدات التوليد.\n\nلأسباب أمنية، نرجو منك تغيير كلمة المرور الافتراضية بعد تسجيل الدخول لأول مرة.\n\nاسم المستخدم: {$username}\n\nيمكنك تغيير كلمة المرور من صفحة الملف الشخصي بعد تسجيل الدخول.\n\nرابط تسجيل الدخول: {$loginUrl}",
-                'type' => 'admin_to_operator',
-                'is_read' => false,
-            ]);
-            \Log::info('Welcome message 1 created', ['message_id' => $message1->id]);
+            $existingMessage1 = \App\Models\Message::where('receiver_id', $user->id)
+                ->where('operator_id', $operator->id)
+                ->where('sender_id', $systemUser->id)
+                ->where('subject', 'يرجى تغيير كلمة المرور')
+                ->first();
+            
+            if (!$existingMessage1) {
+                $message1 = \App\Models\Message::create([
+                    'sender_id' => $systemUser->id,
+                    'receiver_id' => $user->id,
+                    'operator_id' => $operator->id,
+                    'subject' => 'يرجى تغيير كلمة المرور',
+                    'body' => "عزيزي/عزيزتي {$user->name}،\n\nنرحب بك في منصة راصد لإدارة وحدات التوليد.\n\nلأسباب أمنية، نرجو منك تغيير كلمة المرور الافتراضية بعد تسجيل الدخول لأول مرة.\n\nاسم المستخدم: {$username}\n\nيمكنك تغيير كلمة المرور من صفحة الملف الشخصي بعد تسجيل الدخول.\n\nرابط تسجيل الدخول: {$loginUrl}",
+                    'type' => 'admin_to_operator',
+                    'is_read' => false,
+                ]);
+                \Log::info('Welcome message 1 created', ['message_id' => $message1->id]);
+            } else {
+                \Log::info('Welcome message 1 already exists', ['message_id' => $existingMessage1->id]);
+            }
 
             // Message 2: Welcome
-            $message2 = \App\Models\Message::create([
-                'sender_id' => $systemUser->id,
-                'receiver_id' => $user->id,
-                'operator_id' => $operator->id,
-                'subject' => 'مرحباً بك في منصة راصد',
-                'body' => "عزيزي/عزيزتي {$user->name}،\n\nنرحب بك في منصة راصد لإدارة وحدات التوليد.\n\nنتمنى أن تجد في النظام كل ما تحتاجه لإدارة عملك بكفاءة وفعالية.\n\nيمكنك الآن:\n- إضافة وحدات التوليد والمولدات\n- متابعة سجلات التشغيل والوقود\n- إدارة أعمال الصيانة\n\nملاحظة: حسابك حالياً في حالة انتظار الاعتماد من سلطة الطاقة. بعد الاعتماد، ستحصل على صلاحيات كاملة للوصول لجميع خصائص النظام.\n\nنتمنى لك تجربة ممتعة!",
-                'type' => 'admin_to_operator',
-                'is_read' => false,
-            ]);
-            \Log::info('Welcome message 2 created', ['message_id' => $message2->id]);
+            $existingMessage2 = \App\Models\Message::where('receiver_id', $user->id)
+                ->where('operator_id', $operator->id)
+                ->where('sender_id', $systemUser->id)
+                ->where('subject', 'مرحباً بك في منصة راصد')
+                ->first();
+            
+            if (!$existingMessage2) {
+                $message2 = \App\Models\Message::create([
+                    'sender_id' => $systemUser->id,
+                    'receiver_id' => $user->id,
+                    'operator_id' => $operator->id,
+                    'subject' => 'مرحباً بك في منصة راصد',
+                    'body' => "عزيزي/عزيزتي {$user->name}،\n\nنرحب بك في منصة راصد لإدارة وحدات التوليد.\n\nنتمنى أن تجد في النظام كل ما تحتاجه لإدارة عملك بكفاءة وفعالية.\n\nيمكنك الآن:\n- إضافة وحدات التوليد والمولدات\n- متابعة سجلات التشغيل والوقود\n- إدارة أعمال الصيانة\n\nملاحظة: حسابك حالياً في حالة انتظار الاعتماد من سلطة الطاقة. بعد الاعتماد، ستحصل على صلاحيات كاملة للوصول لجميع خصائص النظام.\n\nنتمنى لك تجربة ممتعة!",
+                    'type' => 'admin_to_operator',
+                    'is_read' => false,
+                ]);
+                \Log::info('Welcome message 2 created', ['message_id' => $message2->id]);
+            } else {
+                \Log::info('Welcome message 2 already exists', ['message_id' => $existingMessage2->id]);
+            }
 
             // Message 3: Additional welcome
-            $message3 = \App\Models\Message::create([
-                'sender_id' => $systemUser->id,
-                'receiver_id' => $user->id,
-                'operator_id' => $operator->id,
-                'subject' => 'معلومات مهمة عن النظام',
-                'body' => "عزيزي/عزيزتي {$user->name}،\n\nنود إعلامك بأن:\n\n1. يمكنك الآن إضافة وحدات التوليد والمولدات حتى قبل اعتماد حسابك\n2. يمكنك تغيير كلمة المرور في أي وقت من صفحة الملف الشخصي\n3. بعد اعتماد حسابك من قبل سلطة الطاقة، ستحصل على صلاحيات كاملة للوصول لجميع خصائص النظام (الصلاحيات، الشجرة، السجلات الكاملة)\n4. يمكنك التواصل معنا في أي وقت من خلال نظام الرسائل\n\nرابط تسجيل الدخول: {$loginUrl}\n\nنتمنى لك تجربة ناجحة!",
-                'type' => 'admin_to_operator',
-                'is_read' => false,
-            ]);
-            \Log::info('Welcome message 3 created', ['message_id' => $message3->id]);
+            $existingMessage3 = \App\Models\Message::where('receiver_id', $user->id)
+                ->where('operator_id', $operator->id)
+                ->where('sender_id', $systemUser->id)
+                ->where('subject', 'معلومات مهمة عن النظام')
+                ->first();
+            
+            if (!$existingMessage3) {
+                $message3 = \App\Models\Message::create([
+                    'sender_id' => $systemUser->id,
+                    'receiver_id' => $user->id,
+                    'operator_id' => $operator->id,
+                    'subject' => 'معلومات مهمة عن النظام',
+                    'body' => "عزيزي/عزيزتي {$user->name}،\n\nنود إعلامك بأن:\n\n1. يمكنك الآن إضافة وحدات التوليد والمولدات حتى قبل اعتماد حسابك\n2. يمكنك تغيير كلمة المرور في أي وقت من صفحة الملف الشخصي\n3. بعد اعتماد حسابك من قبل سلطة الطاقة، ستحصل على صلاحيات كاملة للوصول لجميع خصائص النظام (الصلاحيات، الشجرة، السجلات الكاملة)\n4. يمكنك التواصل معنا في أي وقت من خلال نظام الرسائل\n\nرابط تسجيل الدخول: {$loginUrl}\n\nنتمنى لك تجربة ناجحة!",
+                    'type' => 'admin_to_operator',
+                    'is_read' => false,
+                ]);
+                \Log::info('Welcome message 3 created', ['message_id' => $message3->id]);
+            } else {
+                \Log::info('Welcome message 3 already exists', ['message_id' => $existingMessage3->id]);
+            }
 
-            \Log::info('All welcome messages created successfully', [
+            // Final count
+            $finalCount = \App\Models\Message::where('receiver_id', $user->id)
+                ->where('operator_id', $operator->id)
+                ->where('type', 'admin_to_operator')
+                ->where('sender_id', $systemUser->id)
+                ->count();
+
+            \Log::info('Welcome messages creation completed', [
                 'user_id' => $user->id,
                 'operator_id' => $operator->id,
-                'messages_count' => 3,
+                'messages_count' => $finalCount,
+                'expected_count' => 3,
             ]);
         } catch (\Exception $e) {
             \Log::error('Failed to create welcome messages', [

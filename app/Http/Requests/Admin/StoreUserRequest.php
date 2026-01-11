@@ -34,10 +34,13 @@ class StoreUserRequest extends FormRequest
         if ($actor && $actor->isCompanyOwner()) {
             // ✅ المشغّل فقط موظف/فني
             $allowedRoles = [Role::Employee->value, Role::Technician->value];
+        } elseif ($actor && $actor->isAdmin()) {
+            // ✅ Admin يمكنه إضافة جميع الأدوار EXCEPT SuperAdmin
+            $allowedRoles = array_filter($allowedRoles, fn($role) => $role !== Role::SuperAdmin->value);
         } elseif ($actor && $actor->isEnergyAuthority()) {
-            // ✅ EnergyAuthority (سلطة الطاقة) يمكنه إضافة: admin, energy_authority, company_owner, employee, technician
+            // ✅ EnergyAuthority (سلطة الطاقة) يمكنه إضافة: energy_authority, company_owner, employee, technician
+            // ✅ EnergyAuthority لا يمكنه إضافة: SuperAdmin, Admin
             $allowedRoles = [
-                Role::Admin->value,
                 Role::EnergyAuthority->value,
                 Role::CompanyOwner->value,
                 Role::Employee->value,
@@ -46,23 +49,23 @@ class StoreUserRequest extends FormRequest
         }
 
         $role = (string) $this->input('role');
-        $needOperator = ($actor && ($actor->isSuperAdmin() || $actor->isEnergyAuthority()))
+        $needOperator = ($actor && ($actor->isSuperAdmin() || $actor->isAdmin() || $actor->isEnergyAuthority()))
             && in_array($role, [Role::Employee->value, Role::Technician->value], true);
         
         // إذا كان المشغل يضيف موظف، username و password اختياريين (سيتم توليدهما تلقائياً)
         $isCompanyOwnerAddingEmployee = $actor && $actor->isCompanyOwner() 
             && in_array($role, [Role::Employee->value, Role::Technician->value], true);
         
-        // إذا كان SuperAdmin أو EnergyAuthority يضيف مستخدم، username و password اختياريين (سيتم توليدهما تلقائياً)
-        $isSuperAdminOrEnergyAuthorityAddingUser = $actor && ($actor->isSuperAdmin() || $actor->isEnergyAuthority())
+        // إذا كان SuperAdmin أو Admin أو EnergyAuthority يضيف مستخدم، username و password اختياريين (سيتم توليدهما تلقائياً)
+        $isSuperAdminOrAdminOrEnergyAuthorityAddingUser = $actor && ($actor->isSuperAdmin() || $actor->isAdmin() || $actor->isEnergyAuthority())
             && in_array($role, [Role::SuperAdmin->value, Role::Admin->value, Role::EnergyAuthority->value, Role::CompanyOwner->value], true);
         
         // تحديد ما إذا كانت name_en و phone مطلوبة (لأدوار رئيسية)
-        $needNameEnAndPhone = $actor && ($actor->isSuperAdmin() || $actor->isEnergyAuthority())
+        $needNameEnAndPhone = $actor && ($actor->isSuperAdmin() || $actor->isAdmin() || $actor->isEnergyAuthority())
             && in_array($role, [Role::SuperAdmin->value, Role::Admin->value, Role::EnergyAuthority->value, Role::CompanyOwner->value], true);
         
         // تحديد ما إذا كان operator_id مطلوب (لـ Employee/Technician أو CompanyOwner)
-        $needOperatorForCompanyOwner = $actor && ($actor->isSuperAdmin() || $actor->isEnergyAuthority())
+        $needOperatorForCompanyOwner = $actor && ($actor->isSuperAdmin() || $actor->isAdmin() || $actor->isEnergyAuthority())
             && $role === Role::CompanyOwner->value;
 
         return [
@@ -81,7 +84,7 @@ class StoreUserRequest extends FormRequest
             ),
 
             'username' => array_merge(
-                ($isCompanyOwnerAddingEmployee || $isSuperAdminOrEnergyAuthorityAddingUser) ? ['nullable'] : ['required'],
+                ($isCompanyOwnerAddingEmployee || $isSuperAdminOrAdminOrEnergyAuthorityAddingUser) ? ['nullable'] : ['required'],
                 [
                     'string',
                     'max:50',
@@ -108,7 +111,7 @@ class StoreUserRequest extends FormRequest
             ])),
 
             'password' => array_merge(
-                ($isCompanyOwnerAddingEmployee || $isSuperAdminOrEnergyAuthorityAddingUser) ? ['nullable'] : ['required'],
+                ($isCompanyOwnerAddingEmployee || $isSuperAdminOrAdminOrEnergyAuthorityAddingUser) ? ['nullable'] : ['required'],
                 ['string', 'min:8', 'confirmed']
             ),
         ];

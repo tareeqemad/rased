@@ -1,104 +1,111 @@
-# راصد (Rased) - نظام إدارة سوق الطاقة
+# Rased - Energy Market Management System
 
-منصة رقمية شاملة لإدارة المولدات الكهربائية والمشغلين في فلسطين. يوفر النظام إدارة كاملة لبيانات المشغلين، المولدات، السجلات التشغيلية، الصيانة، الامتثال البيئي، والشكاوى والمقترحات.
-
----
-
-## 📋 جدول المحتويات
-
-- [المميزات](#-المميزات)
-- [المتطلبات](#-المتطلبات)
-- [التثبيت والإعداد](#-التثبيت-والإعداد)
-- [بنية المشروع](#-بنية-المشروع)
-- [الأدوار والصلاحيات](#-الأدوار-والصلاحيات)
-- [قاعدة البيانات](#-قاعدة-البيانات)
-- [التطوير](#-التطوير)
-- [المساهمة](#-المساهمة)
+A comprehensive digital platform for managing electrical generators and operators in Palestine. The system provides complete management of operator data, generators, operational logs, maintenance, environmental compliance, and complaints/suggestions.
 
 ---
 
-## ✨ المميزات
+## 📋 Table of Contents
 
-### 1. إدارة المستخدمين والصلاحيات
-- نظام أدوار متقدم (SuperAdmin, Admin, CompanyOwner, Employee, Technician)
-- إدارة صلاحيات ديناميكية مع شجرة صلاحيات تفاعلية
-- تتبع تغييرات الصلاحيات (Permission Audit Logs)
-- صلاحيات مباشرة ومرتكزة على الأدوار وإمكانية إلغاء صلاحيات
-
-### 2. إدارة المشغلين (Operators)
-- ملف شامل لكل مشغل (الموقع، القدرة، بيانات المالك، إلخ)
-- ربط المشغلين بأصحاب الشركات (CompanyOwners)
-- إدارة الموظفين والفنيين لكل مشغل
-- نظام تتبع إكمال الملف الشخصي
-
-### 3. إدارة المولدات (Generators)
-- بيانات فنية كاملة (القدرة، الجهد، التردد، نوع المحرك)
-- معلومات التشغيل والوقود
-- الحالة الفنية والتوثيق (صور لوحات البيانات)
-- نظام التحكم (لوحة التحكم، الحالة، الصور)
-- إدارة خزانات الوقود الخارجية
-
-### 4. السجلات والتقارير
-- سجلات التشغيل (Operation Logs)
-- كفاءة الوقود (Fuel Efficiency)
-- سجلات الصيانة (Maintenance Records)
-- الامتثال البيئي والسلامة (Compliance & Safety)
-
-### 5. نظام الشكاوى والمقترحات
-- واجهة عامة لإرسال الشكاوى والمقترحات
-- نظام تتبع برمز فريد
-- ربط الشكاوى بالمولدات والمشغلين
-
-### 6. نظام الثوابت الديناميكي
-- إدارة ثوابت النظام من قاعدة البيانات
-- دعم المحافظات، أنواع المحركات، حالات المولدات، إلخ
-- سهولة إضافة وتعديل الثوابت
+- [Features](#-features)
+- [Requirements](#-requirements)
+- [Installation & Setup](#-installation--setup)
+- [Project Structure](#-project-structure)
+- [Roles & Permissions](#-roles--permissions)
+- [Database](#-database)
+- [Development](#-development)
 
 ---
 
-## 📦 المتطلبات
+## ✨ Features
+
+### 1. User Management & Permissions
+- Advanced role-based system (SuperAdmin, Admin, Energy Authority, CompanyOwner, Employee, Technician)
+- **Dynamic custom roles** - Create custom roles with specific permissions
+- Dynamic permission management with interactive permission tree
+- Permission audit logs to track permission changes
+- Direct permissions, role-based permissions, and permission revocation capability
+- **Dynamic role filtering** - Filter users by system roles or custom roles
+
+### 2. Operator Management
+- Comprehensive operator profile (location, capacity, owner data, etc.)
+- Link operators to company owners (CompanyOwners)
+- Manage employees and technicians for each operator
+- Operator profile completion tracking system
+
+### 3. Generator Management
+- Complete technical data (capacity, voltage, frequency, engine type)
+- Operating and fuel information
+- Technical status and documentation (data plate images)
+- Control system (control panel, status, images)
+- External fuel tank management
+
+### 4. Records & Reports
+- Operation logs
+- Fuel efficiency tracking
+- Maintenance records
+- Environmental compliance & safety
+
+### 5. Complaints & Suggestions System
+- Public interface for submitting complaints and suggestions
+- Unique tracking code system
+- Link complaints to generators and operators
+
+### 6. Dynamic Constants System
+- Manage system constants from database
+- Support for governorates, engine types, generator statuses, etc.
+- Easy addition and modification of constants
+
+### 7. Recent Improvements
+- **Dynamic Role System**: Support for both system roles (4 roles) and custom roles created by users
+- **Role Filter Enhancement**: Users filter now supports filtering by custom roles dynamically
+- **Role Show Page Redesign**: Redesigned role details page using general-card component
+- **Collapsible Permission Cards**: Added toggle functionality to permission group cards
+
+---
+
+## 📦 Requirements
 
 - **PHP**: ^8.2
 - **Laravel**: ^12.0
-- **MySQL/MariaDB**: 10.3 أو أحدث
-- **Node.js**: 18.x أو أحدث
+- **MySQL/MariaDB**: 10.3 or later
+- **Node.js**: 18.x or later
 - **Composer**: 2.x
-- **npm** أو **yarn**
+- **npm** or **yarn**
 
 ---
 
-## 🚀 التثبيت والإعداد
+## 🚀 Installation & Setup
 
-### 1. استنساخ المشروع
+### 1. Clone the Project
 
 ```bash
 git clone <repository-url>
 cd rased
 ```
 
-### 2. تثبيت المتطلبات
+### 2. Install Dependencies
 
 ```bash
-# تثبيت dependencies للـ PHP
+# Install PHP dependencies
 composer install
 
-# تثبيت dependencies للـ JavaScript
+# Install JavaScript dependencies
 npm install
 ```
 
-### 3. إعداد البيئة
+### 3. Environment Setup
 
 ```bash
-# نسخ ملف البيئة
+# Copy environment file
 cp .env.example .env
 
-# توليد مفتاح التطبيق
+# Generate application key
 php artisan key:generate
 ```
 
-### 4. إعداد قاعدة البيانات
+### 4. Database Setup
 
-قم بتعديل ملف `.env` وأضف بيانات قاعدة البيانات:
+Update `.env` file with database credentials:
 
 ```env
 DB_CONNECTION=mysql
@@ -109,159 +116,177 @@ DB_USERNAME=root
 DB_PASSWORD=
 ```
 
-ثم قم بتشغيل migrations:
+Then run migrations:
 
 ```bash
 php artisan migrate
 ```
 
-### 5. ملء قاعدة البيانات بالبيانات الأولية
+### 5. Seed Database
 
 ```bash
-# تشغيل seeders
+# Run seeders
 php artisan db:seed --class=ConstantSeeder
 php artisan db:seed --class=RoleSeeder
 php artisan db:seed --class=PermissionSeeder
 
-# (اختياري) ملء بيانات تجريبية
+# (Optional) Seed test data
 php artisan db:seed --class=OperatorsWithDataSeeder
 ```
 
-### 6. إنشاء رابط التخزين
+### 6. Create Storage Link
 
 ```bash
 php artisan storage:link
 ```
 
-### 7. تشغيل المشروع
+### 7. Run the Application
 
-#### للبيئة المحلية (Development):
+#### Development Environment:
 
 ```bash
-# تشغيل السيرفر و Vite معاً
+# Run server and Vite together
 npm run dev
 
-# أو بشكل منفصل:
-php artisan serve        # السيرفر على http://127.0.0.1:8000
-npm run dev              # Vite لـ assets
+# Or separately:
+php artisan serve        # Server at http://127.0.0.1:8000
+npm run dev              # Vite for assets
 ```
 
-#### للبيئة الإنتاجية (Production):
+#### Production Environment:
 
 ```bash
-# بناء assets
+# Build assets
 npm run build
 
-# تشغيل السيرفر
+# Run server
 php artisan serve
 ```
 
 ---
 
-## 📁 بنية المشروع
+## 📁 Project Structure
 
 ```
 rased/
 ├── app/
-│   ├── Governorate.php              # Enum للمحافظات
-│   ├── Role.php                     # Enum للأدوار
+│   ├── Governorate.php              # Enum for governorates
+│   ├── Role.php                     # Enum for roles
 │   ├── Helpers/
-│   │   ├── ConstantsHelper.php      # Helper للثوابت
-│   │   └── GeneralHelper.php        # Helper عام (المشغلين حسب المحافظة)
+│   │   ├── ConstantsHelper.php      # Constants helper
+│   │   └── GeneralHelper.php        # General helper (operators by governorate)
 │   ├── Http/
 │   │   ├── Controllers/
-│   │   │   ├── Admin/              # Controllers لوحة التحكم
+│   │   │   ├── Admin/              # Admin panel controllers
 │   │   │   └── ComplaintSuggestionController.php
 │   │   ├── Middleware/
-│   │   │   └── AdminMiddleware.php  # Middleware للتحقق من صلاحيات Admin
-│   │   └── Requests/               # Form Requests للتحقق من البيانات
+│   │   │   └── AdminMiddleware.php  # Admin permission middleware
+│   │   └── Requests/               # Form validation requests
 │   ├── Mail/
 │   │   └── OperatorCredentialsMail.php
-│   ├── Models/                      # Eloquent Models
-│   └── Policies/                    # Authorization Policies
+│   ├── Models/                      # Eloquent models
+│   └── Policies/                    # Authorization policies
 ├── database/
-│   ├── migrations/                  # Database Migrations
-│   └── seeders/                     # Database Seeders
+│   ├── migrations/                  # Database migrations
+│   └── seeders/                     # Database seeders
 ├── public/
 │   └── assets/
-│       └── admin/                   # Assets خاصة بلوحة التحكم
+│       └── admin/                   # Admin panel assets
 │           ├── css/
 │           ├── js/
-│           │   ├── general-helpers.js  # Helper functions JavaScript
-│           │   ├── permissions.js      # منطق صفحة الصلاحيات
-│           │   └── generators.js       # منطق صفحة المولدات
+│           │   ├── general-helpers.js  # JavaScript helper functions
+│           │   ├── permissions.js      # Permissions page logic
+│           │   └── generators.js       # Generators page logic
 │           └── images/
 ├── resources/
 │   ├── views/
-│   │   ├── admin/                  # Views لوحة التحكم
-│   │   ├── auth/                   # Views المصادقة
-│   │   └── complaints-suggestions/ # Views الشكاوى والمقترحات
+│   │   ├── admin/                  # Admin panel views
+│   │   ├── auth/                   # Authentication views
+│   │   └── complaints-suggestions/ # Complaints & suggestions views
 │   ├── css/
 │   └── js/
 └── routes/
-    ├── admin.php                   # Routes لوحة التحكم
-    └── web.php                     # Routes العامة
+    ├── admin.php                   # Admin panel routes
+    └── web.php                     # Public routes
 ```
 
 ---
 
-## 👥 الأدوار والصلاحيات
+## 👥 Roles & Permissions
 
-### الأدوار المتاحة:
+### Available Roles:
 
-1. **SuperAdmin** (مدير النظام)
-   - وصول كامل لجميع الوظائف
-   - إدارة المستخدمين والأدوار
-   - إدارة الثوابت
+1. **SuperAdmin** (System Administrator)
+   - Full access to all functions
+   - User and role management
+   - Constants management
 
-2. **Admin** (مدير)
-   - إدارة المشغلين والمولدات
-   - عرض التقارير
+2. **Admin** (Administrator)
+   - Operator and generator management
+   - View reports
+   - Can create general custom roles
 
-3. **CompanyOwner** (صاحب شركة)
-   - إدارة مشغله الخاص
-   - إدارة موظفيه وفنييه
-   - إدارة مولداته
-   - إدارة صلاحيات موظفيه
+3. **Energy Authority** (سلطة الطاقة)
+   - Can create general and operator-specific custom roles
+   - User management under their authority
+   - Operator approval and management
 
-4. **Employee** (موظف)
-   - عرض البيانات حسب الصلاحيات الممنوحة
-   - إدخال سجلات التشغيل
+4. **CompanyOwner** (Company Owner)
+   - Manage their own operator
+   - Manage employees and technicians
+   - Manage generators
+   - Manage employee permissions
+   - Can create custom roles for their operator
 
-5. **Technician** (فني)
-   - عرض وإدخال بيانات المولدات
-   - إدارة سجلات الصيانة
+5. **Employee** (Employee)
+   - View data according to granted permissions
+   - Enter operation logs
 
-### نظام الصلاحيات:
+6. **Technician** (Technician)
+   - View and enter generator data
+   - Manage maintenance records
 
-- **صلاحيات مباشرة**: يتم منحها مباشرة للمستخدم
-- **صلاحيات دور**: يتم منحها عبر الدور
-- **صلاحيات ملغاة**: يمكن إلغاء صلاحية معينة حتى لو كانت في الدور
+### Permission System:
+
+- **Direct Permissions**: Granted directly to users
+- **Role Permissions**: Granted through roles (system roles or custom roles)
+- **Revoked Permissions**: Ability to revoke specific permissions even if granted through role
+
+### Role System:
+
+- **System Roles**: 4 predefined system roles (SuperAdmin, Admin, Energy Authority, CompanyOwner) stored in database
+- **Custom Roles**: Dynamic roles created by Energy Authority or Company Owner with custom permissions
+- **Role Filtering**: Filter users by system roles or custom roles dynamically
 
 ---
 
-## 🗄️ قاعدة البيانات
+## 🗄️ Database
 
-### الجداول الرئيسية:
+### Main Tables:
 
-- `users`: المستخدمون
-- `operators`: المشغلون
-- `generators`: المولدات
-- `fuel_tanks`: خزانات الوقود
-- `operation_logs`: سجلات التشغيل
-- `fuel_efficiencies`: كفاءة الوقود
-- `maintenance_records`: سجلات الصيانة
-- `compliance_safeties`: الامتثال البيئي والسلامة
-- `permissions`: الصلاحيات
-- `roles`: الأدوار
-- `constant_masters`: الثوابت الرئيسية
-- `constant_details`: تفاصيل الثوابت
-- `complaints_suggestions`: الشكاوى والمقترحات
+- `users`: Users
+- `operators`: Operators
+- `generators`: Generators
+- `fuel_tanks`: Fuel tanks
+- `operation_logs`: Operation logs
+- `fuel_efficiencies`: Fuel efficiency
+- `maintenance_records`: Maintenance records
+- `compliance_safeties`: Environmental compliance & safety
+- `permissions`: Permissions
+- `roles`: Roles (system and custom)
+- `role_permission`: Role-permission pivot table
+- `user_permission`: Direct user permissions
+- `user_permission_revoked`: Revoked user permissions
+- `constant_masters`: Constant masters
+- `constant_details`: Constant details
+- `complaints_suggestions`: Complaints and suggestions
 
-### العلاقات:
+### Relationships:
 
 - `User` → `Operator` (owner: belongsTo)
 - `User` ↔ `Operator` (many-to-many: employees/technicians)
+- `User` → `Role` (role_id: belongsTo for custom roles)
+- `Role` → `Permission` (many-to-many: role_permission)
 - `Operator` → `Generator` (hasMany)
 - `Generator` → `FuelTank` (hasMany)
 - `Generator` → `OperationLog` (hasMany)
@@ -269,170 +294,152 @@ rased/
 
 ---
 
-## 💻 التطوير
+## 💻 Development
+
+### Recent Improvements:
+
+#### 1. Dynamic Role System
+- Added support for custom roles alongside system roles
+- System roles are stored in database (4 roles: SuperAdmin, Admin, Energy Authority, CompanyOwner)
+- Custom roles can be created by Energy Authority or Company Owner
+- Custom roles can be general (operator_id = null) or operator-specific (operator_id = specific operator)
+
+#### 2. Enhanced User Filtering
+- Updated user filtering to support both system roles (enum) and custom roles (from roles table)
+- Role filter dynamically loads available roles based on user permissions
+- Filter displays system roles first, then custom roles
+
+#### 3. Role Show Page Redesign
+- Redesigned role details page using `general-card` component
+- Added statistics cards for users count, permissions count, permission groups count, and order
+- Separated basic information and permissions into distinct cards
+- Added collapsible permission group cards with toggle functionality
 
 ### Helper Functions
 
 #### PHP Helpers
 
-**ConstantsHelper** - إدارة الثوابت:
+**ConstantsHelper** - Constants management:
 ```php
 use App\Helpers\ConstantsHelper;
 
-// الحصول على ثابت بالاسم
+// Get constant by name
 $governorates = ConstantsHelper::getByName('المحافظة');
 
-// الحصول على ثابت بالرقم
-$statuses = ConstantsHelper::get(3); // حالة المولد
+// Get constant by number
+$statuses = ConstantsHelper::get(3); // Generator status
 ```
 
-**GeneralHelper** - وظائف عامة:
+**GeneralHelper** - General functions:
 ```php
 use App\Helpers\GeneralHelper;
 
-// الحصول على المشغلين حسب المحافظة
-$operators = GeneralHelper::getOperatorsByGovernorate(10); // محافظة غزة
+// Get operators by governorate
+$operators = GeneralHelper::getOperatorsByGovernorate(10); // Gaza governorate
 ```
 
 #### JavaScript Helpers
 
-**GeneralHelpers** - متاح في جميع صفحات الـ admin:
+**GeneralHelpers** - Available in all admin pages:
 ```javascript
-// جلب المشغلين حسب المحافظة
+// Get operators by governorate
 GeneralHelpers.getOperatorsByGovernorate(10)
     .then(operators => console.log(operators));
 
-// ملء select بالمشغلين
+// Fill select with operators
 GeneralHelpers.fillOperatorsSelect(10, '#operator-select');
 
-// مع jQuery
+// With jQuery
 $('#operator-select').fillOperatorsByGovernorate(10);
 ```
-
-### إضافة ثابت جديد
-
-1. أضف البيانات في `database/seeders/ConstantSeeder.php`:
-```php
-$newConstant = ConstantMaster::create([
-    'constant_number' => 20,
-    'constant_name' => 'اسم الثابت',
-    'description' => 'وصف الثابت',
-    'is_active' => true,
-    'order' => 20,
-]);
-
-$details = [
-    ['label' => 'الخيار 1', 'code' => 'OPTION1', 'value' => 'value1', 'order' => 1],
-    // ...
-];
-
-foreach ($details as $detail) {
-    ConstantDetail::create([
-        'constant_master_id' => $newConstant->id,
-        // ...
-    ]);
-}
-```
-
-2. شغّل الـ seeder:
-```bash
-php artisan db:seed --class=ConstantSeeder
-```
-
-### إضافة صفحة جديدة
-
-1. أنشئ Controller في `app/Http/Controllers/Admin/`
-2. أنشئ Policy في `app/Policies/` إذا لزم الأمر
-3. أضف routes في `routes/admin.php`
-4. أنشئ views في `resources/views/admin/`
-5. أضف CSS/JS إذا لزم الأمر
 
 ### Testing
 
 ```bash
-# تشغيل جميع الاختبارات
+# Run all tests
 php artisan test
 
-# تشغيل اختبار محدد
+# Run specific test
 php artisan test --filter TestName
 ```
 
 ---
 
-## 📝 الملاحظات المهمة للمطورين
+## 📝 Important Notes for Developers
 
-### 1. نظام الصلاحيات
+### 1. Permission System
 
-- **دائماً استخدم Policies** للتحقق من الصلاحيات في Controllers
-- استخدم `@can` directive في Blade templates
-- تأكد من أن CompanyOwner يمكنه فقط الوصول لموظفيه ومولداته
+- **Always use Policies** for permission checks in Controllers
+- Use `@can` directive in Blade templates
+- Ensure CompanyOwner can only access their own employees and generators
+- Support both system roles (enum) and custom roles (role_id)
 
 ### 2. RTL (Right-to-Left)
 
-- المشروع يستخدم RTL layout
-- تأكد من استخدام Bootstrap RTL
-- في CSS، استخدم `direction: rtl`
+- Project uses RTL layout
+- Ensure Bootstrap RTL is used
+- In CSS, use `direction: rtl`
 
-### 3. الثوابت
+### 3. Constants
 
-- **لا تكتب قيم hardcoded** في الـ code
-- استخدم `ConstantsHelper` دائماً لجلب القيم
-- أضف الثوابت الجديدة في الـ seeder
+- **Do not hardcode values** in code
+- Always use `ConstantsHelper` to get values
+- Add new constants in the seeder
 
 ### 4. AJAX Requests
 
-- استخدم jQuery AJAX أو Fetch API
-- استخدم `showToast` لعرض الرسائل (من `toast.blade.php`)
-- تأكد من إرجاع JSON responses في AJAX endpoints
+- Use jQuery AJAX or Fetch API
+- Use `showToast` to display messages (from `toast.blade.php`)
+- Ensure JSON responses are returned in AJAX endpoints
 
 ### 5. Form Validation
 
-- استخدم Form Requests (`app/Http/Requests/`)
-- أضف رسائل خطأ عربية واضحة
-- استخدم `old()` في views للاحتفاظ بالقيم عند الأخطاء
+- Use Form Requests (`app/Http/Requests/`)
+- Add clear Arabic error messages
+- Use `old()` in views to retain values on errors
 
-### 6. العلاقات
+### 6. Relationships
 
-- استخدم Eager Loading لتجنب N+1 queries
-- مثال: `Generator::with('operator', 'fuelTanks')->get()`
+- Use Eager Loading to avoid N+1 queries
+- Example: `Generator::with('operator', 'fuelTanks')->get()`
 
-### 7. الصور والملفات
+### 7. Images & Files
 
-- الصور تُحفظ في `storage/app/public/`
-- استخدم `php artisan storage:link` لإنشاء رابط رمزي
-- استخدم `asset('storage/...')` في views
+- Images are saved in `storage/app/public/`
+- Use `php artisan storage:link` to create symbolic link
+- Use `asset('storage/...')` in views
 
 ---
 
 ## 🔧 Troubleshooting
 
-### مشكلة في الصلاحيات
+### Permission Issues
 
 ```bash
-# مسح cache الصلاحيات
+# Clear permission cache
 php artisan cache:clear
 php artisan config:clear
 ```
 
-### مشكلة في الثوابت
+### Constants Issues
 
 ```bash
-# مسح cache الثوابت
+# Clear constants cache
 php artisan tinker
 >>> App\Helpers\ConstantsHelper::clearCache();
 ```
 
-### مشكلة في Assets
+### Assets Issues
 
 ```bash
-# إعادة بناء assets
+# Rebuild assets
 npm run build
 php artisan optimize:clear
 ```
 
 ---
 
-## 📚 الموارد المفيدة
+## 📚 Useful Resources
 
 - [Laravel Documentation](https://laravel.com/docs)
 - [Laravel 12 Release Notes](https://laravel.com/docs/releases)
@@ -440,26 +447,26 @@ php artisan optimize:clear
 
 ---
 
-## 🤝 المساهمة
+## 🤝 Contributing
 
-1. Fork المشروع
-2. أنشئ branch جديد (`git checkout -b feature/AmazingFeature`)
-3. Commit التغييرات (`git commit -m 'Add some AmazingFeature'`)
-4. Push إلى Branch (`git push origin feature/AmazingFeature`)
-5. افتح Pull Request
-
----
-
-## 📄 الترخيص
-
-هذا المشروع مرخص تحت MIT License.
+1. Fork the project
+2. Create a new branch (`git checkout -b feature/AmazingFeature`)
+3. Commit changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
 ---
 
-## 👨‍💻 الدعم
+## 📄 License
 
-لأي استفسارات أو مشاكل، يرجى فتح issue في المشروع.
+This project is licensed under the MIT License.
 
 ---
 
-**تم التطوير بـ ❤️ باستخدام Laravel 12**
+## 👨‍💻 Support
+
+For any questions or issues, please open an issue in the project.
+
+---
+
+**Built with ❤️ using Laravel 12**

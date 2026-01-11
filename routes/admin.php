@@ -49,6 +49,10 @@ Route::middleware(['auth', 'admin', 'operator.approved'])->group(function () {
 
         Route::get('/select2/operators', [PermissionsController::class, 'select2Operators'])->name('select2.operators');
         Route::get('/select2/users', [PermissionsController::class, 'select2Users'])->name('select2.users');
+        Route::get('/select2/roles', [PermissionsController::class, 'select2Roles'])->name('select2.roles');
+        Route::get('/select2/custom-roles/{operator}', [PermissionsController::class, 'select2CustomRoles'])->name('select2.custom-roles');
+        Route::get('/role/{role}/permissions', [PermissionsController::class, 'getRolePermissions'])->name('role.permissions');
+        Route::post('/role/{role}/assign', [PermissionsController::class, 'assignRolePermissions'])->name('role.assign');
     });
 
     /**

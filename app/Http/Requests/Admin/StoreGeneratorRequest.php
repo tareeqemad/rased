@@ -9,7 +9,24 @@ class StoreGeneratorRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->isSuperAdmin() || $this->user()->isCompanyOwner();
+        $user = $this->user();
+        
+        // SuperAdmin دائماً مسموح
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
+        
+        // Company Owner يمكنه إضافة المولدات حتى لو لم يكن معتمد
+        if ($user->isCompanyOwner()) {
+            return $user->ownedOperators()->first() !== null;
+        }
+        
+        // Technician يمكنه أيضاً (من خلال Policy)
+        if ($user->isTechnician()) {
+            return $user->can('create', \App\Models\Generator::class);
+        }
+        
+        return false;
     }
 
     public function rules(): array

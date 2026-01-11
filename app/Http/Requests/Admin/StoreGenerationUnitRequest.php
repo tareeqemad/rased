@@ -40,7 +40,7 @@ class StoreGenerationUnitRequest extends FormRequest
             // الملكية والتشغيل
             'owner_name' => ['nullable', 'string', 'max:255'],
             'owner_id_number' => ['nullable', 'string', 'max:255'],
-            'operation_entity_id' => ['nullable', 'exists:constant_details,id'],
+            'operation_entity_id' => ['required', 'exists:constant_details,id'],
             'operator_id_number' => ['nullable', 'string', 'max:255'],
             'phone' => ['nullable', 'string', 'max:255'],
             'phone_alt' => ['nullable', 'string', 'max:255'],
@@ -86,6 +86,7 @@ class StoreGenerationUnitRequest extends FormRequest
             'generators_count.min' => 'يجب أن يكون عدد المولدات على الأقل 1.',
             'generators_count.max' => 'يجب ألا يتجاوز عدد المولدات 99.',
             'status_id.exists' => 'حالة الوحدة المحددة غير صحيحة.',
+            'operation_entity_id.required' => 'جهة التشغيل مطلوبة.',
             'operation_entity_id.exists' => 'جهة التشغيل المحددة غير صحيحة.',
         ];
     }

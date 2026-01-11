@@ -30,12 +30,15 @@ class EnsureOperatorApproved
         $allowedRoutes = [
             'admin.operators.profile',
             'admin.operators.profile.update',
+            'admin.operators.data', // API route for getting operator data (needed for generation units form)
+            'admin.operators.generation-units', // API route for getting generation units (needed for generators form)
             'admin.generation-units.index',
             'admin.generation-units.create',
             'admin.generation-units.store',
             'admin.generation-units.show',
             'admin.generation-units.edit',
             'admin.generation-units.update',
+            'admin.generation-units.qr-code',
             'admin.generators.index',
             'admin.generators.create',
             'admin.generators.store',
@@ -43,6 +46,8 @@ class EnsureOperatorApproved
             'admin.generators.edit',
             'admin.generators.update',
             'admin.dashboard',
+            // Constants routes - needed for generation units and generators forms
+            'admin.constant-details.cities-by-governorate',
             // Notifications routes - should be accessible even if operator is not approved
             'admin.notifications.index',
             'admin.notifications.read',
@@ -62,9 +67,27 @@ class EnsureOperatorApproved
             // Profile routes
             'admin.profile.show',
             'admin.profile.change-password',
+            // Permissions routes - should be accessible for approved CompanyOwner
+            'admin.permissions.index',
+            'admin.permissions.assign',
+            'admin.permissions.search',
+            'admin.permissions.user',
+            'admin.permissions.user.permissions',
+            'admin.permissions.select2.operators',
+            'admin.permissions.select2.users',
+            'admin.permissions.select2.roles',
+            'admin.permissions.select2.custom-roles',
+            'admin.permissions.role.permissions',
+            'admin.permissions.role.assign',
         ];
 
         $routeName = $request->route()?->getName();
+        
+        // التحقق من الـ route name بشكل أكثر مرونة (للتعامل مع variations محتملة)
+        if (!$routeName && $request->route()) {
+            // محاولة الحصول على الـ route name بطريقة بديلة
+            $routeName = $request->route()->getName();
+        }
 
         // إذا كانت الصفحة مسموح بها، اتركه يمر (حتى لو كان المشغل معطل)
         if ($routeName && in_array($routeName, $allowedRoutes)) {

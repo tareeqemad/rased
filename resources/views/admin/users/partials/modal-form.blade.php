@@ -13,15 +13,28 @@
     $isCompanyOwnerRole = $selectedRole === \App\Role::CompanyOwner->value;
     $isMainRole = in_array($selectedRole, [\App\Role::SuperAdmin->value, \App\Role::Admin->value, \App\Role::EnergyAuthority->value], true);
     
+    // تحديد ما إذا كان الدور المحدد دور مخصص (ليس دور نظامي)
+    $systemRoles = [\App\Role::SuperAdmin->value, \App\Role::Admin->value, \App\Role::EnergyAuthority->value, \App\Role::CompanyOwner->value, \App\Role::Employee->value, \App\Role::Technician->value];
+    $isCustomRole = $selectedRole && !in_array($selectedRole, $systemRoles, true);
+    
     // تحديد ما إذا كان username و password يتم توليدهما تلقائياً
+    // للمشغل: عند إنشاء مستخدم جديد، username/password يتم توليدهما تلقائياً دائماً (لأنه لا يمكنه إضافة إلا موظف/فني أو أدوار مخصصة)
+    // للسوبر أدمن/الآدمن/سلطة الطاقة: عند اختيار أدوار رئيسية أو مشغل، username/password يتم توليدهما تلقائياً
+    // عند اختيار أدوار عادية (موظف/فني أو أدوار مخصصة): username/password يجب إدخالهما يدوياً
     $autoGenerateCredentials = $isCreate && (
-        ($authUser->isCompanyOwner() && $isEmpOrTech) ||
-        (($authUser->isSuperAdmin() || $authUser->isEnergyAuthority()) && ($isMainRole || $isCompanyOwnerRole))
+        $authUser->isCompanyOwner() || // المشغل دائماً يحتاج توليد تلقائي (لأنه يضيف فقط موظف/فني أو أدوار مخصصة)
+        (($authUser->isSuperAdmin() || $authUser->isAdmin() || $authUser->isEnergyAuthority()) && ($isMainRole || $isCompanyOwnerRole))
     );
     
     // تحديد ما إذا كانت name_en و phone مطلوبة
-    $needNameEnAndPhone = $isCreate && ($authUser->isSuperAdmin() || $authUser->isEnergyAuthority()) && ($isMainRole || $isCompanyOwnerRole);
-
+    // للسوبر أدمن/الآدمن/سلطة الطاقة: عند إنشاء أدوار رئيسية أو مشغل
+    $needNameEnAndPhone = $isCreate && ($authUser->isSuperAdmin() || $authUser->isAdmin() || $authUser->isEnergyAuthority()) && ($isMainRole || $isCompanyOwnerRole);
+    
+    // للمشغل: إظهار حقل phone (اختياري) عند إنشاء مستخدم جديد
+    // المشغل يضيف موظف/فني أو مستخدمين بأدوار مخصصة - كلهم يحتاجون phone لإرسال بيانات الدخول
+    // عند اختيار أي دور (employee/technician أو custom role)، username/password يتم توليدهما تلقائياً
+    $showPhoneForCompanyOwner = $isCreate && $authUser->isCompanyOwner();
+    
     $selectedOp = $selectedOperator ?? null;
 @endphp
 
@@ -50,16 +63,20 @@
             </div>
         </div>
 
-        {{-- رقم الجوال (للسوبر أدمن وسلطة الطاقة عند إنشاء أدوار رئيسية) --}}
-        <div class="col-md-6" id="phoneField" style="{{ $needNameEnAndPhone ? '' : 'display:none' }}">
+        {{-- رقم الجوال --}}
+        <div class="col-md-6" id="phoneField" style="{{ ($needNameEnAndPhone || $showPhoneForCompanyOwner) ? '' : 'display:none' }}">
             <label class="form-label">
                 رقم الجوال 
                 <span class="text-danger" id="phoneRequired" style="{{ $needNameEnAndPhone ? '' : 'display:none' }}">*</span>
             </label>
-            <input name="phone" class="form-control" value="{{ old('phone', $user->phone ?? '') }}" placeholder="059xxxxxxx أو 056xxxxxxx" maxlength="10">
+            <input name="phone" class="form-control" value="{{ old('phone', $user->phone ?? '') }}" placeholder="059xxxxxxx أو 056xxxxxxx" maxlength="10" {{ $needNameEnAndPhone ? 'required' : '' }}>
             <div class="text-danger small mt-1 d-none" data-error-for="phone"></div>
-            <div class="help small text-muted mt-1" id="phoneHelp" style="{{ $needNameEnAndPhone ? '' : 'display:none' }}">
-                سيتم إرسال بيانات الدخول عبر SMS
+            <div class="help small text-muted mt-1" id="phoneHelp" style="{{ ($needNameEnAndPhone || $showPhoneForCompanyOwner) ? '' : 'display:none' }}">
+                @if($autoGenerateCredentials)
+                    سيتم توليد اسم المستخدم وكلمة المرور تلقائياً وإرسالهما عبر SMS إلى هذا الرقم
+                @else
+                    سيتم إرسال بيانات الدخول عبر SMS
+                @endif
             </div>
         </div>
 
@@ -91,8 +108,14 @@
             <select name="role" id="roleSelect" class="form-select" required>
                 <option value="">اختر الدور</option>
                 @foreach($roles as $r)
-                    <option value="{{ $r->value }}" {{ (string)$selectedRole === (string)$r->value ? 'selected' : '' }}>
-                        {{ $r->label() ?? $r->value }}
+                    @php
+                        $roleValue = is_array($r) ? ($r['value'] ?? $r['name'] ?? '') : ($r->value ?? $r->name ?? '');
+                        $roleLabel = is_array($r) ? ($r['label'] ?? $roleValue) : ($r->label ?? $r->label() ?? $roleValue);
+                    @endphp
+                    <option value="{{ $roleValue }}" 
+                            data-role-id="{{ is_array($r) ? ($r['role_id'] ?? '') : '' }}"
+                            {{ (string)$selectedRole === (string)$roleValue ? 'selected' : '' }}>
+                        {{ $roleLabel }}
                     </option>
                 @endforeach
             </select>
@@ -173,6 +196,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     const roleSelect = document.getElementById('roleSelect');
     const authUserIsSuperAdmin = {{ $authUser->isSuperAdmin() ? 'true' : 'false' }};
+    const authUserIsAdmin = {{ $authUser->isAdmin() ? 'true' : 'false' }};
     const authUserIsEnergyAuthority = {{ $authUser->isEnergyAuthority() ? 'true' : 'false' }};
     const authUserIsCompanyOwner = {{ $authUser->isCompanyOwner() ? 'true' : 'false' }};
     const isCreate = {{ $isCreate ? 'true' : 'false' }};
@@ -185,13 +209,22 @@ document.addEventListener('DOMContentLoaded', function() {
             const isMainRole = ['super_admin', 'admin', 'energy_authority'].includes(selectedRole);
             
             // تحديد ما إذا كان username و password يتم توليدهما تلقائياً
+            // للمشغل: عند إنشاء مستخدم جديد، username/password يتم توليدهما تلقائياً دائماً (لأنه لا يمكنه إضافة إلا موظف/فني أو أدوار مخصصة)
+            // للسوبر أدمن/الآدمن/سلطة الطاقة: عند اختيار أدوار رئيسية أو مشغل، username/password يتم توليدهما تلقائياً
+            // عند اختيار أدوار عادية (موظف/فني أو أدوار مخصصة): username/password يجب إدخالهما يدوياً
+            const isCustomRole = selectedRole && !['super_admin', 'admin', 'energy_authority', 'company_owner', 'employee', 'technician'].includes(selectedRole);
             const autoGenerateCredentials = isCreate && (
-                (authUserIsCompanyOwner && isEmpOrTech) ||
-                ((authUserIsSuperAdmin || authUserIsEnergyAuthority) && (isMainRole || isCompanyOwnerRole))
+                authUserIsCompanyOwner || // المشغل دائماً يحتاج توليد تلقائي
+                ((authUserIsSuperAdmin || authUserIsAdmin || authUserIsEnergyAuthority) && (isMainRole || isCompanyOwnerRole))
             );
             
             // تحديد ما إذا كانت name_en و phone مطلوبة
-            const needNameEnAndPhone = isCreate && (authUserIsSuperAdmin || authUserIsEnergyAuthority) && (isMainRole || isCompanyOwnerRole);
+            // للسوبر أدمن/الآدمن/سلطة الطاقة: عند إنشاء أدوار رئيسية أو مشغل
+            const needNameEnAndPhone = isCreate && (authUserIsSuperAdmin || authUserIsAdmin || authUserIsEnergyAuthority) && (isMainRole || isCompanyOwnerRole);
+            
+            // للمشغل: إظهار حقل phone (اختياري) عند إنشاء مستخدم جديد (موظف/فني أو أدوار مخصصة)
+            // عند إضافة أي مستخدم جديد، username/password يتم توليدهما تلقائياً وإرسالهما عبر SMS
+            const showPhoneForCompanyOwner = isCreate && authUserIsCompanyOwner;
 
             // إظهار/إخفاء name_en و phone
             const nameEnField = document.getElementById('nameEnField');
@@ -213,13 +246,22 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             if (phoneField) {
-                phoneField.style.display = needNameEnAndPhone ? '' : 'none';
+                const shouldShowPhone = needNameEnAndPhone || showPhoneForCompanyOwner;
+                phoneField.style.display = shouldShowPhone ? '' : 'none';
                 if (phoneRequired) phoneRequired.style.display = needNameEnAndPhone ? '' : 'none';
-                if (phoneHelp) phoneHelp.style.display = needNameEnAndPhone ? '' : 'none';
-                if (needNameEnAndPhone) {
-                    phoneField.querySelector('input[name="phone"]').required = true;
-                } else {
-                    phoneField.querySelector('input[name="phone"]').required = false;
+                if (phoneHelp) {
+                    phoneHelp.style.display = shouldShowPhone ? '' : 'none';
+                    if (shouldShowPhone) {
+                        if (autoGenerateCredentials) {
+                            phoneHelp.textContent = 'سيتم توليد اسم المستخدم وكلمة المرور تلقائياً وإرسالهما عبر SMS إلى هذا الرقم';
+                        } else {
+                            phoneHelp.textContent = 'سيتم إرسال بيانات الدخول عبر SMS';
+                        }
+                    }
+                }
+                const phoneInput = phoneField.querySelector('input[name="phone"]');
+                if (phoneInput) {
+                    phoneInput.required = needNameEnAndPhone;
                 }
             }
 
@@ -304,6 +346,68 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
         });
+        
+        // تشغيل الحدث عند التحميل لتحديث الحقول حسب الدور المحدد مسبقاً أو الحالة الافتراضية
+        // للمشغل: يجب إخفاء username/password حتى قبل اختيار الدور
+        if (authUserIsCompanyOwner && isCreate) {
+            // للمشغل عند إنشاء مستخدم: إخفاء username/password افتراضياً
+            const usernameField = document.getElementById('usernameField');
+            const passwordField = document.getElementById('passwordField');
+            const passwordConfirmationField = document.getElementById('passwordConfirmationField');
+            const usernameRequired = document.getElementById('usernameRequired');
+            const usernameHelp = document.getElementById('usernameHelp');
+            const passwordRequired = document.getElementById('passwordRequired');
+            const passwordConfirmationRequired = document.getElementById('passwordConfirmationRequired');
+            const passwordHelp = document.getElementById('passwordHelp');
+            
+            if (usernameField) {
+                usernameField.style.display = 'none';
+                if (usernameRequired) usernameRequired.style.display = 'none';
+                if (usernameHelp) usernameHelp.style.display = '';
+                const usernameInput = usernameField.querySelector('input[name="username"]');
+                if (usernameInput) {
+                    usernameInput.required = false;
+                }
+            }
+            
+            if (passwordField) {
+                passwordField.style.display = 'none';
+                if (passwordRequired) passwordRequired.style.display = 'none';
+                if (passwordHelp) {
+                    passwordHelp.textContent = 'سيتم توليدها تلقائياً';
+                }
+                const passwordInput = passwordField.querySelector('input[name="password"]');
+                if (passwordInput) {
+                    passwordInput.required = false;
+                    passwordInput.minLength = 0;
+                }
+            }
+            
+            if (passwordConfirmationField) {
+                passwordConfirmationField.style.display = 'none';
+                if (passwordConfirmationRequired) passwordConfirmationRequired.style.display = 'none';
+                const passwordConfirmationInput = passwordConfirmationField.querySelector('input[name="password_confirmation"]');
+                if (passwordConfirmationInput) {
+                    passwordConfirmationInput.required = false;
+                    passwordConfirmationInput.minLength = 0;
+                }
+            }
+            
+            // إظهار حقل phone للمشغل
+            const phoneField = document.getElementById('phoneField');
+            const phoneHelp = document.getElementById('phoneHelp');
+            if (phoneField) {
+                phoneField.style.display = '';
+                if (phoneHelp) {
+                    phoneHelp.style.display = '';
+                    phoneHelp.textContent = 'سيتم توليد اسم المستخدم وكلمة المرور تلقائياً وإرسالهما عبر SMS إلى هذا الرقم';
+                }
+                const phoneInput = phoneField.querySelector('input[name="phone"]');
+                if (phoneInput) {
+                    phoneInput.required = false;
+                }
+            }
+        }
         
         // تشغيل الحدث عند التحميل لتحديث الحقول حسب الدور المحدد مسبقاً
         if (roleSelect.value) {

@@ -6,8 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\Operator;
 use App\Models\Permission;
 use App\Models\PermissionAuditLog;
+use App\Models\Role;
 use App\Models\User;
-use App\Role;
+use App\Role as RoleEnum;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -22,6 +23,11 @@ class PermissionsController extends Controller
     /**
      * صلاحيات Tenant اللي مسموح للمشغل يوزعها (حتى لو عنده غيرها بالغلط).
      * عدّل القائمة حسب Modules اللي بدك المشغل يتحكم فيها فقط.
+     * 
+     * ملاحظات مهمة:
+     * - صلاحيات welcome_messages و sms_templates غير متاحة للمشغلين (مخصصة فقط للـ Admin و SuperAdmin)
+     * - صلاحيات settings و constants و logs غير متاحة للمشغلين
+     * - صلاحيات users و roles و permissions محدودة حسب السقف (companyOwnerCeiling)
      */
     private function tenantAssignablePermissionIds(): array
     {
@@ -42,6 +48,9 @@ class PermissionsController extends Controller
                     ->orWhere('name', 'like', 'maintenance_records.%')
                     ->orWhere('name', 'like', 'compliance_safeties.%')
                     ->orWhere('name', 'like', 'electricity_tariff_prices.%');
+                    
+                    // ملاحظة: welcome_messages.* و sms_templates.* غير موجودة هنا عمداً
+                    // لأنها مخصصة فقط للـ Admin و SuperAdmin
             })
             ->pluck('id')
             ->toArray();
@@ -144,10 +153,12 @@ class PermissionsController extends Controller
         // Permissions query
         $query = Permission::query()->orderBy('group')->orderBy('order');
 
-        // CompanyOwner: فلترة بالسقف
+        // CompanyOwner: فلترة بالسقف (TenantAssignable permissions)
         if ($authUser->isCompanyOwner()) {
-            $ceilingIds = $this->companyOwnerCeilingPermissionIds($authUser);
-            $query->whereIn('id', $ceilingIds);
+            // المشغل المعتمد يرى جميع الصلاحيات المتاحة للتوزيع (TenantAssignable)
+            // حتى لو لم يكن لديه هذه الصلاحيات في roleModel
+            $assignableIds = $this->tenantAssignablePermissionIds();
+            $query->whereIn('id', $assignableIds);
         }
 
         if ($search !== '') {
@@ -172,7 +183,7 @@ class PermissionsController extends Controller
         if ($authUser->isSuperAdmin()) {
             $users = User::query()
                 ->where('id', '!=', $authUser->id)
-                ->where('role', Role::CompanyOwner)
+                ->where('role', RoleEnum::CompanyOwner)
                 ->latest()
                 ->get();
 
@@ -185,7 +196,7 @@ class PermissionsController extends Controller
                     ->whereHas('operators', function ($q) use ($operator) {
                         $q->where('operators.id', $operator->id);
                     })
-                    ->whereIn('role', [Role::Employee, Role::Technician])
+                    ->whereIn('role', [RoleEnum::Employee, RoleEnum::Technician])
                     ->orderBy('name')
                     ->get();
 
@@ -315,6 +326,7 @@ class PermissionsController extends Controller
                 'id' => $user->id,
                 'name' => $user->name,
                 'role' => $user->role?->value ?? null,
+                'role_id' => $user->role_id,
                 'operator_id' => $operatorId,
                 'direct_permissions' => $direct,
                 'role_permissions' => $role,
@@ -486,6 +498,7 @@ class PermissionsController extends Controller
         $term = trim((string) $request->input('q', ''));
         $page = max(1, (int) $request->input('page', 1));
         $perPage = 20;
+        $operatorId = (int) $request->input('operator_id', 0);
 
         $query = Operator::query()->select(['id', 'name', 'unit_number']);
 
@@ -493,7 +506,10 @@ class PermissionsController extends Controller
             $query->where('owner_id', $authUser->id);
         }
 
-        if ($term !== '') {
+        // إذا تم تحديد operator_id، أضفه مباشرة
+        if ($operatorId > 0) {
+            $query->where('id', $operatorId);
+        } elseif ($term !== '') {
             $query->where(function ($q) use ($term) {
                 $q->where('name', 'like', "%{$term}%")
                     ->orWhere('unit_number', 'like', "%{$term}%");
@@ -514,9 +530,9 @@ class PermissionsController extends Controller
     }
 
     /**
-     * Select2: Users by operator
-     * - SuperAdmin/Admin: لازم operator_id
-     * - CompanyOwner: يتجاهل operator_id ويرجع موظفينه/فنييه فقط
+     * Select2: Users by role
+     * - SuperAdmin: البحث بالدور النظامي - يعرض جميع المستخدمين في النظام
+     * - CompanyOwner: البحث بالدور (مشغل أو دور مخصص) - يعرض الموظفين/الفنيين التابعين للمشغل
      */
     public function select2Users(Request $request): JsonResponse
     {
@@ -530,42 +546,68 @@ class PermissionsController extends Controller
         $page = max(1, (int) $request->input('page', 1));
         $perPage = 20;
 
-        $operatorId = (int) $request->input('operator_id', 0);
+        $role = trim((string) $request->input('role', '')); // role name (enum) or role_id (custom role)
+        $roleId = (int) $request->input('role_id', 0); // for custom roles
 
-        if ($authUser->isCompanyOwner()) {
+        $query = User::query()
+            ->select(['id', 'name', 'username', 'email', 'role', 'role_id'])
+            ->where('id', '!=', $authUser->id)
+            ->where('username', '!=', 'platform_rased'); // Exclude system user
+
+        if ($authUser->isSuperAdmin()) {
+            // SuperAdmin: البحث بالدور النظامي - يعرض جميع المستخدمين في النظام
+            if ($role !== '') {
+                // Check if it's a system role (enum)
+                $allowedSystemRoles = array_map(fn (RoleEnum $r) => $r->value, RoleEnum::cases());
+                if (in_array($role, $allowedSystemRoles, true)) {
+                    $query->where('role', $role);
+                } elseif ($roleId > 0) {
+                    // Custom role
+                    $query->where('role_id', $roleId);
+                }
+            }
+            // إذا لم يتم تحديد دور، يعرض جميع المستخدمين
+
+        } elseif ($authUser->isCompanyOwner()) {
+            // CompanyOwner: البحث بالدور (مشغل أو دور مخصص) - يعرض الموظفين/الفنيين التابعين للمشغل
             $operator = $authUser->ownedOperators()->first();
             if (! $operator) {
                 return response()->json(['results' => [], 'pagination' => ['more' => false]]);
             }
-        } else {
-            if ($operatorId <= 0) {
-                return response()->json(['results' => [], 'pagination' => ['more' => false]]);
-            }
-            $operator = Operator::findOrFail($operatorId);
-        }
 
-        $query = User::query()
-            ->select(['id', 'name', 'username', 'role'])
-            ->where(function ($q) use ($operator) {
+            // Filter by operator
+            $query->where(function ($q) use ($operator) {
                 // employees/technicians from pivot
                 $q->whereHas('operators', function ($qq) use ($operator) {
                     $qq->where('operators.id', $operator->id);
                 });
-
-                // NOTE: owner (company owner) مش داخل pivot غالبًا
-                // بنضيفه كـ OR على id
+                // owner (company owner)
                 $q->orWhere('id', $operator->owner_id);
             });
 
-        // CompanyOwner: فقط موظفين/فنيين (بدون نفسه)
-        if ($authUser->isCompanyOwner()) {
-            $query->whereIn('role', [Role::Employee, Role::Technician]);
+            if ($role === 'company_owner') {
+                // المشغل: فقط owner
+                $query->where('role', RoleEnum::CompanyOwner);
+                $query->where('id', $operator->owner_id);
+            } elseif ($roleId > 0) {
+                // دور مخصص
+                $customRole = Role::find($roleId);
+                if ($customRole && $customRole->operator_id === $operator->id && $customRole->created_by === $authUser->id) {
+                    $query->where('role_id', $roleId);
+                } else {
+                    return response()->json(['results' => [], 'pagination' => ['more' => false]]);
+                }
+            } else {
+                // Default: فقط موظفين/فنيين
+                $query->whereIn('role', [RoleEnum::Employee, RoleEnum::Technician]);
+            }
         }
 
         if ($term !== '') {
             $query->where(function ($q) use ($term) {
                 $q->where('name', 'like', "%{$term}%")
-                    ->orWhere('username', 'like', "%{$term}%");
+                    ->orWhere('username', 'like', "%{$term}%")
+                    ->orWhere('email', 'like', "%{$term}%");
             });
         }
 
@@ -573,12 +615,173 @@ class PermissionsController extends Controller
 
         $results = $p->getCollection()->map(function ($u) {
             $extra = $u->username ? " ({$u->username})" : '';
-            return ['id' => $u->id, 'text' => $u->name . $extra];
+            return [
+                'id' => $u->id,
+                'text' => $u->name . $extra,
+                'role' => $u->role?->value ?? null,
+                'role_id' => $u->role_id,
+            ];
         })->values();
 
         return response()->json([
             'results' => $results,
             'pagination' => ['more' => $p->hasMorePages()],
         ]);
+    }
+
+    /**
+     * Select2: Roles
+     * - SuperAdmin: الأدوار النظامية فقط (من enum)
+     */
+    public function select2Roles(Request $request): JsonResponse
+    {
+        $authUser = auth()->user();
+        
+        if (!$authUser->isSuperAdmin()) {
+            abort(403);
+        }
+
+        $term = trim((string) $request->input('q', ''));
+
+        // SuperAdmin: عرض الأدوار النظامية فقط (من enum)
+        $systemRoles = Role::where('is_system', true)
+            ->orderBy('order')
+            ->orderBy('name')
+            ->get(['id', 'name', 'label']);
+
+        $results = $systemRoles->map(function ($role) {
+            return [
+                'id' => $role->name, // Use role name (enum value) as ID
+                'text' => $role->label ?: $role->name,
+            ];
+        })->values();
+
+        // Filter by term if provided
+        if ($term !== '') {
+            $results = $results->filter(function ($role) use ($term) {
+                return stripos($role['text'], $term) !== false || stripos($role['id'], $term) !== false;
+            })->values();
+        }
+
+        return response()->json([
+            'results' => $results->toArray(),
+            'pagination' => ['more' => false], // System roles are limited, no pagination needed
+        ]);
+    }
+
+    /**
+     * Select2: Custom Roles for Operator
+     */
+    public function select2CustomRoles(Operator $operator): JsonResponse
+    {
+        $authUser = auth()->user();
+        
+        if (!$authUser->isSuperAdmin()) {
+            abort(403);
+        }
+
+        // Get custom roles for this operator
+        $customRoles = Role::getCustomRolesForOperator($operator->id);
+
+        $results = $customRoles->map(function ($role) {
+            return [
+                'id' => $role->id,
+                'text' => $role->label ?: $role->name,
+            ];
+        })->values();
+
+        return response()->json([
+            'results' => $results->toArray(),
+            'pagination' => ['more' => false],
+        ]);
+    }
+
+    /**
+     * Get permissions for a role
+     */
+    public function getRolePermissions(Role $role): JsonResponse
+    {
+        $authUser = auth()->user();
+        $this->assertActorCanOpenTree($authUser);
+
+        // Check if user can view this role
+        if (!$authUser->can('view', $role)) {
+            abort(403);
+        }
+
+        $role->load('permissions');
+
+        $permissions = $role->permissions->pluck('id')->toArray();
+
+        return response()->json([
+            'success' => true,
+            'role' => [
+                'id' => $role->id,
+                'name' => $role->name,
+                'label' => $role->label,
+                'permissions' => $permissions,
+            ],
+        ]);
+    }
+
+    /**
+     * Assign permissions to a role
+     */
+    public function assignRolePermissions(Request $request, Role $role): RedirectResponse|JsonResponse
+    {
+        $authUser = auth()->user();
+        $this->assertActorCanOpenTree($authUser);
+
+        // Check if user can update this role
+        if (!$authUser->can('update', $role)) {
+            abort(403);
+        }
+
+        try {
+            $request->validate([
+                'permissions' => ['nullable', 'array'],
+                'permissions.*' => ['integer', 'exists:permissions,id'],
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'خطأ في التحقق من البيانات',
+                    'errors' => $e->errors(),
+                ], 422);
+            }
+            throw $e;
+        }
+
+        $permissionIds = array_map('intval', (array) $request->input('permissions', []));
+
+        // Filter system permissions if user is not SuperAdmin
+        if ($authUser->isAdmin() || $authUser->isCompanyOwner()) {
+            $systemPermissions = Permission::whereIn('name', [
+                'users.*', 'operators.*', 'permissions.*', 'settings.*', 'constants.*', 'logs.*'
+            ])->pluck('id')->toArray();
+            $permissionIds = array_diff($permissionIds, $systemPermissions);
+        }
+
+        // Update role permissions
+        $role->permissions()->sync($permissionIds);
+
+        $role->refresh()->load('permissions');
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => "تم تحديث صلاحيات الدور {$role->label} بنجاح.",
+                'role' => [
+                    'id' => $role->id,
+                    'name' => $role->name,
+                    'label' => $role->label,
+                    'permissions' => $role->permissions->pluck('id')->toArray(),
+                ],
+            ]);
+        }
+
+        return redirect()->route('admin.permissions.index')
+            ->with('success', "تم تحديث صلاحيات الدور {$role->label} بنجاح.");
     }
 }

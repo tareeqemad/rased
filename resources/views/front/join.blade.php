@@ -6,6 +6,7 @@
 @section('title', 'طلب الانضمام للمنصة - ' . $siteName)
 
 @push('styles')
+<link rel="stylesheet" href="{{ asset('assets/admin/css/icons.css') }}">
 <style>
     .join-page {
         padding: 3rem 0 0;
@@ -374,60 +375,146 @@
             <form action="{{ route('front.join.store') }}" method="POST" id="joinForm">
                 @csrf
 
-                <!-- بيانات المشغل الأساسية -->
-                <h3 style="color: #1e293b; font-weight: 700; margin-bottom: 1.5rem; font-size: 1.3rem;">بيانات المشغل الأساسية</h3>
+                <!-- بيانات المالك -->
+                <h3 style="color: #1e293b; font-weight: 700; margin-bottom: 1.5rem; font-size: 1.3rem; padding-bottom: 0.75rem; border-bottom: 2px solid #e2e8f0;">
+                    <i class="bi bi-person-badge" style="margin-left: 0.5rem; color: #3b82f6;"></i>
+                    بيانات المالك
+                </h3>
 
-                <!-- الاسم بالعربية -->
-                <div class="form-group">
-                    <label for="name_ar" class="form-label">
-                        الاسم رباعي بالعربية <span class="required">*</span>
-                    </label>
-                    <input 
-                        type="text" 
-                        id="name_ar" 
-                        name="name_ar" 
-                        class="form-input" 
-                        placeholder="أدخل الاسم رباعي بالعربية"
-                        value="{{ e(old('name_ar', '')) }}"
-                        required
-                    >
-                </div>
-
-                <!-- الاسم بالإنجليزية -->
-                <div class="form-group">
-                    <label for="name_en" class="form-label">
-                        الاسم رباعي بالإنجليزية <span class="required">*</span>
-                    </label>
-                    <input 
-                        type="text" 
-                        id="name_en" 
-                        name="name_en" 
-                        class="form-input" 
-                        placeholder="Enter full name in English"
-                        value="{{ e(old('name_en', '')) }}"
-                        required
-                    >
-                </div>
-
-                <!-- رقم الهوية ورقم الموبايل -->
+                <!-- اسم المالك بالعربية والإنجليزية -->
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="id_number" class="form-label">
-                            رقم الهوية <span class="required">*</span>
+                        <label for="owner_name" class="form-label">
+                            <i class="bi bi-person" style="margin-left: 0.5rem; color: #3b82f6;"></i>
+                            اسم المالك بالعربية <span class="required">*</span>
                         </label>
                         <input 
                             type="text" 
-                            id="id_number" 
-                            name="id_number" 
+                            id="owner_name" 
+                            name="owner_name" 
                             class="form-input" 
-                            placeholder="أدخل رقم الهوية"
-                            value="{{ e(old('id_number', '')) }}"
+                            placeholder="أدخل اسم المالك رباعي بالعربية"
+                            value="{{ e(old('owner_name', '')) }}"
                             required
                         >
+                        <div class="form-hint">
+                            <i class="bi bi-info-circle" style="margin-left: 0.25rem; color: #3b82f6;"></i>
+                            اسم المالك القانوني
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="owner_name_en" class="form-label">
+                            <i class="bi bi-person" style="margin-left: 0.5rem; color: #3b82f6;"></i>
+                            اسم المالك بالإنجليزية <span class="required">*</span>
+                        </label>
+                        <input 
+                            type="text" 
+                            id="owner_name_en" 
+                            name="owner_name_en" 
+                            class="form-input" 
+                            placeholder="Enter owner name in English"
+                            value="{{ e(old('owner_name_en', '')) }}"
+                            required
+                        >
+                    </div>
+                </div>
+
+                <!-- رقم هوية المالك -->
+                <div class="form-group">
+                    <label for="owner_id_number" class="form-label">
+                        <i class="bi bi-card-heading" style="margin-left: 0.5rem; color: #3b82f6;"></i>
+                        رقم هوية المالك <span class="required">*</span>
+                    </label>
+                    <input 
+                        type="text" 
+                        id="owner_id_number" 
+                        name="owner_id_number" 
+                        class="form-input" 
+                        placeholder="أدخل رقم هوية المالك (9 أرقام)"
+                        value="{{ e(old('owner_id_number', '')) }}"
+                        maxlength="9"
+                        required
+                    >
+                    <div class="form-hint">
+                        <i class="bi bi-info-circle" style="margin-left: 0.25rem; color: #3b82f6;"></i>
+                        يجب أن يكون 9 أرقام
+                    </div>
+                </div>
+
+                <div class="section-divider"></div>
+
+                <!-- بيانات المشغل -->
+                <h3 style="color: #1e293b; font-weight: 700; margin-bottom: 1.5rem; margin-top: 2rem; font-size: 1.3rem; padding-bottom: 0.75rem; border-bottom: 2px solid #e2e8f0;">
+                    <i class="bi bi-building" style="margin-left: 0.5rem; color: #10b981;"></i>
+                    بيانات المشغل
+                </h3>
+
+                <!-- اسم المشغل بالعربية والإنجليزية -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="operator_name" class="form-label">
+                            <i class="bi bi-building" style="margin-left: 0.5rem; color: #10b981;"></i>
+                            اسم المشغل بالعربية <span class="required">*</span>
+                        </label>
+                        <input 
+                            type="text" 
+                            id="operator_name" 
+                            name="operator_name" 
+                            class="form-input" 
+                            placeholder="أدخل اسم المشغل/الشركة بالعربية"
+                            value="{{ e(old('operator_name', '')) }}"
+                            required
+                        >
+                        <div class="form-hint">
+                            <i class="bi bi-info-circle" style="margin-left: 0.25rem; color: #10b981;"></i>
+                            اسم المشغل أو الشركة
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="operator_name_en" class="form-label">
+                            <i class="bi bi-building" style="margin-left: 0.5rem; color: #10b981;"></i>
+                            اسم المشغل بالإنجليزية <span class="required">*</span>
+                        </label>
+                        <input 
+                            type="text" 
+                            id="operator_name_en" 
+                            name="operator_name_en" 
+                            class="form-input" 
+                            placeholder="Enter operator/company name in English"
+                            value="{{ e(old('operator_name_en', '')) }}"
+                            required
+                        >
+                    </div>
+                </div>
+
+                <!-- رقم هوية المشغل ورقم الموبايل -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="operator_id_number" class="form-label">
+                            <i class="bi bi-card-text" style="margin-left: 0.5rem; color: #10b981;"></i>
+                            رقم هوية المشغل <span class="required">*</span>
+                        </label>
+                        <input 
+                            type="text" 
+                            id="operator_id_number" 
+                            name="operator_id_number" 
+                            class="form-input" 
+                            placeholder="أدخل رقم هوية المشغل (9 أرقام)"
+                            value="{{ e(old('operator_id_number', '')) }}"
+                            maxlength="9"
+                            required
+                        >
+                        <div class="form-hint">
+                            <i class="bi bi-info-circle" style="margin-left: 0.25rem; color: #10b981;"></i>
+                            يجب أن يكون 9 أرقام
+                        </div>
                     </div>
 
                     <div class="form-group">
                         <label for="phone" class="form-label">
+                            <i class="bi bi-phone" style="margin-left: 0.5rem; color: #3b82f6;"></i>
                             رقم الموبايل <span class="required">*</span>
                         </label>
                         <input 
@@ -437,14 +524,20 @@
                             class="form-input" 
                             placeholder="0591234567 أو 0561234567"
                             value="{{ e(old('phone', '')) }}"
+                            maxlength="10"
                             required
                         >
+                        <div class="form-hint">
+                            <i class="bi bi-info-circle" style="margin-left: 0.25rem; color: #3b82f6;"></i>
+                            يجب أن يكون 10 أرقام ويبدأ بـ 059 أو 056
+                        </div>
                     </div>
                 </div>
 
                 <!-- البريد الإلكتروني -->
                 <div class="form-group">
                     <label for="email" class="form-label">
+                        <i class="bi bi-envelope" style="margin-left: 0.5rem; color: #3b82f6;"></i>
                         البريد الإلكتروني
                     </label>
                     <input 
@@ -520,7 +613,8 @@
         const form = document.getElementById('joinForm');
         const submitBtn = document.getElementById('submitBtn');
         const phoneInput = document.getElementById('phone');
-        const idNumberInput = document.getElementById('id_number');
+        const ownerIdNumberInput = document.getElementById('owner_id_number');
+        const operatorIdNumberInput = document.getElementById('operator_id_number');
 
         // دالة لعرض إشعار منبثق
         function showToastNotification(message) {
@@ -581,13 +675,27 @@
             }, 5000);
         }
 
-        // تحقق من رقم الهوية (أرقام فقط)
-        idNumberInput.addEventListener('input', function(e) {
+        // تحقق من رقم هوية المالك (9 أرقام فقط)
+        ownerIdNumberInput.addEventListener('input', function(e) {
             let value = e.target.value.replace(/\D/g, '');
+            // حد أقصى 9 أرقام
+            if (value.length > 9) {
+                value = value.substring(0, 9);
+            }
             e.target.value = value;
         });
 
-        // تحقق من رقم الموبايل (يجب أن يبدأ بـ 059 أو 056)
+        // تحقق من رقم هوية المشغل (9 أرقام فقط)
+        operatorIdNumberInput.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            // حد أقصى 9 أرقام
+            if (value.length > 9) {
+                value = value.substring(0, 9);
+            }
+            e.target.value = value;
+        });
+
+        // تحقق من رقم الموبايل (10 أرقام - يجب أن يبدأ بـ 059 أو 056)
         phoneInput.addEventListener('input', function(e) {
             let value = e.target.value.replace(/\D/g, '');
             if (value.length > 0 && !value.startsWith('0')) {
@@ -610,6 +718,7 @@
                     }
                 }
             }
+            // حد أقصى 10 أرقام
             if (value.length > 10) {
                 value = value.substring(0, 10);
             }

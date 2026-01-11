@@ -51,6 +51,7 @@ class GeneratorPolicy
 
     /**
      * Determine whether the user can create models.
+     * Company Owner can add generators even if not approved.
      */
     public function create(User $user): bool
     {
@@ -63,13 +64,19 @@ class GeneratorPolicy
             return true;
         }
 
+        // Company Owner يمكنه إضافة المولدات حتى لو لم يكن معتمد
+        if ($user->isCompanyOwner()) {
+            $operator = $user->ownedOperators()->first();
+            return $operator !== null;
+        }
+
         // التحقق من الصلاحية الديناميكية
         if ($user->hasPermission('generators.create')) {
             return true;
         }
 
         // Fallback للأدوار
-        return $user->isCompanyOwner() || $user->isTechnician();
+        return $user->isTechnician();
     }
 
     /**

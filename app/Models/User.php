@@ -273,12 +273,14 @@ class User extends Authenticatable
         // Company Owner needs approved operator for full access to their permissions
         if ($this->isCompanyOwner() && ! $this->hasApprovedOperator()) {
             // Before approval, Company Owner has limited access
-            // Only basic view permissions until approved
+            // Can add generation units and generators, but only view other things
             return in_array($permissionName, [
                 'guide.view',
                 'operators.view',
                 'generators.view',
+                'generators.create',
                 'generation_units.view',
+                'generation_units.create',
                 'operation_logs.view',
                 'fuel_efficiencies.view',
                 'maintenance_records.view',
@@ -343,12 +345,14 @@ class User extends Authenticatable
 
             // Company Owner needs approved operator for full access
             if (! $this->hasApprovedOperator()) {
-                // Before approval, only basic view permissions
+                // Before approval, can add generation units and generators, but only view other things
                 $allowedPermissions = [
                     'guide.view',
                     'operators.view',
                     'generators.view',
+                    'generators.create',
                     'generation_units.view',
+                    'generation_units.create',
                     'operation_logs.view',
                     'fuel_efficiencies.view',
                     'maintenance_records.view',
@@ -432,12 +436,14 @@ class User extends Authenticatable
 
             // Company Owner needs approved operator for full access
             if (! $this->hasApprovedOperator()) {
-                // Before approval, only basic view permissions
+                // Before approval, can add generation units and generators, but only view other things
                 $allowedPermissions = [
                     'guide.view',
                     'operators.view',
                     'generators.view',
+                    'generators.create',
                     'generation_units.view',
+                    'generation_units.create',
                     'operation_logs.view',
                     'fuel_efficiencies.view',
                     'maintenance_records.view',

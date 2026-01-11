@@ -36,38 +36,86 @@
                         <div id="permAlerts" style="display:none;"></div>
 
                         @if(auth()->user()->isSuperAdmin())
+                            {{-- السوبر أدمن: الدور → المشغلين (إذا مشغل) → الأدوار المخصصة → المستخدمين --}}
+                            @php
+                                $systemRoles = \App\Models\Role::where('is_system', true)
+                                    ->orderBy('order')
+                                    ->orderBy('name')
+                                    ->get(['id', 'name', 'label']);
+                            @endphp
                             <div class="mb-3">
+                                <label class="form-label fw-semibold">
+                                    <i class="bi bi-shield-check me-1"></i>
+                                    الدور
+                                </label>
+                                <select id="roleSelect" class="form-select">
+                                    <option value="">اختر الدور...</option>
+                                    @foreach($systemRoles as $role)
+                                        <option value="{{ $role->name }}">{{ $role->label }}</option>
+                                    @endforeach
+                                </select>
+                                <div class="form-text">اختر الدور أولاً.</div>
+                            </div>
+
+                            <div class="mb-3" id="operatorSelectWrapper" style="display:none;">
                                 <label class="form-label fw-semibold">
                                     <i class="bi bi-building me-1"></i>
                                     المشغل
                                 </label>
-                                <select id="operatorSelect" class="form-select" style="width:100%"></select>
+                                <select id="operatorSelect" class="form-select"></select>
+                                <div class="form-text">اختر المشغل لعرض أدواره المخصصة.</div>
+                            </div>
+
+                            <div class="mb-3" id="customRoleSelectWrapper" style="display:none;">
+                                <label class="form-label fw-semibold">
+                                    <i class="bi bi-shield me-1"></i>
+                                    الدور المخصص
+                                </label>
+                                <select id="customRoleSelect" class="form-select">
+                                    <option value="">اختر الدور المخصص...</option>
+                                </select>
+                                <div class="form-text">اختر الدور المخصص للمشغل.</div>
                             </div>
 
                             <div class="mb-3">
                                 <label class="form-label fw-semibold">
                                     <i class="bi bi-person-badge me-1"></i>
-                                    المستخدم داخل المشغل
+                                    المستخدم
                                 </label>
-                                <select id="userSelect" class="form-select" style="width:100%" disabled></select>
-                                <div class="form-text">بعد اختيار المشغل، رح تظهر القائمة الثانية.</div>
+                                <select id="userSelect" class="form-select" disabled></select>
+                                <div class="form-text">ابحث عن المستخدمين في النظام حسب الدور المحدد.</div>
                             </div>
                         @elseif(auth()->user()->isCompanyOwner())
-                            <div class="mb-3">
-                                <label class="form-label fw-semibold">
-                                    <i class="bi bi-people me-1"></i>
-                                    موظف / فني
-                                </label>
-                                <select id="userSelect" class="form-select" style="width:100%"></select>
-                                <div class="form-text">ستشاهد فقط الموظفين والفنيين التابعين لمشغلك.</div>
-                            </div>
-
+                            {{-- المشغل: الدور مثبت + الأدوار المخصصة --}}
                             @if($operator)
                                 <div class="perm-mini-note mb-3">
                                     <i class="bi bi-info-circle me-2"></i>
                                     المشغل الحالي: <strong>{{ $operator->name }}</strong>
                                 </div>
                             @endif
+
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">
+                                    <i class="bi bi-shield-check me-1"></i>
+                                    الدور
+                                </label>
+                                <select id="roleSelect" class="form-select">
+                                    <option value="company_owner" selected>مشغل</option>
+                                    @foreach(\App\Models\Role::getAvailableCustomRoles(auth()->user()) as $customRole)
+                                        <option value="{{ $customRole->id }}">{{ $customRole->label }}</option>
+                                    @endforeach
+                                </select>
+                                <div class="form-text">اختر دور لإدارة صلاحياته أو مستخدمينه.</div>
+                            </div>
+
+                            <div class="mb-3" id="userSelectWrapper">
+                                <label class="form-label fw-semibold">
+                                    <i class="bi bi-people me-1"></i>
+                                    موظف / فني
+                                </label>
+                                <select id="userSelect" class="form-select"></select>
+                                <div class="form-text">ستشاهد فقط الموظفين والفنيين التابعين لمشغلك.</div>
+                            </div>
                         @else
                             <div class="alert alert-warning mb-0">
                                 لا تملك صلاحية الوصول لهذه الصفحة.
@@ -286,8 +334,12 @@
             routes: {
                 selectOperators: @json(route('admin.permissions.select2.operators')),
                 selectUsers: @json(route('admin.permissions.select2.users')),
+                selectRoles: @json(route('admin.permissions.select2.roles')),
+                selectCustomRoles: @json(route('admin.permissions.select2.custom-roles', ['operator' => '__OPERATOR__'])),
                 userPermissions: @json(route('admin.permissions.user.permissions', ['user' => '__USER__'])),
+                rolePermissions: @json(route('admin.permissions.role.permissions', ['role' => '__ROLE__'])),
                 assign: @json(route('admin.permissions.assign')),
+                assignRole: @json(route('admin.permissions.role.assign', ['role' => '__ROLE__'])),
                 searchTree: @json(route('admin.permissions.search')),
             }
         };

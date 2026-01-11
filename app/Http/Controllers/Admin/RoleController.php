@@ -28,10 +28,14 @@ class RoleController extends Controller
         // Super Admin and Admin can see general roles (operator_id = null) that they or Super Admin created
         // Energy Authority and Company Owner cannot see general roles - they only see roles they created themselves
         if ($user->isAdmin()) {
-            // Admin can see system roles and general roles (operator_id = null) created by Admin or Super Admin
+            // Admin can see system roles (except super_admin) and general roles (operator_id = null) created by Admin or Super Admin
             // Admin cannot see roles specific to operators
             $query->where(function ($q) {
-                $q->where('is_system', true)
+                $q->where(function($q1) {
+                    // System roles except super_admin
+                    $q1->where('is_system', true)
+                       ->where('name', '!=', 'super_admin');
+                })
                   ->orWhere(function($q2) {
                       // General roles (operator_id = null) created by Admin or Super Admin
                       $q2->whereNull('operator_id')
@@ -45,11 +49,15 @@ class RoleController extends Controller
             });
         } elseif ($user->isEnergyAuthority()) {
             // Energy Authority can see:
-            // 1. System roles
+            // 1. System roles (except super_admin)
             // 2. General roles created by Energy Authority or Super Admin/Admin (for reference)
             // 3. Operator-specific roles created by Energy Authority
             $query->where(function ($q) use ($user) {
-                $q->where('is_system', true)
+                $q->where(function($q1) {
+                    // System roles except super_admin
+                    $q1->where('is_system', true)
+                       ->where('name', '!=', 'super_admin');
+                })
                   ->orWhere('created_by', $user->id) // Roles created by this Energy Authority (general or operator-specific)
                   ->orWhere(function($q2) {
                       // General roles (operator_id = null) created by Super Admin or Admin (for reference only)

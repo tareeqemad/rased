@@ -65,6 +65,12 @@
                     </div>
 
                     <div class="d-flex gap-2">
+                        @can('create', App\Models\User::class)
+                            <button type="button" class="btn btn-primary" id="btnOpenCreate">
+                                <i class="bi bi-person-plus me-1"></i>
+                                إضافة مستخدم
+                            </button>
+                        @endcan
                     </div>
                 </div>
 
@@ -72,7 +78,7 @@
                     @if($isCompanyOwner)
                         <div class="users-note mb-3">
                             <i class="bi bi-shield-lock me-1"></i>
-                            أنت ترى وتدير فقط <strong>الموظفين والفنيين</strong> التابعين لمشغّلك.
+                            يمكنك إضافة مستخدمين جدد بأدوار مخصصة أنشأتها أنت (<strong>موظفين وفنيين</strong>) وإدارة المستخدمين التابعين لمشغّلك.
                         </div>
                     @endif
 
@@ -217,6 +223,37 @@
             </div>
         </div>
     </div>
+
+    {{-- Create User Modal --}}
+    @can('create', App\Models\User::class)
+        <div class="modal fade" id="userCreateModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                <div class="modal-content">
+                    <div class="modal-header border-0 pb-0">
+                        <h5 class="modal-title fw-bold">
+                            <i class="bi bi-person-plus me-1"></i>
+                            إضافة مستخدم جديد
+                        </h5>
+                        <button type="button" class="btn-close ms-0" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body pt-2">
+                        <form id="userCreateForm">
+                            @csrf
+                            @include('admin.users.partials.modal-form', [
+                                'mode' => 'create',
+                                'user' => null,
+                                'roles' => collect($rolesForCreate ?? []),
+                                'defaultRole' => '',
+                                'operatorLocked' => $operatorLocked ?? null,
+                                'operators' => $operators ?? collect(),
+                                'selectedOperator' => null,
+                            ])
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endcan
 
     {{-- Delete confirm --}}
     <div class="modal fade" id="deleteUserModal" tabindex="-1" aria-hidden="true">
@@ -885,7 +922,7 @@
                 const createModal = createModalEl ? new bootstrap.Modal(createModalEl) : null;
 
                 const $createForm = $('#userCreateForm');
-                const $createRole = $('#createRole');
+                const $createRole = $('#roleSelect');
                 const $createSpinner = $('#createSpinner');
 
                 function clearCreateErrors(){
@@ -894,7 +931,7 @@
                 }
 
                 function setCreateLoading(on){
-                    $('#btnSubmitCreate').prop('disabled', on);
+                    $('#userModalSubmitBtn').prop('disabled', on);
                     $createSpinner.toggleClass('d-none', !on);
                 }
 
@@ -913,39 +950,39 @@
                     
                     // For Super Admin: show name_en, phone, email for main roles
                     if(IS_SUPER_ADMIN && isMainRole){
-                        $('#createNameEnField').removeClass('d-none');
-                        $('#createNameEnRequired').show();
-                        $('#createNameEnField input').prop('required', true);
+                        $('#nameEnField').removeClass('d-none');
+                        $('#nameEnRequired').show();
+                        $('#nameEnField input').prop('required', true);
                         
-                        $('#createPhoneField').removeClass('d-none');
-                        $('#createPhoneRequired').show();
-                        $('#createPhoneField input').prop('required', true);
+                        $('#phoneField').removeClass('d-none');
+                        $('#phoneRequired').show();
+                        $('#phoneField input').prop('required', true);
                         
-                        $('#createEmailField').removeClass('d-none');
-                        $('#createEmailField input').prop('required', false);
+                        $('#emailField').removeClass('d-none');
+                        $('#emailField input').prop('required', false);
                     } else {
-                        $('#createNameEnField').addClass('d-none');
-                        $('#createNameEnRequired').hide();
-                        $('#createNameEnField input').prop('required', false);
+                        $('#nameEnField').addClass('d-none');
+                        $('#nameEnRequired').hide();
+                        $('#nameEnField input').prop('required', false);
                         
-                        $('#createPhoneField').addClass('d-none');
-                        $('#createPhoneRequired').hide();
-                        $('#createPhoneField input').prop('required', false);
+                        $('#phoneField').addClass('d-none');
+                        $('#phoneRequired').hide();
+                        $('#phoneField input').prop('required', false);
                         
-                        $('#createEmailField').addClass('d-none');
-                        $('#createEmailField input').prop('required', false);
+                        $('#emailField').addClass('d-none');
+                        $('#emailField input').prop('required', false);
                     }
                     
                     // Operator field for Super Admin
                     if(IS_SUPER_ADMIN){
                         const shouldShowOperator = isEmpOrTech || isCompanyOwnerRole;
-                        $('#createOperatorWrap').toggleClass('d-none', !shouldShowOperator);
+                        $('#operatorField').toggleClass('d-none', !shouldShowOperator);
                         
                         if(shouldShowOperator){
-                            $('#createOperatorSelect').prop('required', true);
+                            $('#operatorSelect').prop('required', true);
                         } else {
-                            $('#createOperatorSelect').prop('required', false);
-                            try { $('#createOperatorSelect').val(null).trigger('change'); } catch(e){}
+                            $('#operatorSelect').prop('required', false);
+                            try { $('#operatorSelect').val(null).trigger('change'); } catch(e){}
                         }
                     }
                 }
@@ -967,7 +1004,7 @@
 
                 // Select2 for operator inside create modal (super admin)
                 if(IS_SUPER_ADMIN){
-                    $('#createOperatorSelect').select2({
+                    $('#operatorSelect').select2({
                         dropdownParent: $('#userCreateModal'),
                         dir: 'rtl',
                         width: '100%',
@@ -993,7 +1030,8 @@
                     });
                 }
 
-                $('#btnSubmitCreate').on('click', function(){
+                $('#userModalSubmitBtn').on('click', function(e){
+                    e.preventDefault();
                     clearCreateErrors();
                     setCreateLoading(true);
 

@@ -1,4 +1,4 @@
-﻿@extends('layouts.admin')
+@extends('layouts.admin')
 
 @section('title', 'إضافة مولد جديد')
 
@@ -116,12 +116,16 @@
                                 </div>
                             @else
                                 <input type="hidden" name="operator_id" id="operator_id" value="{{ auth()->user()->ownedOperators()->first()->id }}">
+                                @php
+                                    // قراءة generation_unit_id من query parameter أو old value
+                                    $selectedGenerationUnitId = request()->query('generation_unit_id') ?? old('generation_unit_id');
+                                @endphp
                                 <div class="col-md-6">
                                     <label class="form-label fw-semibold">وحدة التوليد <span class="text-danger">*</span></label>
                                     <select name="generation_unit_id" id="generation_unit_id" class="form-select @error('generation_unit_id') is-invalid @enderror">
                                         <option value="">اختر وحدة التوليد</option>
                                         @foreach(auth()->user()->ownedOperators()->first()->generationUnits as $unit)
-                                            <option value="{{ $unit->id }}" {{ old('generation_unit_id') == $unit->id ? 'selected' : '' }}>
+                                            <option value="{{ $unit->id }}" {{ $selectedGenerationUnitId == $unit->id ? 'selected' : '' }}>
                                                 {{ $unit->name }} ({{ $unit->unit_code }}) - {{ $unit->generators()->count() }}/{{ $unit->generators_count }} مولد
                                             </option>
                                         @endforeach
@@ -1050,6 +1054,10 @@
 
                     const data = await response.json();
                     if (data.success && data.generation_units && data.generation_units.length > 0) {
+                        // قراءة generation_unit_id من query parameter
+                        const urlParams = new URLSearchParams(window.location.search);
+                        const generationUnitIdFromUrl = urlParams.get('generation_unit_id');
+                        
                         data.generation_units.forEach(unit => {
                             const option = document.createElement('option');
                             option.value = unit.id;
@@ -1059,8 +1067,17 @@
                                 option.disabled = true;
                                 option.textContent += ' (ممتلئة)';
                             }
+                            // تحديد الوحدة إذا كانت في الـ URL
+                            if (generationUnitIdFromUrl && generationUnitIdFromUrl == unit.id) {
+                                option.selected = true;
+                            }
                             generationUnitSelect.appendChild(option);
                         });
+                        
+                        // إذا تم تحديد وحدة من الـ URL، قم بتوليد رقم المولد
+                        if (generationUnitIdFromUrl && generationUnitSelect.value == generationUnitIdFromUrl) {
+                            generationUnitSelect.dispatchEvent(new Event('change'));
+                        }
                         
                         if (generationUnitHelp) {
                             generationUnitHelp.textContent = 'اختر وحدة التوليد لإضافة المولد';
@@ -1125,11 +1142,41 @@
                 }
             });
 
-            // توليد الرقم تلقائياً إذا كانت وحدة التوليد محددة مسبقاً
-            if (generationUnitSelect.value) {
-                generationUnitSelect.dispatchEvent(new Event('change'));
+            // توليد الرقم تلقائياً إذا كانت وحدة التوليد محددة مسبقاً (من old value أو URL)
+            const urlParams = new URLSearchParams(window.location.search);
+            const generationUnitIdFromUrl = urlParams.get('generation_unit_id');
+            const generationUnitIdFromOld = @json(old('generation_unit_id'));
+            
+            if (generationUnitSelect.value || generationUnitIdFromUrl || generationUnitIdFromOld) {
+                // إذا كانت القيمة من URL وليست محددة بعد، انتظر قليلاً ثم قم بالتحديد
+                if (generationUnitIdFromUrl && !generationUnitSelect.value) {
+                    setTimeout(() => {
+                        if (generationUnitSelect.querySelector(`option[value="${generationUnitIdFromUrl}"]`)) {
+                            generationUnitSelect.value = generationUnitIdFromUrl;
+                            generationUnitSelect.dispatchEvent(new Event('change'));
+                        }
+                    }, 100);
+                } else if (generationUnitSelect.value) {
+                    generationUnitSelect.dispatchEvent(new Event('change'));
+                }
             }
         }
+        
+        // اختيار وحدة التوليد تلقائياً من الـ URL (للمشغلين الذين لا يستخدمون AJAX)
+        @if(!auth()->user()->isSuperAdmin())
+            const urlParamsForCompanyOwner = new URLSearchParams(window.location.search);
+            const generationUnitIdFromUrl = urlParamsForCompanyOwner.get('generation_unit_id');
+            const generationUnitSelectForCompanyOwner = document.getElementById('generation_unit_id');
+            
+            if (generationUnitIdFromUrl && generationUnitSelectForCompanyOwner) {
+                // تحديد الوحدة إذا كانت موجودة في الـ select
+                if (generationUnitSelectForCompanyOwner.querySelector(`option[value="${generationUnitIdFromUrl}"]`)) {
+                    generationUnitSelectForCompanyOwner.value = generationUnitIdFromUrl;
+                    // توليد رقم المولد تلقائياً
+                    generationUnitSelectForCompanyOwner.dispatchEvent(new Event('change'));
+                }
+            }
+        @endif
     });
 </script>
 @endpush

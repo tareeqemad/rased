@@ -50,12 +50,12 @@ class UpdateGenerationUnitRequest extends FormRequest
             'fuel_tanks_count' => ['nullable', 'integer', 'min:0', 'max:10'],
             'fuel_tanks' => ['nullable', 'array'],
             'fuel_tanks.*.capacity' => ['required_with:fuel_tanks', 'numeric', 'min:0', 'max:10000'],
-            'fuel_tanks.*.location' => ['required_with:fuel_tanks'],
+            'fuel_tanks.*.location_id' => ['required_with:fuel_tanks', 'exists:constant_details,id'],
             'fuel_tanks.*.filtration_system_available' => ['nullable', 'boolean'],
             'fuel_tanks.*.condition' => ['nullable', 'string'],
-            'fuel_tanks.*.material' => ['nullable'],
-            'fuel_tanks.*.usage' => ['nullable'],
-            'fuel_tanks.*.measurement_method' => ['nullable'],
+            'fuel_tanks.*.material_id' => ['nullable', 'exists:constant_details,id'],
+            'fuel_tanks.*.usage_id' => ['nullable', 'exists:constant_details,id'],
+            'fuel_tanks.*.measurement_method_id' => ['nullable', 'exists:constant_details,id'],
         ];
     }
 

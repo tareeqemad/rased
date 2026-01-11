@@ -173,27 +173,45 @@
 </div>
 
 {{-- Import Excel Modal --}}
-<div class="modal fade" id="importExcelModal" tabindex="-1">
+<div class="modal fade" id="importExcelModal" tabindex="-1" aria-labelledby="importExcelModalLabel" aria-hidden="true" style="display: none;">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">
+                <h5 class="modal-title" id="importExcelModalLabel">
                     <i class="bi bi-file-earmark-excel me-2 text-success"></i>
                     استيراد من ملف Excel
                 </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form id="importExcelForm" action="{{ route('admin.authorized-phones.import') }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 <div class="modal-body">
-                    <div class="alert alert-info">
-                        <strong>تعليمات:</strong>
-                        <ul class="mb-0 mt-2 small">
-                            <li><strong>العمود الأول (A):</strong> الاسم (مطلوب)</li>
-                            <li><strong>العمود الثاني (B):</strong> رقم الجوال (مطلوب)</li>
-                            <li><strong>العمود الثالث (C):</strong> الملاحظات (اختياري)</li>
-                            <li>الصيغ المدعومة: .xlsx, .xls, .csv</li>
-                            <li>يمكن إضافة headers في السطر الأول (الاسم، رقم الجوال، الملاحظات)</li>
+                    <div class="mb-4 p-3 bg-light rounded border-start border-3 border-info">
+                        <h6 class="mb-3 fw-semibold text-dark">
+                            <i class="bi bi-info-circle me-2 text-info"></i>
+                            تعليمات:
+                        </h6>
+                        <ul class="mb-0 small text-muted" style="list-style: none; padding: 0;">
+                            <li class="mb-2">
+                                <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                <strong>العمود الأول (A):</strong> الاسم (مطلوب)
+                            </li>
+                            <li class="mb-2">
+                                <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                <strong>العمود الثاني (B):</strong> رقم الجوال (مطلوب)
+                            </li>
+                            <li class="mb-2">
+                                <i class="bi bi-circle text-secondary me-2"></i>
+                                <strong>العمود الثالث (C):</strong> الملاحظات (اختياري)
+                            </li>
+                            <li class="mb-2">
+                                <i class="bi bi-file-earmark-excel text-success me-2"></i>
+                                الصيغ المدعومة: <code>.xlsx</code>, <code>.xls</code>, <code>.csv</code>
+                            </li>
+                            <li class="mb-0">
+                                <i class="bi bi-list-ul text-info me-2"></i>
+                                يمكن إضافة headers في السطر الأول (الاسم، رقم الجوال، الملاحظات)
+                            </li>
                         </ul>
                     </div>
                     <div class="mb-3">

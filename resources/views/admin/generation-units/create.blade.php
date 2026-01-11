@@ -142,6 +142,22 @@
                             {{-- TAB: OWNER --}}
                             <div class="tab-pane fade" id="tab-owner" role="tabpanel">
                                 <div class="row g-3">
+                                    {{-- جهة التشغيل (أول حقل وإجباري) --}}
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">جهة التشغيل <span class="text-danger">*</span></label>
+                                        <select name="operation_entity_id" id="operation_entity_id" class="form-select @error('operation_entity_id') is-invalid @enderror" required>
+                                            <option value="">اختر جهة التشغيل</option>
+                                            @foreach($constants['operation_entity'] as $entity)
+                                                <option value="{{ $entity->id }}" data-code="{{ $entity->code }}" {{ old('operation_entity_id') == $entity->id ? 'selected' : '' }}>
+                                                    {{ $entity->label }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                        @error('operation_entity_id')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+
                                     <div class="col-md-6">
                                         <label class="form-label fw-semibold">اسم المالك</label>
                                         <input type="text" name="owner_name" class="form-control @error('owner_name') is-invalid @enderror"
@@ -157,22 +173,6 @@
                                         <input type="text" name="owner_id_number" class="form-control @error('owner_id_number') is-invalid @enderror"
                                                value="{{ old('owner_id_number') }}">
                                         @error('owner_id_number')
-                                            <div class="invalid-feedback">{{ $message }}</div>
-                                        @enderror
-                                    </div>
-
-                                    <div class="col-md-6">
-                                        <label class="form-label fw-semibold">جهة التشغيل</label>
-                                        <select name="operation_entity_id" id="operation_entity_id" class="form-select @error('operation_entity_id') is-invalid @enderror">
-                                            <option value="">اختر</option>
-                                            @foreach($constants['operation_entity'] as $entity)
-                                                <option value="{{ $entity->id }}" data-code="{{ $entity->code }}" {{ old('operation_entity_id') == $entity->id ? 'selected' : '' }}>
-                                                    {{ $entity->label }}
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                        <div class="form-text">يمكن ملؤه لاحقاً</div>
-                                        @error('operation_entity_id')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
@@ -371,8 +371,8 @@
                             <div class="tab-pane fade" id="tab-status" role="tabpanel">
                                 <div class="row g-3">
                                     <div class="col-md-6">
-                                        <label class="form-label fw-semibold">حالة الوحدة <span class="text-danger">*</span></label>
-                                        <select name="status_id" class="form-select @error('status_id') is-invalid @enderror" required>
+                                        <label class="form-label fw-semibold">حالة الوحدة</label>
+                                        <select name="status_id" class="form-select @error('status_id') is-invalid @enderror">
                                             <option value="">اختر</option>
                                             @foreach($constants['status'] as $status)
                                                 <option value="{{ $status->id }}" {{ old('status_id', $constants['status']->firstWhere('code', 'ACTIVE')?->id) == $status->id ? 'selected' : '' }}>
@@ -380,6 +380,7 @@
                                                 </option>
                                             @endforeach
                                         </select>
+                                        <div class="form-text">سيتم تعيين حالة "فعال" تلقائياً إذا لم يتم الاختيار</div>
                                         @error('status_id')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
@@ -482,51 +483,99 @@
             'status': 'الحالة',
             'owner_name': 'اسم المالك',
             'owner_id_number': 'رقم هوية المالك',
+            'operation_entity_id': 'جهة التشغيل',
             'operation_entity': 'كيان التشغيل',
             'operator_id_number': 'رقم هوية المشغل',
             'phone': 'رقم الهاتف',
             'phone_alt': 'رقم الهاتف البديل',
             'email': 'البريد الإلكتروني',
+            'governorate_id': 'المحافظة',
             'governorate': 'المحافظة',
             'city_id': 'المدينة',
             'detailed_address': 'العنوان التفصيلي',
             'latitude': 'خط العرض',
             'longitude': 'خط الطول',
             'total_capacity': 'السعة الإجمالية',
+            'synchronization_available_id': 'مزامنة المولدات',
             'synchronization_available': 'التزامن متاح',
             'max_synchronization_capacity': 'السعة القصوى للتزامن',
             'beneficiaries_count': 'عدد المستفيدين',
             'beneficiaries_description': 'وصف المستفيدين',
+            'environmental_compliance_status_id': 'الامتثال البيئي',
             'environmental_compliance_status': 'حالة الامتثال البيئي',
+            'status_id': 'حالة الوحدة',
             'external_fuel_tank': 'خزان وقود خارجي',
             'fuel_tanks_count': 'عدد خزانات الوقود',
             'fuel_tanks': 'خزانات الوقود'
         };
 
-        const errorMessages = [];
-        const firstField = Object.keys(errors || {})[0];
+        // ترتيب أولويات الحقول حسب التابات (من الأول للأخير)
+        const fieldOrder = [
+            // tab-basic: البيانات الأساسية
+            'operator_id', 'name', 'generators_count',
+            // tab-owner: الملكية
+            'operation_entity_id', 'owner_name', 'owner_id_number', 'operator_id_number', 'phone', 'phone_alt', 'email',
+            // tab-location: الموقع
+            'governorate_id', 'city_id', 'detailed_address', 'latitude', 'longitude',
+            // tab-tech: القدرات
+            'total_capacity', 'synchronization_available_id', 'max_synchronization_capacity',
+            // tab-benef: المستفيدون
+            'beneficiaries_count', 'beneficiaries_description', 'environmental_compliance_status_id',
+            // tab-status: الحالة
+            'status_id',
+            // tab-tanks: الخزانات
+            'external_fuel_tank', 'fuel_tanks_count', 'fuel_tanks'
+        ];
+
+        // إيجاد أول حقل خطأ حسب ترتيب الأولويات
+        let firstField = null;
+        for (const field of fieldOrder) {
+            if (errors[field]) {
+                firstField = field;
+                break;
+            }
+        }
         
-        // جمع جميع رسائل الأخطاء
+        // إذا لم يتم العثور على الحقل في الترتيب المحدد، استخدم أول حقل في الأخطاء
+        if (!firstField && Object.keys(errors).length > 0) {
+            firstField = Object.keys(errors)[0];
+        }
+
+        const errorMessages = [];
+        
+        // جمع جميع رسائل الأخطاء حسب ترتيب الأولويات
+        for (const field of fieldOrder) {
+            if (errors[field]) {
+                const errorMsg = Array.isArray(errors[field]) ? errors[field][0] : errors[field];
+                const fieldLabel = fieldLabels[field] || field;
+                errorMessages.push(fieldLabel + ': ' + errorMsg);
+            }
+        }
+        
+        // إضافة أي حقول خطأ أخرى غير موجودة في fieldOrder
         Object.keys(errors || {}).forEach(field => {
-            const errorMsg = Array.isArray(errors[field]) ? errors[field][0] : errors[field];
-            const fieldLabel = fieldLabels[field] || field;
-            errorMessages.push(fieldLabel + ': ' + errorMsg);
+            if (!fieldOrder.includes(field)) {
+                const errorMsg = Array.isArray(errors[field]) ? errors[field][0] : errors[field];
+                const fieldLabel = fieldLabels[field] || field;
+                errorMessages.push(fieldLabel + ': ' + errorMsg);
+            }
         });
 
-        // عرض جميع الأخطاء في إشعار أحمر
+        // عرض جميع رسائل الأخطاء في إشعار أحمر
         if (errorMessages.length > 0) {
             let errorMessage = 'يرجى تصحيح الأخطاء التالية:\n\n';
             errorMessage += errorMessages.join('\n');
             notify('error', errorMessage, 'تحقق من الأخطاء');
         }
 
+        // عرض أول حقل خطأ وفتح التاب المناسب
         if (firstField) {
             const input = form.querySelector(`[name="${CSS.escape(firstField)}"]`);
             if (input) {
                 input.classList.add('is-invalid');
                 const div = document.createElement('div');
                 div.className = 'invalid-feedback';
-                div.textContent = errors[firstField][0];
+                div.textContent = Array.isArray(errors[firstField]) ? errors[firstField][0] : errors[firstField];
                 input.insertAdjacentElement('afterend', div);
 
                 // افتح التاب اللي فيه الحقل
@@ -540,6 +589,7 @@
             }
         }
 
+        // عرض جميع الأخطاء على الحقول
         Object.keys(errors || {}).forEach(field => {
             const input = form.querySelector(`[name="${CSS.escape(field)}"]`);
             if (!input) return;
@@ -547,7 +597,7 @@
             if (input.nextElementSibling && input.nextElementSibling.classList.contains('invalid-feedback')) return;
             const div = document.createElement('div');
             div.className = 'invalid-feedback';
-            div.textContent = errors[field][0];
+            div.textContent = Array.isArray(errors[field]) ? errors[field][0] : errors[field];
             input.insertAdjacentElement('afterend', div);
         });
     }

@@ -19,7 +19,12 @@ class UserPolicy
         }
 
         // CompanyOwner: يشوف فقط موظفينه/فنييه عبر Users module
+        // يجب أن يكون المشغل معتمد حتى يرى صفحة المستخدمين
         if ($user->isCompanyOwner()) {
+            $operator = $user->ownedOperators()->first();
+            if ($operator && !$operator->isApproved()) {
+                return false;
+            }
             return true;
         }
 

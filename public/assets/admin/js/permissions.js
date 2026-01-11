@@ -8,7 +8,11 @@
     const $alerts = $('#permAlerts');
 
     const $operatorSelect = $('#operatorSelect');
+    const $roleSelect = $('#roleSelect');
+    const $customRoleSelect = $('#customRoleSelect');
     const $userSelect = $('#userSelect');
+    const $operatorSelectWrapper = $('#operatorSelectWrapper');
+    const $customRoleSelectWrapper = $('#customRoleSelectWrapper');
 
     const $saveBtn = $('#savePermissionsBtn');
     const $resetBtn = $('#resetPermissionsBtn');
@@ -45,7 +49,11 @@
     });
 
     function setLoading(on) {
-        $overlay.toggle(!!on);
+        if (on) {
+            $overlay.css('display', 'flex');
+        } else {
+            $overlay.css('display', 'none');
+        }
     }
 
     function escapeHtml(str) {
@@ -286,7 +294,188 @@
         });
     }
 
-    function initUserSelect(operatorIdForSuperAdmin) {
+    function initRoleSelect() {
+        if (!$roleSelect.length) return;
+
+        // For SuperAdmin: regular select (not select2)
+        if (ctx.isSuperAdmin) {
+            $roleSelect.on('change', function () {
+                const roleName = $(this).val();
+                currentUserId = null;
+                resetUserContextUI();
+
+                // reset sets
+                roleSet = new Set();
+                directSet = new Set();
+                revokedSet = new Set();
+                baselineDirect = new Set();
+                baselineRevoked = new Set();
+
+                // Hide operator and custom role selects
+                $operatorSelectWrapper.hide();
+                $customRoleSelectWrapper.hide();
+                $customRoleSelect.val('').trigger('change');
+
+                // Clear and disable user select
+                if ($userSelect.length) {
+                    $userSelect.val(null).trigger('change');
+                    $userSelect.prop('disabled', true);
+                }
+
+                if (roleName === 'company_owner') {
+                    // If company_owner selected, show operator select
+                    $operatorSelectWrapper.show();
+                    if (!$operatorSelect.hasClass('select2-hidden-accessible')) {
+                        initOperatorSelect();
+                    }
+                } else if (roleName) {
+                    // Other system roles - show users directly
+                    $userSelect.prop('disabled', false);
+                    initUserSelect(roleName);
+                }
+            });
+        } else if (ctx.isCompanyOwner) {
+            // For CompanyOwner: regular select, no select2 needed (it's a static select)
+            $roleSelect.on('change', function () {
+                const roleValue = $(this).val();
+                currentUserId = null;
+                resetUserContextUI();
+
+                // reset sets
+                roleSet = new Set();
+                directSet = new Set();
+                revokedSet = new Set();
+                baselineDirect = new Set();
+                baselineRevoked = new Set();
+
+                // re-init users with selected role
+                if (roleValue) {
+                    initUserSelect(roleValue);
+                }
+            });
+
+            // Initialize user select on page load
+            const initialRole = $roleSelect.val();
+            if (initialRole) {
+                initUserSelect(initialRole);
+            }
+        }
+    }
+
+    function initOperatorSelect() {
+        if (!$operatorSelect.length) return;
+
+        $operatorSelect.select2({
+            width: '100%',
+            placeholder: 'ابحث عن مشغل...',
+            allowClear: true,
+            dir: 'rtl',
+            language: 'ar',
+            ajax: {
+                url: routes.selectOperators,
+                dataType: 'json',
+                delay: 250,
+                data: params => ({
+                    q: params.term || '',
+                    page: params.page || 1
+                }),
+                processResults: data => ({
+                    results: data.results || [],
+                    pagination: data.pagination || { more: false }
+                })
+            },
+            templateResult: formatOperatorResult,
+            templateSelection: item => item.text || '—'
+        });
+
+        $operatorSelect.off('change').on('change', function () {
+            const operatorId = $(this).val();
+            currentUserId = null;
+            resetUserContextUI();
+
+            // reset sets
+            roleSet = new Set();
+            directSet = new Set();
+            revokedSet = new Set();
+            baselineDirect = new Set();
+            baselineRevoked = new Set();
+
+            // Hide custom role select
+            $customRoleSelectWrapper.hide();
+            $customRoleSelect.val('').trigger('change');
+
+            // Clear and disable user select
+            if ($userSelect.length) {
+                $userSelect.val(null).trigger('change');
+                $userSelect.prop('disabled', true);
+            }
+
+            if (operatorId) {
+                // Load custom roles for this operator
+                loadCustomRolesForOperator(operatorId);
+            }
+        });
+    }
+
+    function loadCustomRolesForOperator(operatorId) {
+        const url = routes.selectCustomRoles.replace('__OPERATOR__', operatorId);
+        
+        $.ajax({
+            url: url,
+            method: 'GET',
+            dataType: 'json'
+        })
+        .done(function(res) {
+            // Clear existing options
+            $customRoleSelect.find('option:not(:first)').remove();
+            
+            if (res.results && res.results.length > 0) {
+                // Add custom roles
+                res.results.forEach(function(role) {
+                    $customRoleSelect.append(new Option(role.text, role.id, false, false));
+                });
+                $customRoleSelectWrapper.show();
+            } else {
+                // No custom roles - show users directly for company_owner role
+                $userSelect.prop('disabled', false);
+                initUserSelect('company_owner');
+            }
+        })
+        .fail(function() {
+            flash('warning', 'فشل تحميل الأدوار المخصصة');
+        });
+    }
+
+    function initCustomRoleSelect() {
+        if (!$customRoleSelect.length) return;
+
+        $customRoleSelect.on('change', function () {
+            const roleId = $(this).val();
+            currentUserId = null;
+            resetUserContextUI();
+
+            // reset sets
+            roleSet = new Set();
+            directSet = new Set();
+            revokedSet = new Set();
+            baselineDirect = new Set();
+            baselineRevoked = new Set();
+
+            // Clear and disable user select
+            if ($userSelect.length) {
+                $userSelect.val(null).trigger('change');
+                $userSelect.prop('disabled', !roleId);
+            }
+
+            if (roleId) {
+                // Show users for this custom role
+                $userSelect.prop('disabled', false);
+                initUserSelect('custom_role_' + roleId);
+            }
+        });
+    }
+
+    function initUserSelect(roleForSuperAdminOrCompanyOwner) {
         if (!$userSelect.length) return;
 
         // destroy old if exists
@@ -296,7 +485,7 @@
 
         $userSelect.select2({
             width: '100%',
-            placeholder: ctx.isSuperAdmin ? 'اختر مستخدم...' : 'ابحث عن موظف/فني...',
+            placeholder: ctx.isSuperAdmin ? 'ابحث عن المستخدمين...' : 'ابحث عن موظف/فني...',
             allowClear: true,
             dir: 'rtl',
             language: 'ar',
@@ -309,7 +498,23 @@
                         q: params.term || '',
                         page: params.page || 1
                     };
-                    if (ctx.isSuperAdmin) payload.operator_id = operatorIdForSuperAdmin;
+                    if (ctx.isSuperAdmin) {
+                        // SuperAdmin: check if it's custom role or system role
+                        if (roleForSuperAdminOrCompanyOwner && roleForSuperAdminOrCompanyOwner.startsWith('custom_role_')) {
+                            const roleId = roleForSuperAdminOrCompanyOwner.replace('custom_role_', '');
+                            payload.role_id = parseInt(roleId, 10);
+                        } else {
+                            // System role
+                            payload.role = roleForSuperAdminOrCompanyOwner;
+                        }
+                    } else if (ctx.isCompanyOwner) {
+                        // CompanyOwner: use role value (company_owner or role_id)
+                        if (roleForSuperAdminOrCompanyOwner === 'company_owner') {
+                            payload.role = 'company_owner';
+                        } else {
+                            payload.role_id = parseInt(roleForSuperAdminOrCompanyOwner, 10);
+                        }
+                    }
                     return payload;
                 },
                 processResults: data => ({
@@ -764,15 +969,17 @@
         const userIdFromUrl = urlParams.get('user_id');
 
         if (ctx.isSuperAdmin) {
-            initOperatorSelect();
+            // SuperAdmin: init role select first
+            initRoleSelect();
+            initCustomRoleSelect();
             
-            // إذا كان هناك user_id في الـ URL، نحتاج لتحميل المستخدم والمشغل أولاً
+            // إذا كان هناك user_id في الـ URL، نحتاج لتحميل المستخدم والدور أولاً
             if (userIdFromUrl) {
                 loadUserFromUrl(userIdFromUrl);
             }
         } else if (ctx.isCompanyOwner) {
-            // company owner: init directly
-            initUserSelect(ctx.operatorId || null);
+            // CompanyOwner: init role select (which will init user select)
+            initRoleSelect();
             
             // إذا كان هناك user_id في الـ URL، حمّل المستخدم مباشرة
             if (userIdFromUrl) {
@@ -780,6 +987,33 @@
             }
         }
     });
+
+    // ===== Helper: Set operator and load custom roles =====
+    function setOperatorAndLoadCustomRoles(operatorData, userRoleId, userIdNum, userName, userRole) {
+        if (!operatorData) return;
+        
+        // إضافة المشغل إلى select2
+        const operatorOption = new Option(operatorData.text, operatorData.id, true, true);
+        $operatorSelect.append(operatorOption).trigger('change');
+        
+        // انتظر حتى يتم تحميل الأدوار المخصصة
+        setTimeout(function() {
+            if (userRoleId) {
+                // إذا كان المستخدم لديه custom role
+                $customRoleSelect.val(userRoleId).trigger('change');
+                
+                // انتظر حتى يتم تهيئة select المستخدمين
+                setTimeout(function() {
+                    addUserToSelectAndLoad(userIdNum, userName, userRole, 'custom_role_' + userRoleId);
+                }, 500);
+            } else {
+                // المستخدم مشغل بدون custom role
+                setTimeout(function() {
+                    addUserToSelectAndLoad(userIdNum, userName, userRole, 'company_owner');
+                }, 500);
+            }
+        }, 800);
+    }
 
     // ===== Load user from URL =====
     function loadUserFromUrl(userId, operatorIdForSuperAdmin = null) {
@@ -797,7 +1031,7 @@
             method: 'GET',
             dataType: 'json'
         })
-        .done(function(res) {
+            .done(function(res) {
             if (!res.success || !res.user) {
                 flash('danger', 'المستخدم غير موجود أو ليس لديك صلاحية لعرضه');
                 setLoading(false);
@@ -805,19 +1039,100 @@
             }
 
             const user = res.user;
+            const userRole = user.role || '';
+            const userRoleId = user.role_id || null;
+            const userOperatorId = user.operator_id || null;
             
-            // إذا كان السوبر أدمن وكان هناك operator_id، حمّل المشغل أولاً
-            if (ctx.isSuperAdmin && user.operator_id) {
-                // تحميل المشغل أولاً
-                $operatorSelect.val(user.operator_id).trigger('change');
-                
-                // انتظر حتى يتم تهيئة select المستخدمين
-                setTimeout(function() {
-                    addUserToSelectAndLoad(userIdNum, user.name, user.role || '', user.operator_id);
-                }, 800);
-            } else {
-                // Company Owner أو بدون مشغل - حمّل مباشرة
-                addUserToSelectAndLoad(userIdNum, user.name, user.role || '', operatorIdForSuperAdmin || user.operator_id);
+            // لا نوقف loading هنا - سنوقفه في loadUserPermissions
+            
+            // إذا كان السوبر أدمن
+            if (ctx.isSuperAdmin && userRole) {
+                if (userRole === 'company_owner') {
+                    // إذا كان المستخدم مشغل، حمّل المشغل والأدوار المخصصة
+                    $roleSelect.val('company_owner').trigger('change');
+                    
+                    // انتظر حتى يتم عرض select المشغل
+                    setTimeout(function() {
+                        if (userOperatorId) {
+                            // تحميل معلومات المشغل من API
+                            $.ajax({
+                                url: routes.selectOperators,
+                                method: 'GET',
+                                data: { q: '', page: 1, operator_id: userOperatorId }
+                            })
+                            .done(function(opRes) {
+                                // البحث عن المشغل في النتائج
+                                let operatorData = null;
+                                if (opRes.results && opRes.results.length > 0) {
+                                    operatorData = opRes.results.find(function(op) {
+                                        return parseInt(op.id) === parseInt(userOperatorId);
+                                    });
+                                }
+                                
+                                // إذا لم نجده في النتائج، جربه مباشرة
+                                if (!operatorData) {
+                                    // جرب البحث بشكل مختلف
+                                    $.ajax({
+                                        url: routes.selectOperators,
+                                        method: 'GET',
+                                        data: { q: userOperatorId.toString(), page: 1 }
+                                    })
+                                    .done(function(searchRes) {
+                                        if (searchRes.results && searchRes.results.length > 0) {
+                                            operatorData = searchRes.results.find(function(op) {
+                                                return parseInt(op.id) === parseInt(userOperatorId);
+                                            });
+                                        }
+                                        if (operatorData) {
+                                            setOperatorAndLoadCustomRoles(operatorData, userRoleId, userIdNum, user.name, userRole);
+                                        } else {
+                                            // إذا لم نجد المشغل، حمّل المستخدم مباشرة
+                                            setTimeout(function() {
+                                                addUserToSelectAndLoad(userIdNum, user.name, userRole, 'company_owner');
+                                            }, 300);
+                                        }
+                                    });
+                                } else {
+                                    setOperatorAndLoadCustomRoles(operatorData, userRoleId, userIdNum, user.name, userRole);
+                                }
+                            })
+                            .fail(function() {
+                                // إذا فشل تحميل المشغل، حمّل المستخدم مباشرة
+                                setTimeout(function() {
+                                    addUserToSelectAndLoad(userIdNum, user.name, userRole, 'company_owner');
+                                }, 300);
+                            });
+                        } else {
+                            // لا يوجد مشغل - فقط دور النظام
+                            setTimeout(function() {
+                                addUserToSelectAndLoad(userIdNum, user.name, userRole, userRole);
+                            }, 500);
+                        }
+                    }, 300);
+                } else {
+                    // دور نظامي آخر (غير مشغل)
+                    $roleSelect.val(userRole).trigger('change');
+                    
+                    // انتظر حتى يتم تهيئة select المستخدمين
+                    setTimeout(function() {
+                        addUserToSelectAndLoad(userIdNum, user.name, userRole, userRole);
+                    }, 500);
+                }
+            } else if (ctx.isCompanyOwner) {
+                // Company Owner - حمّل مباشرة
+                if (userRoleId) {
+                    // إذا كان المستخدم لديه custom role
+                    $roleSelect.val(userRoleId).trigger('change');
+                    setTimeout(function() {
+                        addUserToSelectAndLoad(userIdNum, user.name, userRole, userRoleId);
+                    }, 300);
+                } else {
+                    // المستخدم مشغل
+                    $roleSelect.val('company_owner').trigger('change');
+                    setTimeout(function() {
+                        addUserToSelectAndLoad(userIdNum, user.name, userRole, 'company_owner');
+                    }, 300);
+                }
             }
         })
         .fail(function(xhr) {
@@ -839,16 +1154,17 @@
         // التأكد من تهيئة select2
         if (!$userSelect.hasClass('select2-hidden-accessible')) {
             if (ctx.isSuperAdmin) {
-                const operatorId = operatorIdForSuperAdmin || $operatorSelect.val();
-                if (operatorId) {
-                    initUserSelect(operatorId);
+                const roleName = $roleSelect.val();
+                if (roleName) {
+                    initUserSelect(roleName);
                 } else {
-                    flash('warning', 'يرجى اختيار المشغل أولاً');
+                    flash('warning', 'يرجى اختيار الدور أولاً');
                     setLoading(false);
                     return;
                 }
             } else {
-                initUserSelect(ctx.operatorId || null);
+                const roleValue = $roleSelect.val();
+                initUserSelect(roleValue || 'company_owner');
             }
         }
 
@@ -879,7 +1195,7 @@
                         setRoleBadge(currentUserRole);
                         loadUserPermissions(userIdNum);
                     }
-                    setLoading(false);
+                    // لا نوقف loading هنا - loadUserPermissions سيتولى ذلك
                 }, 1000);
             } else {
                 // إذا لم يكن select موجود، حمّل الصلاحيات مباشرة

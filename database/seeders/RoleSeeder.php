@@ -61,11 +61,12 @@ class RoleSeeder extends Seeder
                 
             } elseif ($role->name === 'energy_authority') {
                 // EnergyAuthority (Energy Authority) - Main role in the system
-                // Full permissions EXCEPT site settings, constants, logs
+                // Full permissions EXCEPT site settings, constants, logs, welcome_messages
                 // Can manage users, custom roles, operators under their authority
                 // Can create and update records
                 // Can add operators through authorized phone numbers
                 // Has access to roles and permissions definition
+                // Note: welcome_messages are only for Admin and SuperAdmin
                 $role->permissions()->attach($permissions->whereIn('name', [
                     // View
                     'operators.view',
@@ -77,9 +78,7 @@ class RoleSeeder extends Seeder
                     'compliance_safeties.view',
                     'electricity_tariff_prices.view',
                     'guide.view',
-                    // Welcome messages and SMS templates
-                    'welcome_messages.view',
-                    'welcome_messages.update',
+                    // SMS templates (but NOT welcome_messages - only for Admin and SuperAdmin)
                     'sms_templates.view',
                     'sms_templates.update',
                     // Create and update records
@@ -114,8 +113,9 @@ class RoleSeeder extends Seeder
                 ])->pluck('id'));
                 
             } elseif ($role->name === 'admin') {
-                // Admin - Limited administrative permissions (view only + approve operators)
-                // Can view data and approve operators, but cannot modify other data
+                // Admin - Administrative permissions including welcome_messages
+                // Can view data, approve operators, and manage welcome messages
+                // Note: welcome_messages are only for Admin and SuperAdmin (not for Energy Authority or Company Owner)
                 $role->permissions()->attach($permissions->whereIn('name', [
                     // View only (no create, update, delete except approve)
                     'operators.view',
@@ -128,6 +128,9 @@ class RoleSeeder extends Seeder
                     'compliance_safeties.view',
                     'electricity_tariff_prices.view',
                     'guide.view',
+                    // Welcome messages (only for Admin and SuperAdmin)
+                    'welcome_messages.view',
+                    'welcome_messages.update',
                 ])->pluck('id'));
                 
             } elseif ($role->name === 'company_owner') {
